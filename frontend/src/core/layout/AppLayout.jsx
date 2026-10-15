@@ -26,6 +26,8 @@ export default function AppLayout() {
     (m) => (me.module_access[m.id] ?? 'none') !== 'none',
   )
 
+  const wide = Boolean(visibleModules.find((m) => m.wide && location.pathname === `/modules/${m.id}`))
+
   const dropdownItems = [
     {
       key: 'info',
@@ -103,7 +105,7 @@ export default function AppLayout() {
             </span>
           </div>
         )}
-        <div className="page">
+        <div className={`page${wide ? ' wide' : ''}`}>
           <Outlet />
         </div>
       </main>
