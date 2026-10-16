@@ -13,11 +13,12 @@ from app.core.routes_core import router as core_router
 def create_app() -> FastAPI:
     app = FastAPI(title="Trendsetter Hub API", docs_url=None, redoc_url=None, openapi_url=None)
 
-    origins = get_settings().cors_origins
-    if origins:
+    settings = get_settings()
+    if settings.cors_origins or settings.cors_origin_regex:
         app.add_middleware(
             CORSMiddleware,
-            allow_origins=origins,
+            allow_origins=settings.cors_origins,
+            allow_origin_regex=settings.cors_origin_regex,
             allow_methods=["GET", "POST", "PATCH", "OPTIONS"],
             allow_headers=["Authorization", "Content-Type"],
         )

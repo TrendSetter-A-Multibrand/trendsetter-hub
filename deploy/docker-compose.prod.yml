@@ -1,0 +1,25 @@
+# Боевой запуск бэкенда хаба на сервере. Секреты — в /opt/trendsetter-hub/.env (вне репозитория).
+# Запуск из папки deploy:  docker compose -f docker-compose.prod.yml up -d --build
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    image: trendsetter-hub-api:latest
+    container_name: trendsetter-hub-api
+    restart: unless-stopped
+    env_file: ../../.env            # /opt/trendsetter-hub/.env
+    ports:
+      - "127.0.0.1:8010:8000"       # только изнутри сервера; наружу отдаёт Caddy
+    mem_limit: 512m                 # хаб не должен отнимать память у airflow и дашбордов
+    cpus: 1.0
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

@@ -11,6 +11,7 @@ class Settings:
     jwt_secret: str
     jwt_ttl_minutes: int
     cors_origins: list[str]
+    cors_origin_regex: str | None
 
 
 def get_settings() -> Settings:
@@ -22,4 +23,5 @@ def get_settings() -> Settings:
         jwt_secret=secret,
         jwt_ttl_minutes=int(os.environ.get("HUB_JWT_TTL_MINUTES", "720")),
         cors_origins=[o.strip() for o in os.environ.get("HUB_CORS_ORIGINS", "").split(",") if o.strip()],
+        cors_origin_regex=os.environ.get("HUB_CORS_ORIGIN_REGEX") or None,
     )
