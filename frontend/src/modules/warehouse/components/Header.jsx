@@ -1,5 +1,6 @@
 import { useRef } from 'react'
-import { S, ask, setCfg, showTarget, loadFile, startLoad, openReceipts, focusScan } from '../store.js'
+import { S, ask, setCfg, showTarget, loadFile, startLoad, openReceipts, focusScan, shared } from '../store.js'
+import { useAuth } from '../../../core/auth/useAuth.js'
 import strings from '../strings.js'
 import { useStore } from './useStore.js'
 
@@ -7,6 +8,7 @@ const u = strings.header
 
 export default function Header() {
   useStore()
+  const { me } = useAuth()
   const { cfg, st, q, lastErr } = S
   const fileRef = useRef(null)
 
@@ -26,7 +28,7 @@ export default function Header() {
   }
   const dupOn = cfg.dupGuard || cfg.noCz
   const syncCls = lastErr ? 'bad' : q.length ? '' : 'ok'
-  const syncText = lastErr ? u.syncBad(q.length) : q.length ? u.syncSending(q.length) : u.syncOk
+  const syncText = lastErr ? u.syncBad(q.length) : q.length ? u.syncSending(q.length) : shared ? u.syncOkShared : u.syncOk
 
   return (
     <header className="wh-header">
@@ -75,7 +77,7 @@ export default function Header() {
         {u.dup}: {cfg.noCz ? u.dupOnForced : cfg.dupGuard ? u.on : u.off}
       </button>
       <span className="wh-sp" />
-      <span className="wh-who">{u.localMode}</span>
+      <span className="wh-who">{shared ? me.email : u.localMode}</span>
       <span className={`wh-sync ${syncCls}`} title={lastErr || ''}>
         {syncText}
       </span>

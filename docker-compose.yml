@@ -26,6 +26,7 @@ services:
       HUB_MIGRATION_DATABASE_URL: postgresql+psycopg://doadmin:dev-only-password@postgres:5432/defaultdb
       HUB_JWT_SECRET: dev-only-jwt-secret-change-me-0123456789
       HUB_CORS_ORIGINS: http://localhost:5173
+      HUB_WAREHOUSE_PIN: "1234"          # только для разработки
       # для pytest: администратор тестового сервера (создаёт временные базы)
       HUB_TEST_ADMIN_DSN: postgresql://doadmin:dev-only-password@postgres:5432/postgres
     volumes:

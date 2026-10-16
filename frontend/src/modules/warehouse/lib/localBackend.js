@@ -41,6 +41,8 @@ const checkPin = (pin) => {
 }
 
 export const backend = {
+  shared: false, // данные только в этом браузере: нет общей раскладки приёмки между ПК
+
   getInit() {
     return { email: 'локальный режим' }
   },

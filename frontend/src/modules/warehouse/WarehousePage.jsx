@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { Alert } from 'antd'
 import { canRun, canSeeData } from '../../core/access.js'
 import NoDataAccess from '../../core/pages/NoDataAccess.jsx'
-import { S, boot, flush, refreshPalCache, focusScan } from './store.js'
+import { S, boot, flush, refreshPalCache, pollPlan, focusScan } from './store.js'
 import strings from './strings.js'
 import Header from './components/Header.jsx'
 import PlanPanel from './components/PlanPanel.jsx'
@@ -22,6 +22,7 @@ function Receiving() {
     boot()
     const iFlush = setInterval(flush, 3000)
     const iPal = setInterval(refreshPalCache, 30000)
+    const iPlan = setInterval(pollPlan, 30000)
     const dialogOpen = () => Boolean(S.ui.ask || S.ui.choose || S.ui.receipts || S.ui.more || S.ui.sectors || S.wb)
     // любая печатная клавиша возвращает фокус в поле сканера, как в исходном приложении
     const onKey = (e) => {
@@ -45,6 +46,7 @@ function Receiving() {
     return () => {
       clearInterval(iFlush)
       clearInterval(iPal)
+      clearInterval(iPlan)
       document.removeEventListener('keydown', onKey)
       document.removeEventListener('click', onClick)
       window.removeEventListener('beforeunload', onUnload)

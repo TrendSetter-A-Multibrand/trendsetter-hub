@@ -27,3 +27,23 @@ def require_manager(user: User = Depends(get_current_user)) -> User:
     if not can_manage_users(access_level=user.access_level, is_active=user.is_active):
         raise HTTPException(403, m.FORBIDDEN)
     return user
+
+
+def require_module_run(module_id: str):
+    """Зависимость: пользователь может запускать модуль (admin/superuser или сотрудник отдела модуля)."""
+    from sqlalchemy import select
+
+    from app.core.access import can_run, compute_module_access
+    from app.core.models import ModuleDepartment, UserDepartment
+
+    def dependency(user: User = Depends(get_current_user), session: Session = Depends(get_session)) -> User:
+        own = session.scalars(select(UserDepartment.department_id).where(UserDepartment.user_id == user.id)).all()
+        module_deps = session.scalars(select(ModuleDepartment.department_id).where(ModuleDepartment.module_id == module_id)).all()
+        access = compute_module_access(
+            access_level=user.access_level, is_active=user.is_active, department_ids=own, module_department_ids=module_deps
+        )
+        if not can_run(access):
+            raise HTTPException(403, m.FORBIDDEN)
+        return user
+
+    return dependency

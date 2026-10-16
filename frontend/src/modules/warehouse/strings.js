@@ -44,6 +44,7 @@ const strings = {
     noCzOffSub: 'Сканируйте штрихкод товара',
     localMode: 'локальный режим',
     syncOk: '✓ Всё сохранено (локально)',
+    syncOkShared: '✓ Всё в базе',
     syncSending: (n) => `Отправка… ${n}`,
     syncBad: (n) => `Ошибка сохранения · ждут отправки: ${n}`,
     sheet: 'Раскладка из Google Таблицы',
@@ -81,6 +82,10 @@ const strings = {
     withCz: (cz, no) => `. С кодом ЧЗ: ${cz}, без ЧЗ: ${no}`,
     updMatch: (sheet) => `. Сверка с «${sheet}»: все коды совпадают ✓`,
     downloadUpdDiff: 'Скачать расхождения шаблон / УПД (.csv)',
+    sharedLine: (receipt, by, when) => `Общая раскладка приемки «${receipt}»${by ? ` · загрузил ${by}${when ? ', ' + when : ''}` : ''}`,
+    localLine: 'Раскладка только на этом компьютере',
+    remoteNew: (info) => `На другом ПК загружена новая раскладка «${info.name}» (${info.by}, ${info.when}).`,
+    pull: 'Обновить раскладку',
   },
 
   scan: {
@@ -302,6 +307,28 @@ const strings = {
     importWord: 'Импорт',
     importFailed: 'Импорт не выполнен',
     receiptWord: (name) => `Приемка: ${name}`,
+    planSummary: (p) =>
+      `Файл: ${p.name}\nСтрок: ${p.lines}, коробок: ${p.boxes.length}${p.kiCount ? `, кодов ЧЗ: ${p.kiCount}` : ''}${p.skipped ? `, пропущено строк: ${p.skipped}` : ''}`,
+    sharePlanPrompt: (name, summary, info) =>
+      `Сохранить эту раскладку для всех компьютеров в приемке «${name}»?\n\n${summary}` +
+      (info ? `\n\nВНИМАНИЕ: у приемки уже есть раскладка «${info.name}» (${info.by}, ${info.when}). Она будет заменена на всех ПК.` : '') +
+      '\n\nПроверьте цифры: ошибка в файле сразу попадёт на все ПК.',
+    onlyThisPc: 'Только на этом ПК',
+    saveForAll: 'Сохранить для всех ПК',
+    savingPlan: 'Сохраняю раскладку…',
+    thisPc: 'этот ПК',
+    planSaved: (name) => `Раскладка сохранена для всех ПК\nприемка «${name}»`,
+    sharedPlan: 'Общая раскладка',
+    planNotSaved: 'Раскладка не сохранена',
+    onlyThisPcBig: 'Только этот ПК',
+    onlyThisPcSub: 'Раскладка загружена только на этом компьютере',
+    planNotPulled: 'Раскладка не получена',
+    noSharedPlan: 'Нет общей раскладки',
+    noSharedPlanSub: (name) => `У приемки «${name}» ещё нет раскладки — загрузите Excel на одном из ПК`,
+    planBroken: 'Раскладка повреждена',
+    planBrokenSub: 'Загрузите Excel заново',
+    planPulledSub: (name, by, when) => `${name}\nзагрузил: ${by}, ${when}`,
+    planPulled: 'Раскладка получена',
     chooseReceiptTop: 'Выберите приемку вверху',
   },
 }

@@ -7,6 +7,7 @@ from app.config import get_settings
 from app.core import messages
 from app.core.routes_admin import router as admin_router
 from app.core.routes_auth import router as auth_router
+from app.core.registry import MODULES
 from app.core.routes_core import router as core_router
 
 
@@ -35,6 +36,9 @@ def create_app() -> FastAPI:
     app.include_router(auth_router)
     app.include_router(core_router)
     app.include_router(admin_router)
+    for module in MODULES:
+        if module.router is not None:
+            app.include_router(module.router)
     return app
 
 

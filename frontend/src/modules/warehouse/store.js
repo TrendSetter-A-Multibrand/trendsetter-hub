@@ -4,9 +4,15 @@ import strings from './strings.js'
 import { UNK, pad, norm, byNum, boxId, BOX_RE, STOR_RE } from './lib/format.js'
 import { fixLayout, isDM, parseDM, gtinEan } from './lib/marks.js'
 import { guess, updCandidates, buildPlan, route, routeMarked, markedMap, eanOf } from './lib/plan.js'
-import { STATUS, allLines, kizLines, byBoxCsv, diffCsv, updDiffCsv, download, stamp, toCsv, parseCsv, parseRuTime } from './lib/csv.js'
+import { allLines, kizLines, byBoxCsv, diffCsv, updDiffCsv, download, stamp, toCsv, parseCsv, parseRuTime } from './lib/csv.js'
 import { labelHTML, storLabelHTML, printHTML } from './lib/print.js'
-import { backend } from './lib/localBackend.js'
+import { backend as localBackend } from './lib/localBackend.js'
+import { httpBackend } from './lib/httpBackend.js'
+import { API_URL } from '../../core/config.js'
+
+// С настоящим бэкендом (VITE_API_URL) — сервер хаба и база; без него (демо на Vercel) — localStorage браузера
+const backend = API_URL ? httpBackend : localBackend
+export const shared = backend.shared
 
 const M = strings.msg
 const P = strings.print
@@ -44,6 +50,7 @@ export const S = {
   // разбор Excel (пока выбираются столбцы)
   wb: null,
   wbName: '',
+  remoteInfo: null, // на другом ПК загружена более новая общая раскладка
   receipts: [],
   receiptsMsg: '',
   target: { kind: 'idle', big: M.loadExcel, sub: M.loadExcelSub, pre: '', btn: null, n: 0 },
@@ -59,6 +66,7 @@ export const S = {
 }
 S.st.pend = S.st.pend || {}
 
+let pendingPlan = false // загруженная раскладка ещё не сохранена для всех ПК приёмки
 let markReg = new Set(load('whf_marks', []))
 let boxReg = load(BREG_KEY, {})
 let palCache = {}
@@ -296,6 +304,8 @@ export function applyMapping({ rows, bc, bx, q, h, kc, updSheet }) {
   persist()
   S.wb = null
   S.hit = null
+  pendingPlan = shared
+  S.remoteInfo = null
   emit()
   showTarget('idle', M.canScan, M.loadedLines(S.plan.lines))
   openReceipts(/^Google/.test(S.wbName) ? '' : S.wbName.replace(/\.[^.]+$/, ''))
@@ -425,7 +435,7 @@ function recordScan(bc, n, r, extra) {
   const id = uid()
   st.scans.push(Object.assign({ id, bc, n, box: r.box, boxCode: cell.box.code, t, status: r.status, worker: cfg.worker }, extra))
   const op = Object.assign(
-    { op: 'scan', id, t, box: r.box, boxCode: cell.box.code, bc: extra.ean || bc, status: STATUS[r.status] + (extra.noCz ? ', без ЧЗ' : ''), receipt: st.receipt },
+    { op: 'scan', id, t, box: r.box, boxCode: cell.box.code, bc: extra.ean || bc, status: r.status, noCz: Boolean(extra.noCz), receipt: st.receipt },
     extra.ki ? { ki: extra.ki, full: extra.full } : {},
   )
   if (cell.box.code) enqueue(op)
@@ -656,13 +666,16 @@ export function openReceipts(prefill) {
 }
 export function closeReceipts() {
   setUi({ receipts: false })
+  if (pendingPlan && S.st.receipt) sharePlan(S.st.receipt)
 }
 
 export async function switchReceipt(name) {
   name = String(name).trim()
   if (!name) return
   if (name === S.st.receipt) {
-    closeReceipts()
+    setUi({ receipts: false })
+    if (pendingPlan) await sharePlan(name)
+    focusScan()
     return
   }
   const open = openKeys()
@@ -695,6 +708,8 @@ export async function switchReceipt(name) {
   persist()
   emit()
   showTarget('idle', M.canScan, M.receiptSub(name, Object.keys(keep.boxes).length))
+  if (pendingPlan) await sharePlan(name)
+  else await pullPlan(name)
   focusScan()
 }
 export async function createReceipt(name) {
@@ -839,6 +854,91 @@ export const sectorsApi = {
   remove: (cat, sec, pin) => api('removeSector', cat, sec, pin),
 }
 
+/* ---------- Общая раскладка приёмки (одна на все ПК; только с настоящим бэкендом) ---------- */
+const planSummary = (p) => M.planSummary(p)
+
+async function sharePlan(name) {
+  if (!pendingPlan || !S.plan || !backend.shared) return
+  let info = null
+  try {
+    info = await api('getPlanInfo', name)
+  } catch {
+    // нет связи: предложим сохранить, ошибка покажется при сохранении
+  }
+  const c = await choose(M.sharePlanPrompt(name, planSummary(S.plan), info), [{ text: M.onlyThisPc }, { text: M.saveForAll, dark: true }])
+  pendingPlan = false
+  S.plan.receipt = name
+  if (c === 1) {
+    try {
+      showTarget('idle', M.savingPlan, S.plan.name)
+      const copy = Object.assign({}, S.plan)
+      delete copy.markedMap
+      const r = await api('savePlan', name, JSON.stringify(copy), S.plan.name, S.cfg.worker || '')
+      S.plan.version = r.version
+      S.plan.by = S.cfg.worker || M.thisPc
+      S.plan.when = fmtTime(Date.now()).slice(0, 16)
+      S.remoteInfo = null
+      showTarget('ok', '✓', M.planSaved(name), M.sharedPlan)
+    } catch (e) {
+      showTarget('err msg', M.planNotSaved, e.message)
+      beep(false)
+    }
+  } else {
+    S.plan.version = -1
+    showTarget('idle', M.onlyThisPcBig, M.onlyThisPcSub)
+  }
+  save(PLAN_KEY, S.plan)
+  emit()
+}
+
+export async function pullPlan(name, quiet) {
+  if (!backend.shared || !name) return
+  let info
+  try {
+    info = await api('getPlan', name)
+  } catch (e) {
+    if (!quiet) showTarget('err msg', M.planNotPulled, e.message)
+    return
+  }
+  if (!info) {
+    if (!S.plan || S.plan.receipt !== name) showTarget('idle', M.noSharedPlan, M.noSharedPlanSub(name))
+    return
+  }
+  if (S.plan && S.plan.version === info.version && S.plan.receipt === name) return
+  try {
+    S.plan = JSON.parse(info.json)
+  } catch {
+    showTarget('err msg', M.planBroken, M.planBrokenSub)
+    return
+  }
+  Object.assign(S.plan, { version: info.version, receipt: name, by: info.by, when: info.when })
+  delete S.plan.markedMap
+  S.remoteInfo = null
+  save(PLAN_KEY, S.plan)
+  emit()
+  showTarget('ok', '✓', M.planPulledSub(S.plan.name, info.by, info.when), M.planPulled)
+  beep(true)
+}
+
+// Раз в 30 секунд: не появилась ли на другом ПК новая раскладка этой приёмки
+export async function pollPlan() {
+  if (!backend.shared || !S.st.receipt || pendingPlan || S.wb) return
+  try {
+    const info = await api('getPlanInfo', S.st.receipt)
+    if (!S.plan || S.plan.receipt !== S.st.receipt) {
+      if (info) pullPlan(S.st.receipt, true)
+      return
+    }
+    const newer = Boolean(info) && info.version !== S.plan.version
+    if (newer !== Boolean(S.remoteInfo)) {
+      S.remoteInfo = newer ? info : null
+      emit()
+    }
+  } catch {
+    // опрос фоновый: ошибки не показываем
+  }
+}
+
 /* ---------- Запуск и остановка ---------- */
 let booted = false
 export function boot() {
@@ -853,5 +953,6 @@ export function boot() {
     }
   })
   if (S.plan) showTarget('idle', M.canScan, S.st.receipt ? M.receiptWord(S.st.receipt) : M.chooseReceiptTop)
+  if (S.st.receipt && (!S.plan || S.plan.receipt !== S.st.receipt)) setTimeout(() => pullPlan(S.st.receipt, true), 500)
 }
 

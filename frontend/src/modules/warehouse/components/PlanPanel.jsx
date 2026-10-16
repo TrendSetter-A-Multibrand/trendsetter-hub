@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { S, mappingInfo, applyMapping, cancelMapping, exportUpdDiff } from '../store.js'
+import { S, mappingInfo, applyMapping, cancelMapping, exportUpdDiff, pullPlan } from '../store.js'
 import { colName, fmtTime } from '../lib/format.js'
 import { previewRows } from '../lib/plan.js'
 import strings from '../strings.js'
@@ -107,6 +107,13 @@ function Summary() {
         {plan.kiCount ? u.withCz(plan.kiCount, plan.lines - plan.kiCount) : ''}
         {updOk ? u.updMatch(plan.upd.sheet) : ''}.
       </div>
+      <div className="wh-meta">{plan.version > 0 ? u.sharedLine(plan.receipt, plan.by, plan.when) : plan.version === -1 ? u.localLine : ''}</div>
+      {S.remoteInfo && (
+        <div className="wh-warn" style={{ fontWeight: 700 }}>
+          {u.remoteNew(S.remoteInfo)}{' '}
+          <button type="button" onClick={() => pullPlan(S.st.receipt)}>{u.pull}</button>
+        </div>
+      )}
       {warn.map((w) => (
         <div key={w} className="wh-warn">{w}</div>
       ))}
