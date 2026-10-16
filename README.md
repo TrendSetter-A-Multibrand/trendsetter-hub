@@ -19,6 +19,15 @@ npm run dev
 Демо-режим (баннер, вход без пароля): в `frontend/.env.local` написать `VITE_DEMO_MODE=true`.
 Проверки: `npm run lint`, `npm test`, `npm run build`.
 
+## Запуск бэкенда (разработка, в Docker, с локальным Postgres)
+```
+docker compose up -d postgres
+docker compose run --rm api alembic upgrade head      # схема trendsetter_hub (роль hub_app создаётся тестами/вручную, см. backend/tests/conftest.py)
+docker compose run --rm api pytest -q                 # тесты (временная база, приложение под hub_app)
+docker compose up api                                 # API на http://localhost:8000
+```
+Фронтенд с настоящим API: `VITE_API_URL=http://localhost:8000` в `frontend/.env.local`. Без неё работают моки (так на Vercel). Реальные пароли и ключи в репозиторий не кладём: образец — `backend/.env.example`. ТЗ: `docs/TZ-backend-stage-0b.md`.
+
 ## Работа с git
 - В `main` напрямую не пушим. У каждого своя ветка: `dev-karen`, `dev-andrey`.
 - Готовый кусок работы — Pull Request из своей ветки в `main`, второй смотрит и сливает.

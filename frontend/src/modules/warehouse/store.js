@@ -103,7 +103,7 @@ export function showTarget(kind, big, sub, pre, btn) {
 const anyDialog = () => Boolean(S.ui.ask || S.ui.choose || S.ui.receipts || S.ui.more || S.ui.sectors)
 export function focusScan() {
   if (anyDialog() || S.wb) return
-  S.scanEl && S.scanEl.focus()
+  if (S.scanEl) S.scanEl.focus()
 }
 
 /* ---------- Диалоги ---------- */
@@ -328,7 +328,7 @@ export function handleScan(raw, force) {
   if (!cfg.worker) {
     showTarget('err msg', M.whoScans, M.whoScansSub)
     beep(false)
-    S.workerEl && S.workerEl.focus()
+    if (S.workerEl) S.workerEl.focus()
     return
   }
   if (STOR_RE.test(bc)) {

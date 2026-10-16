@@ -5,6 +5,7 @@ import { ACCESS_LEVELS } from '../access.js'
 import { useAuth } from '../auth/useAuth.js'
 import strings from '../strings.js'
 import { validateUserForm, validationMessages } from './validation.js'
+import ResetPasswordModal from './ResetPasswordModal.jsx'
 
 const s = strings.admin.users
 
@@ -14,6 +15,7 @@ const FIELD_BY_MESSAGE = {
   [validationMessages.emailDuplicate]: 'email',
   [validationMessages.fullNameEmpty]: 'full_name',
   [validationMessages.levelInvalid]: 'access_level',
+  [validationMessages.passwordInvalid]: 'password',
 }
 
 function UserModal({ mode, user, users, departments, onClose, onSaved }) {
@@ -79,6 +81,9 @@ function UserModal({ mode, user, users, departments, onClose, onSaved }) {
             <Form.Item name="email" label={s.email}>
               <Input autoComplete="off" />
             </Form.Item>
+            <Form.Item name="password" label={s.password}>
+              <Input.Password autoComplete="new-password" />
+            </Form.Item>
           </>
         )}
         <Form.Item name="access_level" label={s.level} extra={level ? strings.levelDescriptions[level] : undefined}>
@@ -105,6 +110,7 @@ export default function UsersTab({ users, departments, reload }) {
   const { message } = App.useApp()
   const { me } = useAuth()
   const [modal, setModal] = useState(null) // { mode: 'add' } | { mode: 'edit', user }
+  const [resetFor, setResetFor] = useState(null)
 
   const toggleActive = async (user) => {
     try {
@@ -146,6 +152,9 @@ export default function UsersTab({ users, departments, reload }) {
           <Button size="small" onClick={() => setModal({ mode: 'edit', user })}>
             {s.edit}
           </Button>
+          <Button size="small" onClick={() => setResetFor(user)}>
+            {s.resetPassword}
+          </Button>
           {user.id === me.id ? (
             <Tooltip title={s.cannotDisableSelf}>
               <Button size="small" disabled>
@@ -180,6 +189,7 @@ export default function UsersTab({ users, departments, reload }) {
         scroll={{ x: 'max-content' }}
         onRow={(user) => ({ style: user.is_active ? undefined : { opacity: 0.5 } })}
       />
+      {resetFor && <ResetPasswordModal user={resetFor} onClose={() => setResetFor(null)} />}
       {modal && (
         <UserModal
           mode={modal.mode}

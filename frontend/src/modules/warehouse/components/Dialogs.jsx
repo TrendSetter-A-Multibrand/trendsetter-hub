@@ -14,9 +14,9 @@ const Msg = ({ m }) => (m ? <span className={m.ok ? 'wh-okmsg' : 'wh-errmsg'}>{m
 
 function AskDialog() {
   const a = S.ui.ask
-  const dlg = useDialog(Boolean(a), () => a && a.done(false))
+  const { ref, onCancel } = useDialog(Boolean(a), () => a && a.done(false))
   return (
-    <dialog ref={dlg.ref} onCancel={dlg.onCancel}>
+    <dialog ref={ref} onCancel={onCancel}>
       <p>{a ? a.text : ''}</p>
       <div className="wh-row end">
         <button type="button" onClick={() => a && a.done(false)}>{d.cancel}</button>
@@ -28,9 +28,9 @@ function AskDialog() {
 
 function ChooseDialog() {
   const c = S.ui.choose
-  const dlg = useDialog(Boolean(c), () => c && c.done(-1))
+  const { ref, onCancel } = useDialog(Boolean(c), () => c && c.done(-1))
   return (
-    <dialog ref={dlg.ref} onCancel={dlg.onCancel}>
+    <dialog ref={ref} onCancel={onCancel}>
       <p className="wh-pre">{c ? c.text : ''}</p>
       <div className="wh-row end">
         {c && c.buttons.map((b, i) => (
@@ -43,16 +43,22 @@ function ChooseDialog() {
 
 function ReceiptsDialog() {
   const open = S.ui.receipts
-  const dlg = useDialog(open, closeReceipts)
-  const [name, setName] = useState('')
+  const { ref, onCancel } = useDialog(open, closeReceipts)
+  return (
+    <dialog ref={ref} onCancel={onCancel} className="wh-rdlg">
+      {open && <ReceiptsBody />}
+    </dialog>
+  )
+}
+
+function ReceiptsBody() {
+  const [name, setName] = useState(S.ui.receiptPrefill || '')
   const [busy, setBusy] = useState(false)
   const inputRef = useRef(null)
   useEffect(() => {
-    if (!open) return
-    setName(S.ui.receiptPrefill || '')
     const t = setTimeout(() => inputRef.current && inputRef.current.focus(), 50)
     return () => clearTimeout(t)
-  }, [open])
+  }, [])
   const list = S.receipts.slice()
   if (S.st.receipt && !list.some((r) => r.name === S.st.receipt)) list.unshift({ name: S.st.receipt, created: '', by: '' })
   const create = async () => {
@@ -66,7 +72,7 @@ function ReceiptsDialog() {
     }
   }
   return (
-    <dialog ref={dlg.ref} onCancel={dlg.onCancel} className="wh-rdlg">
+    <>
       <h3>{d.receiptTitle}</h3>
       <div className="wh-new">
         <input
@@ -112,14 +118,22 @@ function ReceiptsDialog() {
       <div className="wh-row end">
         <button type="button" onClick={closeReceipts}>{d.close}</button>
       </div>
-    </dialog>
+    </>
   )
 }
 
 function MoreDialog() {
   const open = S.ui.more
+  const { ref, onCancel } = useDialog(open, () => setUi({ more: false }))
+  return (
+    <dialog ref={ref} onCancel={onCancel} className="wh-sdlg">
+      {open && <MoreBody />}
+    </dialog>
+  )
+}
+
+function MoreBody() {
   const close = () => setUi({ more: false })
-  const dlg = useDialog(open, close)
   const [box, setBox] = useState('')
   const [boxMsg, setBoxMsg] = useState(null)
   const [pin, setPin] = useState('')
@@ -129,16 +143,9 @@ function MoreDialog() {
   const [palMsg, setPalMsg] = useState(null)
   const boxRef = useRef(null)
   useEffect(() => {
-    if (!open) return
-    setBox('')
-    setBoxMsg(null)
-    setPin('')
-    setImpMsg(null)
-    setPal('')
-    setPalMsg(null)
     const t = setTimeout(() => boxRef.current && boxRef.current.focus(), 50)
     return () => clearTimeout(t)
-  }, [open])
+  }, [])
 
   const doOpen = async () => {
     setBoxMsg({ text: d.checking, ok: true })
@@ -160,7 +167,7 @@ function MoreDialog() {
     }
   }
   return (
-    <dialog ref={dlg.ref} onCancel={dlg.onCancel} className="wh-sdlg">
+    <>
       <h3>{d.moreTitle}</h3>
       <p className="wh-sub"><b>{d.reopenTitle}</b></p>
       <div className="wh-hint">{d.reopenHint}</div>
@@ -194,14 +201,22 @@ function MoreDialog() {
       <div className="wh-row end">
         <button type="button" onClick={close}>{d.close}</button>
       </div>
-    </dialog>
+    </>
   )
 }
 
 function SectorsDialog() {
   const open = S.ui.sectors
-  const dlg = useDialog(open, closeSectorDlg)
-  const [cat, setCat] = useState('')
+  const { ref, onCancel } = useDialog(open, closeSectorDlg)
+  return (
+    <dialog ref={ref} onCancel={onCancel} className="wh-xdlg">
+      {open && <SectorsBody retry={S.ui.sectorsRetry} />}
+    </dialog>
+  )
+}
+
+function SectorsBody({ retry }) {
+  const [cat, setCat] = useState(retry ? String(+retry || retry) : '')
   const [sec, setSec] = useState('')
   const [pin, setPin] = useState('')
   const [msg, setMsg] = useState(null)
@@ -209,18 +224,11 @@ function SectorsDialog() {
   const [busy, setBusy] = useState(false)
   const catRef = useRef(null)
   const secRef = useRef(null)
-  const retry = S.ui.sectorsRetry
   useEffect(() => {
-    if (!open) return
-    setCat(retry ? String(+retry || retry) : '')
-    setSec('')
-    setPin('')
-    setMsg(null)
-    setList(null)
     sectorsApi.list().then(setList).catch((e) => setList(e.message))
     const t = setTimeout(() => (retry ? secRef.current : catRef.current)?.focus(), 50)
     return () => clearTimeout(t)
-  }, [open, retry])
+  }, [retry])
 
   const ok = async () => {
     const c = cat.trim()
@@ -261,7 +269,7 @@ function SectorsDialog() {
     }
   }
   return (
-    <dialog ref={dlg.ref} onCancel={dlg.onCancel} className="wh-xdlg">
+    <>
       <h3>{d.sectorsDlgTitle}</h3>
       <div className="wh-hint">{d.sectorsDlgHint}</div>
       <div className="wh-fields">
@@ -296,7 +304,7 @@ function SectorsDialog() {
         <button type="button" onClick={closeSectorDlg}>{d.close}</button>
         <button type="button" className="wh-dark" disabled={busy} onClick={ok}>{d.assign}</button>
       </div>
-    </dialog>
+    </>
   )
 }
 

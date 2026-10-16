@@ -1,0 +1,209 @@
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+
+from app.core import messages as m
+from app.core.access import ACCESS_LEVELS
+from app.core.audit import log_action
+from app.core.deps import require_manager
+from app.core.models import Department, User, UserDepartment
+from app.core.security import hash_password, password_is_valid
+from app.core.validation import validate_department_code, validate_department_name, validate_new_user
+from app.db.database import get_session
+
+router = APIRouter(prefix="/admin", tags=["admin"])
+
+
+def _department_ids_by_user(session: Session) -> dict[int, list[int]]:
+    result: dict[int, list[int]] = {}
+    for user_id, department_id in session.execute(
+        select(UserDepartment.user_id, UserDepartment.department_id).order_by(UserDepartment.department_id)
+    ):
+        result.setdefault(user_id, []).append(department_id)
+    return result
+
+
+def _public_user(user: User, department_ids: list[int]) -> dict:
+    return {
+        "id": user.id,
+        "email": user.email,
+        "full_name": user.full_name,
+        "access_level": user.access_level,
+        "department_ids": department_ids,
+        "is_active": user.is_active,
+    }
+
+
+def _check_department_ids(session: Session, ids: list[int]) -> None:
+    found = set(session.scalars(select(Department.id).where(Department.id.in_(ids))).all()) if ids else set()
+    if set(ids) != found:
+        raise HTTPException(422, m.UNKNOWN_DEPARTMENT)
+
+
+def _set_departments(session: Session, user_id: int, ids: list[int]) -> None:
+    session.query(UserDepartment).filter(UserDepartment.user_id == user_id).delete()
+    for department_id in sorted(set(ids)):
+        session.add(UserDepartment(user_id=user_id, department_id=department_id))
+
+
+def _get_user(session: Session, user_id: int) -> User:
+    user = session.get(User, user_id)
+    if user is None:
+        raise HTTPException(404, m.USER_NOT_FOUND)
+    return user
+
+
+# ---------- пользователи ----------
+
+
+@router.get("/users")
+def list_users(_: User = Depends(require_manager), session: Session = Depends(get_session)) -> list[dict]:
+    deps = _department_ids_by_user(session)
+    return [_public_user(u, deps.get(u.id, [])) for u in session.scalars(select(User).order_by(User.id))]
+
+
+class CreateUserBody(BaseModel):
+    email: str
+    full_name: str
+    access_level: str
+    password: str
+    department_ids: list[int] = []
+
+
+@router.post("/users")
+def create_user(body: CreateUserBody, me: User = Depends(require_manager), session: Session = Depends(get_session)) -> dict:
+    existing = list(session.scalars(select(User.email)).all())
+    problem = validate_new_user(body.email, body.full_name, body.access_level, body.password, existing)
+    if problem:
+        raise HTTPException(409 if problem == m.EMAIL_DUPLICATE else 422, problem)
+    _check_department_ids(session, body.department_ids)
+    user = User(
+        email=body.email.strip(),
+        full_name=body.full_name.strip(),
+        access_level=body.access_level,
+        password_hash=hash_password(body.password),
+        is_active=True,
+    )
+    session.add(user)
+    try:
+        session.flush()
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(409, m.EMAIL_DUPLICATE) from None
+    _set_departments(session, user.id, body.department_ids)
+    log_action(session, me.id, "user.create", target_user_id=user.id, access_level=user.access_level)
+    session.commit()
+    return _public_user(user, sorted(set(body.department_ids)))
+
+
+class PatchUserBody(BaseModel):
+    access_level: str | None = None
+    department_ids: list[int] | None = None
+    is_active: bool | None = None
+
+
+@router.patch("/users/{user_id}")
+def patch_user(user_id: int, body: PatchUserBody, me: User = Depends(require_manager), session: Session = Depends(get_session)) -> dict:
+    user = _get_user(session, user_id)
+    is_self = user.id == me.id
+    if body.access_level is not None:
+        if body.access_level not in ACCESS_LEVELS:
+            raise HTTPException(422, m.UNKNOWN_LEVEL)
+        if is_self and body.access_level != user.access_level:
+            raise HTTPException(422, m.SELF_LEVEL)
+    if body.is_active is False and is_self:
+        raise HTTPException(422, m.SELF_DISABLE)
+    if body.department_ids is not None:
+        _check_department_ids(session, body.department_ids)
+    if body.access_level is not None:
+        user.access_level = body.access_level
+    if body.is_active is not None:
+        user.is_active = body.is_active
+    if body.department_ids is not None:
+        _set_departments(session, user.id, body.department_ids)
+    log_action(session, me.id, "user.update", target_user_id=user.id, changes=body.model_dump(exclude_none=True))
+    session.commit()
+    return _public_user(user, _department_ids_by_user(session).get(user.id, []))
+
+
+class PasswordBody(BaseModel):
+    password: str
+
+
+@router.post("/users/{user_id}/password")
+def reset_password(user_id: int, body: PasswordBody, me: User = Depends(require_manager), session: Session = Depends(get_session)) -> dict:
+    user = _get_user(session, user_id)
+    if not password_is_valid(body.password):
+        raise HTTPException(422, m.PASSWORD_INVALID)
+    user.password_hash = hash_password(body.password)
+    log_action(session, me.id, "user.password_reset", target_user_id=user.id)
+    session.commit()
+    return {}
+
+
+# ---------- отделы ----------
+
+
+def _department_out(session: Session, department: Department) -> dict:
+    count = session.scalar(
+        select(func.count())
+        .select_from(UserDepartment)
+        .join(User, User.id == UserDepartment.user_id)
+        .where(UserDepartment.department_id == department.id, User.is_active.is_(True))
+    )
+    return {"id": department.id, "code": department.code, "name": department.name, "user_count": count or 0}
+
+
+@router.get("/departments")
+def list_departments(_: User = Depends(require_manager), session: Session = Depends(get_session)) -> list[dict]:
+    return [_department_out(session, d) for d in session.scalars(select(Department).order_by(Department.id))]
+
+
+class CreateDepartmentBody(BaseModel):
+    code: str
+    name: str
+
+
+@router.post("/departments")
+def create_department(body: CreateDepartmentBody, me: User = Depends(require_manager), session: Session = Depends(get_session)) -> dict:
+    existing = session.execute(select(Department.id, Department.name, Department.code)).all()
+    name_problem = validate_department_name(body.name, [(i, n) for i, n, _ in existing])
+    if name_problem:
+        raise HTTPException(409 if name_problem == m.NAME_DUPLICATE else 422, name_problem)
+    code_problem = validate_department_code(body.code, [c for _, _, c in existing])
+    if code_problem:
+        raise HTTPException(409 if code_problem == m.CODE_DUPLICATE else 422, code_problem)
+    department = Department(code=body.code, name=body.name.strip())
+    session.add(department)
+    try:
+        session.flush()
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(409, m.CONFLICT) from None
+    log_action(session, me.id, "department.create", department_id=department.id, code=department.code)
+    session.commit()
+    return _department_out(session, department)
+
+
+class PatchDepartmentBody(BaseModel):
+    name: str | None = None
+    code: str | None = None
+
+
+@router.patch("/departments/{department_id}")
+def rename_department(department_id: int, body: PatchDepartmentBody, me: User = Depends(require_manager), session: Session = Depends(get_session)) -> dict:
+    department = session.get(Department, department_id)
+    if department is None:
+        raise HTTPException(404, m.DEPARTMENT_NOT_FOUND)
+    if body.code is not None:
+        raise HTTPException(422, m.CODE_IMMUTABLE)
+    existing = session.execute(select(Department.id, Department.name)).all()
+    problem = validate_department_name(body.name, [(i, n) for i, n in existing], department.id)
+    if problem:
+        raise HTTPException(409 if problem == m.NAME_DUPLICATE else 422, problem)
+    department.name = body.name.strip()
+    log_action(session, me.id, "department.rename", department_id=department.id, name=department.name)
+    session.commit()
+    return _department_out(session, department)

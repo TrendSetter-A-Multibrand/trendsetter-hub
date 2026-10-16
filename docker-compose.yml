@@ -1,0 +1,37 @@
+# Только для разработки: локальный Postgres и бэкенд. К боевой базе DO отсюда не подключаемся.
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: doadmin          # как на DO: владелец схемы и миграций
+      POSTGRES_PASSWORD: dev-only-password
+      POSTGRES_DB: defaultdb
+    ports:
+      - "127.0.0.1:55433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U doadmin -d defaultdb"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      HUB_DATABASE_URL: postgresql+psycopg://hub_app:dev-only-app-password@postgres:5432/defaultdb
+      HUB_MIGRATION_DATABASE_URL: postgresql+psycopg://doadmin:dev-only-password@postgres:5432/defaultdb
+      HUB_JWT_SECRET: dev-only-jwt-secret-change-me-0123456789
+      HUB_CORS_ORIGINS: http://localhost:5173
+      # для pytest: администратор тестового сервера (создаёт временные базы)
+      HUB_TEST_ADMIN_DSN: postgresql://doadmin:dev-only-password@postgres:5432/postgres
+    volumes:
+      - ./backend:/app/backend
+      - ./db:/app/db
+    ports:
+      - "127.0.0.1:8000:8000"
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    user: root

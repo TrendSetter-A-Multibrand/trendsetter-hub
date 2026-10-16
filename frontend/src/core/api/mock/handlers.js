@@ -5,6 +5,7 @@ import {
   validateDepartmentName,
   validateDepartmentCode,
   validateUserForm,
+  validatePassword,
   validationMessages,
 } from '../../admin/validation.js'
 import { MODULES } from '../../../modules/registry.js'
@@ -179,6 +180,14 @@ export const handlers = {
     if (body?.department_ids !== undefined) user.department_ids = body.department_ids
     if (body?.is_active !== undefined) user.is_active = Boolean(body.is_active)
     return toPublicUser(user)
+  },
+
+  'POST /admin/users/:id/password': ({ token, params, body }) => {
+    requireManager(token)
+    findUser(params.id)
+    const problem = validatePassword(body?.password)
+    if (problem) throw new ApiError(422, problem)
+    return {}
   },
 
   'GET /admin/departments': ({ token }) => {
