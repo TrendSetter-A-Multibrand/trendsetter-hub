@@ -42,3 +42,16 @@ def test_create_superadmin(db, client):
         create_superadmin(db, "x@example.com", "Имя", "short")
     with pytest.raises(ValueError):
         create_superadmin(db, "bad", "Имя", "Strong-pass-1")
+
+
+def test_cli_main_creates_admin_and_prints(engine, clean, client, monkeypatch, capsys):
+    """Команда целиком: пароль через getpass, печать результата после закрытия сессии (регресс DetachedInstanceError)."""
+    from app.core import cli
+
+    monkeypatch.setattr(cli, "get_engine", lambda: engine)
+    monkeypatch.setattr(cli.getpass, "getpass", lambda prompt="": "Strong-pass-1")
+    assert cli.main(["create-superadmin", "--email", "cli@example.com", "--name", "Из Консоли"]) == 0
+    assert "Администратор создан: cli@example.com" in capsys.readouterr().out
+    assert login(client, "cli@example.com", "Strong-pass-1")
+    # повтор — понятная ошибка, а не падение
+    assert cli.main(["create-superadmin", "--email", "cli@example.com", "--name", "Из Консоли"]) == 1

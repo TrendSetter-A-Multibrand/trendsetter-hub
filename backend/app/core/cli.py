@@ -49,7 +49,8 @@ def main(argv: list[str] | None = None) -> int:
     if password != getpass.getpass("Повторите пароль: "):
         print("Пароли не совпадают", file=sys.stderr)
         return 1
-    with Session(get_engine()) as session:
+    # expire_on_commit=False: данные созданного пользователя читаются после коммита и закрытия сессии
+    with Session(get_engine(), expire_on_commit=False) as session:
         try:
             user = create_superadmin(session, args.email, args.name, password)
         except ValueError as e:
