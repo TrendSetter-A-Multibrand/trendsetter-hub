@@ -7,6 +7,7 @@ export const data = {
     { id: 2, code: 'wb', name: 'WB-отдел' },
     { id: 3, code: 'analytics', name: 'Аналитика' },
     { id: 4, code: 'pricing', name: 'Ценообразование' },
+    { id: 5, code: 'warehouse', name: 'Склад' },
   ],
 
   // Привязка модулей к отделам — данные, а не реестр. Новый модуль добавляется сюда разработчиком.
@@ -15,6 +16,7 @@ export const data = {
     wb: [2],
     analytics: [3],
     pricing: [4],
+    warehouse: [5],
   },
 
   users: [
@@ -24,6 +26,7 @@ export const data = {
     { id: 4, email: 'wb@example.com', full_name: 'Сотрудник WB', access_level: 'employee', department_ids: [2], is_active: true },
     { id: 5, email: 'viewer@example.com', full_name: 'Наблюдатель', access_level: 'viewer', department_ids: [], is_active: true },
     { id: 6, email: 'multi@example.com', full_name: 'Сотрудник закупок и аналитики', access_level: 'employee', department_ids: [1, 3], is_active: true },
+    { id: 8, email: 'warehouse@example.com', full_name: 'Сотрудник склада', access_level: 'employee', department_ids: [5], is_active: true },
     { id: 7, email: 'former@example.com', full_name: 'Бывший сотрудник', access_level: 'employee', department_ids: [1], is_active: false },
   ],
 

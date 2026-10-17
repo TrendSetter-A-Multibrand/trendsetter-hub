@@ -1,0 +1,9 @@
+# Добавить в конец /etc/caddy/Caddyfile (по образцу блока weeek-mcp.trendsettercrew.com):
+hub-api.trendsettercrew.com {
+    reverse_proxy 127.0.0.1:8010
+    tls {
+        issuer acme {
+            disable_http_challenge
+        }
+    }
+}

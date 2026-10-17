@@ -25,13 +25,17 @@ export function validateDepartmentCode(code, existing) {
   return existing.some((d) => d.code === value) ? v.codeDuplicate : null
 }
 
-export function validateUserForm({ email, full_name, access_level }, existingUsers) {
+const isValidPassword = (p) => (p ?? '').length >= 8 && new TextEncoder().encode(p).length <= 72
+
+export const validatePassword = (password) => (isValidPassword(password) ? null : v.passwordInvalid)
+
+export function validateUserForm({ email, full_name, access_level, password }, existingUsers) {
   if (!isValidEmail(email)) return v.emailInvalid
   const lower = email.trim().toLowerCase()
   if (existingUsers.some((u) => u.email.toLowerCase() === lower)) return v.emailDuplicate
   if (!(full_name ?? '').trim()) return v.fullNameEmpty
   if (!ACCESS_LEVELS.includes(access_level)) return v.levelInvalid
-  return null
+  return validatePassword(password)
 }
 
 export const validationMessages = v

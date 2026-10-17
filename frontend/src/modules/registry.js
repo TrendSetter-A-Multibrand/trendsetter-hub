@@ -10,9 +10,11 @@ import purchasingStrings from './purchasing/strings.js'
 import wbStrings from './wb/strings.js'
 import analyticsStrings from './analytics/strings.js'
 import pricingStrings from './pricing/strings.js'
+import warehouseStrings from './warehouse/strings.js'
 
 export const MODULES = [
   { id: 'purchasing', status: 'mvp', strings: purchasingStrings, Component: lazy(() => import('./purchasing/PurchasingPage.jsx')) },
+  { id: 'warehouse', status: 'mvp', wide: true, strings: warehouseStrings, Component: lazy(() => import('./warehouse/WarehousePage.jsx')) },
   { id: 'wb', status: 'roadmap', strings: wbStrings, Component: null },
   { id: 'analytics', status: 'roadmap', strings: analyticsStrings, Component: null },
   { id: 'pricing', status: 'roadmap', strings: pricingStrings, Component: null },

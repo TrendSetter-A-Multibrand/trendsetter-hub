@@ -36,9 +36,11 @@ test('код отдела: кириллица, заглавная, дублик�
 })
 
 test('пользователь: невалидный email, дубликат, пустое ФИО, валидный', () => {
-  const ok = { email: 'new@example.com', full_name: 'Новый', access_level: 'employee' }
+  const ok = { email: 'new@example.com', full_name: 'Новый', access_level: 'employee', password: 'Pass-12345' }
   assert.equal(validateUserForm({ ...ok, email: 'не-почта' }, users), v.emailInvalid)
   assert.equal(validateUserForm({ ...ok, email: 'karen@EXAMPLE.com' }, users), v.emailDuplicate)
   assert.equal(validateUserForm({ ...ok, full_name: '  ' }, users), v.fullNameEmpty)
+  assert.equal(validateUserForm({ ...ok, password: 'short' }, users), v.passwordInvalid)
+  assert.equal(validateUserForm({ ...ok, password: 'ы'.repeat(40) }, users), v.passwordInvalid)
   assert.equal(validateUserForm(ok, users), null)
 })
