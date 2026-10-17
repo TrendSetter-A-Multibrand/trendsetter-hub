@@ -10,7 +10,7 @@ import strings from '../strings.js'
 const s = strings.login
 
 export default function LoginPage() {
-  const { me, login, demoLogin } = useAuth()
+  const { me, expired, login, demoLogin } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
   const [error, setError] = useState(null)
@@ -44,6 +44,7 @@ export default function LoginPage() {
         <Typography.Title level={3} style={{ marginTop: 0 }}>
           {s.title}
         </Typography.Title>
+        {expired && !error && <Alert type="warning" showIcon title={s.sessionExpired} style={{ marginBottom: 16 }} />}
         {error && <Alert type="error" showIcon title={error} style={{ marginBottom: 16 }} />}
         <Form layout="vertical" onFinish={({ email, password }) => run(() => login(email, password))}>
           <Form.Item

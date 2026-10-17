@@ -19,13 +19,24 @@ const DEFAULT_MESSAGES = {
 
 export const defaultMessage = (status) => DEFAULT_MESSAGES[status] ?? strings.errors.unknown
 
+// Подписка на «сессия истекла»: сервер ответил 401 на запрос с токеном (не на неверный пароль при входе).
+const expiredListeners = new Set()
+export function onSessionExpired(listener) {
+  expiredListeners.add(listener)
+  return () => expiredListeners.delete(listener)
+}
+
 // Транспорт: async ({method, path, body, token}) => данные; ошибки — ApiError.
 export function createClient(transport) {
   async function request(method, path, body) {
     try {
       return await transport({ method, path, body, token: getToken() })
     } catch (error) {
-      if (error instanceof ApiError && error.status === 401) clearToken()
+      if (error instanceof ApiError && error.status === 401) {
+        const hadToken = Boolean(getToken())
+        clearToken()
+        if (hadToken) expiredListeners.forEach((listener) => listener())
+      }
       throw error
     }
   }

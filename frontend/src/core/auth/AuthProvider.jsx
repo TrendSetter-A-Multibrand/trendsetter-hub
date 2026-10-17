@@ -1,10 +1,21 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { api, getToken, setToken, clearToken } from '../api/index.js'
+import { api, getToken, setToken, clearToken, onSessionExpired } from '../api/index.js'
 import { AuthContext } from './AuthContext.js'
 
 export default function AuthProvider({ children }) {
   const [me, setMe] = useState(null)
   const [loading, setLoading] = useState(() => Boolean(getToken()))
+  const [expired, setExpired] = useState(false)
+
+  // Токен истёк посреди работы: RequireAuth сам вернёт на вход, место работы запоминается в location.state
+  useEffect(
+    () =>
+      onSessionExpired(() => {
+        setMe(null)
+        setExpired(true)
+      }),
+    [],
+  )
 
   const refreshMe = useCallback(async () => {
     if (!getToken()) {
@@ -14,6 +25,7 @@ export default function AuthProvider({ children }) {
     try {
       const profile = await api.get('/core/me')
       setMe(profile)
+      setExpired(false)
       return profile
     } catch {
       clearToken()
@@ -59,8 +71,8 @@ export default function AuthProvider({ children }) {
   }, [])
 
   const value = useMemo(
-    () => ({ me, loading, login, demoLogin, logout, refreshMe }),
-    [me, loading, login, demoLogin, logout, refreshMe],
+    () => ({ me, loading, expired, login, demoLogin, logout, refreshMe }),
+    [me, loading, expired, login, demoLogin, logout, refreshMe],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
