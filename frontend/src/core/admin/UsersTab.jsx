@@ -156,7 +156,7 @@ export default function UsersTab({ users, departments, groups, reload }) {
     {
       title: s.actions,
       render: (_, user) => (
-        <Space>
+        <Space size={4} wrap>
           <Button size="small" onClick={() => setModal({ mode: 'edit', user })}>
             {s.edit}
           </Button>
@@ -194,7 +194,6 @@ export default function UsersTab({ users, departments, groups, reload }) {
         columns={columns}
         dataSource={users}
         pagination={false}
-        scroll={{ x: 'max-content' }}
         onRow={(user) => ({ style: user.is_active ? undefined : { opacity: 0.5 } })}
       />
       {resetFor && <ResetPasswordModal user={resetFor} onClose={() => setResetFor(null)} />}
