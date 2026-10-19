@@ -47,6 +47,29 @@ class ModuleDepartment(Base):
     department_id: Mapped[int] = mapped_column(ForeignKey(f"{SCHEMA}.departments.id", ondelete="CASCADE"), primary_key=True)
 
 
+class AccessGroup(Base):
+    __tablename__ = "access_groups"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    name: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AccessGroupPermission(Base):
+    __tablename__ = "access_group_permissions"
+
+    group_id: Mapped[int] = mapped_column(ForeignKey(f"{SCHEMA}.access_groups.id", ondelete="CASCADE"), primary_key=True)
+    module_id: Mapped[str] = mapped_column(Text, primary_key=True)
+    permission: Mapped[str] = mapped_column(Text)
+
+
+class AccessGroupMember(Base):
+    __tablename__ = "access_group_members"
+
+    group_id: Mapped[int] = mapped_column(ForeignKey(f"{SCHEMA}.access_groups.id", ondelete="CASCADE"), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey(f"{SCHEMA}.users.id", ondelete="CASCADE"), primary_key=True)
+
+
 class AuditLog(Base):
     __tablename__ = "audit_log"
 

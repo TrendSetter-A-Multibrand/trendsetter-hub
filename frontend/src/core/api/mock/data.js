@@ -30,6 +30,8 @@ export const data = {
     { id: 7, email: 'former@example.com', full_name: 'Бывший сотрудник', access_level: 'employee', department_ids: [1], is_active: false },
   ],
 
+  groups: [{ id: 1, name: 'Ответственные склада', permissions: { warehouse: 'responsible' }, user_ids: [8] }],
+
   runs: [
     { id: 1, module_id: 'purchasing', filename: 'price_summer_2026.xlsx', user_id: 1, status: 'done', created_at: '2026-09-30T14:20:00' },
     { id: 2, module_id: 'purchasing', filename: 'price_autumn_2026.xlsx', user_id: 3, status: 'running', created_at: '2026-09-30T11:05:00' },
@@ -148,5 +150,5 @@ export const data = {
     },
   ],
 
-  nextId: { user: 8, department: 5, preset: 4 },
+  nextId: { user: 8, department: 5, preset: 4, group: 2 },
 }

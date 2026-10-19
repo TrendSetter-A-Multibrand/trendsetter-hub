@@ -5,12 +5,13 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core import messages as m
-from app.core.access import ACCESS_LEVELS
+from app.core.access import ACCESS_LEVELS, GROUP_PERMISSIONS
 from app.core.audit import log_action
 from app.core.deps import require_manager
-from app.core.models import Department, User, UserDepartment
+from app.core.models import AccessGroup, AccessGroupMember, AccessGroupPermission, Department, User, UserDepartment
+from app.core.registry import MODULES
 from app.core.security import hash_password, password_is_valid
-from app.core.validation import validate_department_code, validate_department_name, validate_new_user
+from app.core.validation import validate_department_code, validate_department_name, validate_group_name, validate_new_user
 from app.db.database import get_session
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -207,3 +208,137 @@ def rename_department(department_id: int, body: PatchDepartmentBody, me: User = 
     log_action(session, me.id, "department.rename", department_id=department.id, name=department.name)
     session.commit()
     return _department_out(session, department)
+
+
+# ---------- группы доступа ----------
+# TODO(Q-G4): удаление групп не реализовано — группу можно обнулить (убрать права и участников)
+
+
+def _group_out(session: Session, group: AccessGroup) -> dict:
+    permissions = {
+        module_id: permission
+        for module_id, permission in session.execute(
+            select(AccessGroupPermission.module_id, AccessGroupPermission.permission).where(AccessGroupPermission.group_id == group.id)
+        )
+    }
+    user_ids = sorted(session.scalars(select(AccessGroupMember.user_id).where(AccessGroupMember.group_id == group.id)).all())
+    active = (
+        session.scalar(
+            select(func.count())
+            .select_from(AccessGroupMember)
+            .join(User, User.id == AccessGroupMember.user_id)
+            .where(AccessGroupMember.group_id == group.id, User.is_active.is_(True))
+        )
+        or 0
+    )
+    return {"id": group.id, "name": group.name, "permissions": permissions, "user_ids": user_ids, "user_count": active}
+
+
+def _check_user_ids(session: Session, ids: list[int]) -> None:
+    found = set(session.scalars(select(User.id).where(User.id.in_(ids))).all()) if ids else set()
+    if set(ids) != found:
+        raise HTTPException(422, m.UNKNOWN_USER)
+
+
+def _check_permissions(permissions: dict[str, str]) -> None:
+    module_ids = {mod.id for mod in MODULES}
+    for module_id, permission in permissions.items():
+        if module_id not in module_ids:
+            raise HTTPException(422, m.UNKNOWN_MODULE)
+        if permission not in GROUP_PERMISSIONS:
+            raise HTTPException(422, m.UNKNOWN_PERMISSION)
+
+
+def _set_permissions(session: Session, group_id: int, permissions: dict[str, str]) -> None:
+    session.query(AccessGroupPermission).filter(AccessGroupPermission.group_id == group_id).delete()
+    for module_id, permission in sorted(permissions.items()):
+        session.add(AccessGroupPermission(group_id=group_id, module_id=module_id, permission=permission))
+
+
+def _set_members(session: Session, group_id: int, ids: list[int]) -> None:
+    session.query(AccessGroupMember).filter(AccessGroupMember.group_id == group_id).delete()
+    for user_id in sorted(set(ids)):
+        session.add(AccessGroupMember(group_id=group_id, user_id=user_id))
+
+
+def _check_group_name(session: Session, name: str | None, self_id: int | None = None) -> None:
+    existing = session.execute(select(AccessGroup.id, AccessGroup.name)).all()
+    problem = validate_group_name(name, [(i, n) for i, n in existing], self_id)
+    if problem:
+        raise HTTPException(409 if problem == m.GROUP_NAME_DUPLICATE else 422, problem)
+
+
+@router.get("/groups")
+def list_groups(_: User = Depends(require_manager), session: Session = Depends(get_session)) -> list[dict]:
+    return [_group_out(session, g) for g in session.scalars(select(AccessGroup).order_by(AccessGroup.id))]
+
+
+class CreateGroupBody(BaseModel):
+    name: str
+    permissions: dict[str, str] = {}
+    user_ids: list[int] = []
+
+
+@router.post("/groups")
+def create_group(body: CreateGroupBody, me: User = Depends(require_manager), session: Session = Depends(get_session)) -> dict:
+    _check_group_name(session, body.name)
+    _check_permissions(body.permissions)
+    _check_user_ids(session, body.user_ids)
+    group = AccessGroup(name=body.name.strip())
+    session.add(group)
+    try:
+        session.flush()
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(409, m.GROUP_NAME_DUPLICATE) from None
+    _set_permissions(session, group.id, body.permissions)
+    _set_members(session, group.id, body.user_ids)
+    log_action(
+        session, me.id, "group.create", group_id=group.id, name=group.name, permissions=body.permissions, user_ids=sorted(set(body.user_ids))
+    )
+    session.commit()
+    return _group_out(session, group)
+
+
+class PatchGroupBody(BaseModel):
+    name: str | None = None
+    permissions: dict[str, str] | None = None
+    user_ids: list[int] | None = None
+
+
+@router.patch("/groups/{group_id}")
+def patch_group(group_id: int, body: PatchGroupBody, me: User = Depends(require_manager), session: Session = Depends(get_session)) -> dict:
+    group = session.get(AccessGroup, group_id)
+    if group is None:
+        raise HTTPException(404, m.GROUP_NOT_FOUND)
+    if body.name is not None:
+        _check_group_name(session, body.name, group.id)
+    if body.permissions is not None:
+        _check_permissions(body.permissions)
+    if body.user_ids is not None:
+        _check_user_ids(session, body.user_ids)
+    changes: dict = {}
+    # autoflush срабатывает на любом запросе внутри блока, поэтому уникальность имени ловим вокруг всего блока
+    try:
+        if body.name is not None and body.name.strip() != group.name:
+            group.name = body.name.strip()
+            changes["name"] = group.name
+        if body.permissions is not None:
+            if body.permissions != _group_out(session, group)["permissions"]:
+                changes["permissions"] = body.permissions
+            _set_permissions(session, group.id, body.permissions)
+        if body.user_ids is not None:
+            before = set(session.scalars(select(AccessGroupMember.user_id).where(AccessGroupMember.group_id == group.id)).all())
+            after = set(body.user_ids)
+            if after - before:
+                changes["added_user_ids"] = sorted(after - before)
+            if before - after:
+                changes["removed_user_ids"] = sorted(before - after)
+            _set_members(session, group.id, body.user_ids)
+        session.flush()
+    except IntegrityError:
+        session.rollback()
+        raise HTTPException(409, m.GROUP_NAME_DUPLICATE) from None
+    log_action(session, me.id, "group.update", group_id=group.id, **changes)
+    session.commit()
+    return _group_out(session, group)

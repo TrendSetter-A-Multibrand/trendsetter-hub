@@ -20,10 +20,20 @@ SQL-скрипты для базы хаба. Секретов (паролей) �
 2. **`01_core_hub.sql`** — создаёт схему `trendsetter_hub` и таблицы ядра (отделы, пользователи, доступ, журнал). Выполнить как скрипт (в DBeaver Alt+X).
 3. **`modules/warehouse/001_warehouse.sql`** — таблицы модуля «Склад».
 
+4. **`02_access_groups.sql`** — группы доступа (см. ниже).
+
 Скрипты можно запускать повторно: существующее они пропускают. Ничего вне схемы `trendsetter_hub` они не меняют.
 
 ## Ядро
 `departments` (отделы — справочник), `users` (вход по почте и паролю; пароль только хэшем; уровни admin / superuser / employee / viewer), `user_departments`, `module_departments`, `audit_log`. Первого администратора создаёт команда бэкенда (пароли в SQL не хранятся).
+
+## Группы доступа
+`access_groups` (название, уникальное без учёта регистра), `access_group_permissions` (на пару «группа — модуль» одно право: `view` / `run` / `responsible`), `access_group_members` (участники). Права группы только добавляются к уровню и отделам сотрудника (итог — максимум); удаления групп нет, группу можно обнулить. Таблицы без приставки модуля, одна ревизия Alembic `0002`.
+
+**Порядок выката (боевая база; `deploy.sh` миграции не выполняет, `/health` базу не проверяет):**
+1. Под doadmin в `defaultdb` выполнить `db/02_access_groups.sql`.
+2. Под doadmin выполнить `deploy/stamp_alembic_0002.sql` (версия миграции `0001` → `0002`).
+3. Только после этого — merge в `main`. Иначе деплой будет «зелёным», а `/core/me` и Склад начнут отвечать 500.
 
 ## Модуль «Склад»
 Листы Google Таблицы «Склад-приёмка» стали таблицами: Приемки → `warehouse_receipts`, Раскладки → `warehouse_receipt_plans`, Счётчики → `warehouse_box_counters` и `warehouse_pallet_pointers`, Сканы → `warehouse_scans`, Короба → `warehouse_boxes`, Хранение → `warehouse_storage_boxes`, Хранение — архив → `warehouse_storage_archive`, Секции → `warehouse_extra_sections`, Коды ЧЗ → `warehouse_marks`, Сводка → представление `warehouse_receipt_summary`. Условия, которые раньше защищал `LockService`, держит база: уникальность кода ЧЗ, одно место на короб, уникальное имя приёмки, номера коробов через функцию `warehouse_next_box_number()`, повтор отправки скана отсекается по id.

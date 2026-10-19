@@ -19,6 +19,15 @@ export function validateDepartmentName(name, existing, selfId) {
   return duplicate ? v.nameDuplicate : null
 }
 
+export function validateGroupName(name, existing, selfId) {
+  const value = (name ?? '').trim()
+  if (!value) return v.groupNameEmpty
+  if (value.length > 64) return v.groupNameTooLong
+  const lower = value.toLowerCase()
+  const duplicate = existing.some((g) => g.id !== selfId && g.name.trim().toLowerCase() === lower)
+  return duplicate ? v.groupNameDuplicate : null
+}
+
 export function validateDepartmentCode(code, existing) {
   const value = code ?? ''
   if (!CODE_RE.test(value)) return v.codeInvalid

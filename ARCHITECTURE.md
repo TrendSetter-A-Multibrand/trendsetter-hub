@@ -113,6 +113,8 @@ MODULES: list[ModuleManifest] = [...]
 
 Права вычисляются в `require_access(module_id, "view"|"run")` (зависимость FastAPI) из `access_level` + `user_departments` + `module_departments`. Право `view`/`run` — на уровне модуля, модули не знают о ролях. Фронт получает вычисленные права из `GET /core/me`.
 
+**Группы доступа.** Три таблицы ядра без приставки: `access_groups` (id, name, уникальное без учёта регистра), `access_group_permissions` (group_id, module_id, permission `view|run|responsible`, одна строка на пару группа-модуль), `access_group_members` (group_id, user_id). Группы только расширяют права: итог = максимум из базового (уровень + отделы) и группового, порядок `none < structure < view < run`; `view` даёт не ниже `view`, `run` и `responsible` дают `run`; группа поднимает и `viewer` (Q-G1). `responsible` не попадает в `module_access`: это отдельный флаг `module_responsible: {module_id: bool}` в `GET /core/me` (admin/superuser автоматически не ответственные, Q-G2); для Склада ответственный проходит действия «по ПИН» без ПИН (Q-G3). Права читаются из БД на каждый запрос, в JWT не кладутся; фронт тихо обновляет `/core/me` при возврате на вкладку и раз в 60 с (Q-G5). Удаления групп нет (Q-G4), запрещающих прав нет (Q-G6). Управление — `/admin/groups` (только admin). Подробности — `docs/TZ-access-groups.md`.
+
 ## 6. Ключевые решения
 
 | Тема | Решение | Почему / альтернатива |

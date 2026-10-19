@@ -70,7 +70,7 @@ def clean(database):
     """Пользователи, привязки, журнал и данные склада очищаются перед каждым тестом (отделы и модули — стартовые)."""
     with psycopg.connect(database["db_dsn"], autocommit=True) as conn:
         conn.execute(
-            "TRUNCATE trendsetter_hub.audit_log, trendsetter_hub.user_departments, trendsetter_hub.users, "
+            "TRUNCATE trendsetter_hub.audit_log, trendsetter_hub.access_groups, trendsetter_hub.user_departments, trendsetter_hub.users, "
             "trendsetter_hub.warehouse_receipts, trendsetter_hub.warehouse_box_counters, trendsetter_hub.warehouse_pallet_pointers "
             "RESTART IDENTITY CASCADE"
         )

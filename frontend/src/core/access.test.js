@@ -1,6 +1,13 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { computeModuleAccess, canSeeData, canRun, canManageUsers } from './access.js'
+import {
+  computeModuleAccess,
+  isModuleResponsible,
+  GROUP_PERMISSIONS,
+  canSeeData,
+  canRun,
+  canManageUsers,
+} from './access.js'
 
 const u = (access_level, department_ids, extra = {}) => ({
   access_level,
@@ -33,6 +40,49 @@ for (const [n, user, moduleDeps, expected] of cases) {
     assert.equal(computeModuleAccess(user, moduleDeps), expected)
   })
 }
+
+const groupCases = [
+  [17, u('viewer', []), [1], ['view'], 'view'],
+  [18, u('viewer', []), [1], ['run'], 'run'],
+  [19, u('employee', [2]), [1], ['view'], 'view'],
+  [20, u('employee', [2]), [1], ['run'], 'run'],
+  [21, u('employee', [2]), [1], ['responsible'], 'run'],
+  [22, u('employee', [1]), [1], ['view'], 'run'],
+  [23, u('employee', [1], { is_active: false }), [1], ['run'], 'none'],
+  [24, u('boss', [1]), [1], ['run'], 'none'],
+  [25, u('superuser', []), [1], ['view'], 'run'],
+  [26, u('viewer', []), [1], ['view', 'run'], 'run'],
+  [27, u('viewer', []), [1], [], 'structure'],
+]
+
+for (const [n, user, moduleDeps, groups, expected] of groupCases) {
+  test(`computeModuleAccess #${n} (группы) -> ${expected}`, () => {
+    assert.equal(computeModuleAccess(user, moduleDeps, groups), expected)
+  })
+}
+
+test('computeModuleAccess: права групп по умолчанию пустые', () => {
+  assert.equal(computeModuleAccess(u('viewer', []), [1]), 'structure')
+})
+
+const responsibleCases = [
+  ['R1', u('employee', []), ['responsible'], true],
+  ['R2', u('employee', []), ['run'], false],
+  ['R3', u('admin', []), [], false],
+  ['R4', u('employee', [], { is_active: false }), ['responsible'], false],
+  ['R5', u('viewer', []), ['responsible'], true],
+  ['R6', u('boss', []), ['responsible'], false],
+]
+
+for (const [n, user, groups, expected] of responsibleCases) {
+  test(`isModuleResponsible ${n} -> ${expected}`, () => {
+    assert.equal(isModuleResponsible(user, groups), expected)
+  })
+}
+
+test('GROUP_PERMISSIONS', () => {
+  assert.deepEqual(GROUP_PERMISSIONS, ['view', 'run', 'responsible'])
+})
 
 test('canManageUsers', () => {
   assert.equal(canManageUsers(u('admin', [])), true)

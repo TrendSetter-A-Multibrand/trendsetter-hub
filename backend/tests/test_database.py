@@ -24,11 +24,27 @@ def test_app_role_can_use_warehouse_objects(db):
     db.rollback()
 
 
+def test_app_role_can_use_access_group_tables(db):
+    """Права hub_app на таблицы групп доступа выданы (INSERT, SELECT, UPDATE, DELETE)."""
+    db.execute(
+        text("INSERT INTO trendsetter_hub.users (email, full_name, password_hash, access_level) VALUES ('g@example.com', 'Г', 'x', 'viewer')")
+    )
+    user_id = db.execute(text("SELECT id FROM trendsetter_hub.users WHERE email = 'g@example.com'")).scalar_one()
+    group_id = db.execute(text("INSERT INTO trendsetter_hub.access_groups (name) VALUES ('Группа') RETURNING id")).scalar_one()
+    db.execute(text("INSERT INTO trendsetter_hub.access_group_permissions (group_id, module_id, permission) VALUES (:g, 'warehouse', 'run')"), {"g": group_id})
+    db.execute(text("INSERT INTO trendsetter_hub.access_group_members (group_id, user_id) VALUES (:g, :u)"), {"g": group_id, "u": user_id})
+    db.execute(text("UPDATE trendsetter_hub.access_groups SET name = 'Группа 2' WHERE id = :g"), {"g": group_id})
+    assert db.execute(text("SELECT count(*) FROM trendsetter_hub.access_group_members")).scalar_one() == 1
+    db.execute(text("DELETE FROM trendsetter_hub.access_groups WHERE id = :g"), {"g": group_id})
+    assert db.execute(text("SELECT count(*) FROM trendsetter_hub.access_group_permissions")).scalar_one() == 0  # CASCADE
+    db.rollback()
+
+
 def test_alembic_version_in_hub_schema(database):
     import psycopg
 
     with psycopg.connect(database["db_dsn"]) as conn:
-        assert conn.execute("SELECT version_num FROM trendsetter_hub.alembic_version").fetchone() == ("0001",)
+        assert conn.execute("SELECT version_num FROM trendsetter_hub.alembic_version").fetchone() == ("0002",)
         assert conn.execute("SELECT to_regclass('public.alembic_version')").fetchone() == (None,)
 
 

@@ -4,11 +4,18 @@ import {
   freePallet, reopenByCode, importOldFile, sectorsApi, closeBox,
 } from '../store.js'
 import { DEMO_PIN } from '../lib/localBackend.js'
-import { DEMO_MODE } from '../../../core/config.js'
+import { API_URL, DEMO_MODE } from '../../../core/config.js'
+import { useAuth } from '../../../core/auth/useAuth.js'
 import strings from '../strings.js'
 import { useStore, useDialog } from './useStore.js'
 
 const d = strings.dialogs
+
+// Ответственный по группе проходит без ПИН; в демо (без сервера) ПИН нужен всегда
+const usePinFree = () => {
+  const { me } = useAuth()
+  return Boolean(API_URL) && me?.module_responsible?.warehouse === true
+}
 
 const Msg = ({ m }) => (m ? <span className={m.ok ? 'wh-okmsg' : 'wh-errmsg'}>{m.text}</span> : null)
 
@@ -137,6 +144,7 @@ function MoreBody() {
   const [box, setBox] = useState('')
   const [boxMsg, setBoxMsg] = useState(null)
   const [pin, setPin] = useState('')
+  const pinFree = usePinFree()
   const [file, setFile] = useState(null)
   const [impMsg, setImpMsg] = useState(null)
   const [pal, setPal] = useState('')
@@ -153,7 +161,7 @@ function MoreBody() {
     if (r.error) setBoxMsg({ text: r.error })
   }
   const doImport = async () => {
-    const r = await importOldFile(file, pin.trim())
+    const r = await importOldFile(file, pinFree ? '' : pin.trim(), pinFree)
     if (r.error) setImpMsg({ text: r.error })
   }
   const doFree = async () => {
@@ -181,9 +189,12 @@ function MoreBody() {
       <div className="wh-hint">{d.importHint}</div>
       <div className="wh-new wrap">
         <input type="file" accept=".csv" onChange={(e) => setFile(e.target.files[0] || null)} />
-        <input className="wh-pin" type="password" inputMode="numeric" maxLength={4} autoComplete="off" placeholder={d.pin} value={pin} onChange={(e) => setPin(e.target.value)} />
+        {!pinFree && (
+          <input className="wh-pin" type="password" inputMode="numeric" maxLength={4} autoComplete="off" placeholder={d.pin} value={pin} onChange={(e) => setPin(e.target.value)} />
+        )}
         <button type="button" onClick={doImport}>{d.importButton}</button>
       </div>
+      {pinFree && <div className="wh-hint">{d.pinNotNeeded}</div>}
       <div className="wh-msg"><Msg m={impMsg} /></div>
       <hr />
       <p className="wh-sub"><b>{d.sectorsTitle}</b></p>
@@ -219,6 +230,7 @@ function SectorsBody({ retry }) {
   const [cat, setCat] = useState(retry ? String(+retry || retry) : '')
   const [sec, setSec] = useState('')
   const [pin, setPin] = useState('')
+  const pinFree = usePinFree()
   const [msg, setMsg] = useState(null)
   const [list, setList] = useState(null)
   const [busy, setBusy] = useState(false)
@@ -233,9 +245,9 @@ function SectorsBody({ retry }) {
   const ok = async () => {
     const c = cat.trim()
     const s = sec.trim()
-    const p = pin.trim()
+    const p = pinFree ? '' : pin.trim()
     if (!/^\d{1,3}$/.test(c) || !/^\d{1,3}$/.test(s)) return setMsg({ text: d.sectorsDigits })
-    if (!/^\d{4}$/.test(p)) return setMsg({ text: d.sectorsPin })
+    if (!pinFree && !/^\d{4}$/.test(p)) return setMsg({ text: d.sectorsPin })
     setBusy(true)
     try {
       setList(await sectorsApi.add(c, s, p))
@@ -253,8 +265,8 @@ function SectorsBody({ retry }) {
     }
   }
   const remove = async (c, s) => {
-    const p = pin.trim()
-    if (!/^\d{4}$/.test(p)) return setMsg({ text: d.sectorsPinRemove })
+    const p = pinFree ? '' : pin.trim()
+    if (!pinFree && !/^\d{4}$/.test(p)) return setMsg({ text: d.sectorsPinRemove })
     try {
       setList(await sectorsApi.remove(c, s, p))
       setMsg({ text: d.sectorsRemoved(+c, +s), ok: true })
@@ -276,8 +288,11 @@ function SectorsBody({ retry }) {
         <label>{d.category}<input ref={catRef} inputMode="numeric" maxLength={3} value={cat} onChange={(e) => setCat(e.target.value)} onKeyDown={onEnter} /></label>
         <span className="arrow">→</span>
         <label>{d.section}<input ref={secRef} inputMode="numeric" maxLength={3} value={sec} onChange={(e) => setSec(e.target.value)} onKeyDown={onEnter} /></label>
-        <label>{d.responsiblePin}<input className="wh-pin" type="password" inputMode="numeric" maxLength={4} autoComplete="off" value={pin} onChange={(e) => setPin(e.target.value)} onKeyDown={onEnter} /></label>
+        {!pinFree && (
+          <label>{d.responsiblePin}<input className="wh-pin" type="password" inputMode="numeric" maxLength={4} autoComplete="off" value={pin} onChange={(e) => setPin(e.target.value)} onKeyDown={onEnter} /></label>
+        )}
       </div>
+      {pinFree && <div className="wh-hint">{d.pinNotNeeded}</div>}
       <div className="wh-msg"><Msg m={msg} /></div>
       <div className="wh-sublist">
         <b>{d.assigned}</b>

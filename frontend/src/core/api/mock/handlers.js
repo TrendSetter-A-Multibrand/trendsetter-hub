@@ -1,8 +1,9 @@
 import strings from '../../strings.js'
 import { DEMO_MODE } from '../../config.js'
-import { ACCESS_LEVELS, computeModuleAccess, canSeeData, canRun, canManageUsers } from '../../access.js'
+import { ACCESS_LEVELS, GROUP_PERMISSIONS, computeModuleAccess, isModuleResponsible, canSeeData, canRun, canManageUsers } from '../../access.js'
 import {
   validateDepartmentName,
+  validateGroupName,
   validateDepartmentCode,
   validateUserForm,
   validatePassword,
@@ -29,7 +30,37 @@ function requireManager(token) {
   return user
 }
 
-const accessTo = (user, moduleId) => computeModuleAccess(user, data.moduleDepartments[moduleId] ?? [])
+const groupPermissionsOf = (user, moduleId) =>
+  data.groups.filter((g) => g.user_ids.includes(user.id) && g.permissions[moduleId]).map((g) => g.permissions[moduleId])
+
+const accessTo = (user, moduleId) =>
+  computeModuleAccess(user, data.moduleDepartments[moduleId] ?? [], groupPermissionsOf(user, moduleId))
+
+function checkGroupPermissions(permissions) {
+  for (const [moduleId, permission] of Object.entries(permissions)) {
+    if (!MODULES.some((m) => m.id === moduleId)) throw new ApiError(422, err.unknownModule)
+    if (!GROUP_PERMISSIONS.includes(permission)) throw new ApiError(422, err.unknownPermission)
+  }
+}
+
+function checkGroupUserIds(ids) {
+  if (!ids.every((id) => data.users.some((u) => u.id === id))) throw new ApiError(422, err.unknownUser)
+}
+
+function checkGroupName(name, selfId) {
+  const problem = validateGroupName(name, data.groups, selfId)
+  if (problem) throw new ApiError(problem === validationMessages.groupNameDuplicate ? 409 : 422, problem)
+}
+
+const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v)
+const isIdList = (v) => Array.isArray(v) && v.every((id) => Number.isInteger(id))
+
+const groupOut = (group) => ({
+  ...group,
+  permissions: { ...group.permissions },
+  user_ids: [...group.user_ids].sort((a, b) => a - b),
+  user_count: data.users.filter((u) => u.is_active && group.user_ids.includes(u.id)).length,
+})
 
 function requireDemo() {
   if (!DEMO_MODE) throw new ApiError(404, err.notFound)
@@ -83,6 +114,9 @@ export const handlers = {
       departments: data.departments.filter((d) => user.department_ids.includes(d.id)),
       can_manage_users: canManageUsers(user),
       module_access: Object.fromEntries(MODULES.map((m) => [m.id, accessTo(user, m.id)])),
+      module_responsible: Object.fromEntries(
+        MODULES.map((m) => [m.id, isModuleResponsible(user, groupPermissionsOf(user, m.id))]),
+      ),
     }
   },
 
@@ -221,5 +255,50 @@ export const handlers = {
       ...department,
       user_count: data.users.filter((u) => u.is_active && u.department_ids.includes(department.id)).length,
     }
+  },
+
+  'GET /admin/groups': ({ token }) => {
+    requireManager(token)
+    return data.groups.map(groupOut)
+  },
+
+  'POST /admin/groups': ({ token, body }) => {
+    requireManager(token)
+    const permissions = body?.permissions ?? {}
+    const userIds = body?.user_ids ?? []
+    if (typeof body?.name !== 'string' || !isObject(permissions) || !isIdList(userIds)) {
+      throw new ApiError(422, err.invalid)
+    }
+    checkGroupName(body.name)
+    checkGroupPermissions(permissions)
+    checkGroupUserIds(userIds)
+    const group = {
+      id: data.nextId.group++,
+      name: body.name.trim(),
+      permissions: { ...permissions },
+      user_ids: [...new Set(userIds)],
+    }
+    data.groups.push(group)
+    return groupOut(group)
+  },
+
+  'PATCH /admin/groups/:id': ({ token, params, body }) => {
+    requireManager(token)
+    const group = data.groups.find((g) => g.id === Number(params.id))
+    if (!group) throw new ApiError(404, err.groupNotFound)
+    if (
+      (body?.name !== undefined && typeof body.name !== 'string') ||
+      (body?.permissions !== undefined && !isObject(body.permissions)) ||
+      (body?.user_ids !== undefined && !isIdList(body.user_ids))
+    ) {
+      throw new ApiError(422, err.invalid)
+    }
+    if (body?.name !== undefined) checkGroupName(body.name, group.id)
+    if (body?.permissions !== undefined) checkGroupPermissions(body.permissions)
+    if (body?.user_ids !== undefined) checkGroupUserIds(body.user_ids)
+    if (body?.name !== undefined) group.name = body.name.trim()
+    if (body?.permissions !== undefined) group.permissions = { ...body.permissions }
+    if (body?.user_ids !== undefined) group.user_ids = [...new Set(body.user_ids)]
+    return groupOut(group)
   },
 }
