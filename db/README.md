@@ -38,6 +38,76 @@ SQL-скрипты для базы хаба. Секретов (паролей) �
 ## Модуль «Склад»
 Листы Google Таблицы «Склад-приёмка» стали таблицами: Приемки → `warehouse_receipts`, Раскладки → `warehouse_receipt_plans`, Счётчики → `warehouse_box_counters` и `warehouse_pallet_pointers`, Сканы → `warehouse_scans`, Короба → `warehouse_boxes`, Хранение → `warehouse_storage_boxes`, Хранение — архив → `warehouse_storage_archive`, Секции → `warehouse_extra_sections`, Коды ЧЗ → `warehouse_marks`, Сводка → представление `warehouse_receipt_summary`. Условия, которые раньше защищал `LockService`, держит база: уникальность кода ЧЗ, одно место на короб, уникальное имя приёмки, номера коробов через функцию `warehouse_next_box_number()`, повтор отправки скана отсекается по id.
 
+## Перенос данных из Google Таблицы (разово)
+Команда `python -m app.modules.warehouse.legacy_import` (код — `backend/app/modules/warehouse/legacy_import.py`, WEEEK #18835) переносит выгрузку xlsx старой системы «Склад-приемка» в таблицы `warehouse_*`. Работает в контейнере API под `hub_app`, к HTTP не подключена, DDL и миграций нет.
+
+**Соответствие листов.** Приемки → `warehouse_receipts`; Раскладки (части склеиваются по «Часть») → `warehouse_receipt_plans`; Счётчики → `warehouse_box_counters` (`BOX_xx`, берётся максимум из листа и номеров всех кодов, включая временные) и `warehouse_pallet_pointers` (`PAL_xx`); Сканы → `warehouse_scans`; Короба → `warehouse_boxes`; Хранение → `warehouse_storage_boxes`; Хранение — архив → `warehouse_storage_archive`; Секции → `warehouse_extra_sections`; Коды ЧЗ → `warehouse_marks`. Столбец «Кто» (почта) сопоставляется с `users` без учёта регистра; нет такой почты в хабе — ошибка, учётки заводит админ заранее.
+
+**Не переносится.** Сводка (в хабе её заменяет представление `warehouse_receipt_summary`, лист используется только для сверки); Раскладка и Лист 1 (пустые); раскладка завершённой приёмки (хаб удаляет её при завершении); формульный столбец «Палет» в Сканах и Коробах. 8 полностью одинаковых строк «Короба» схлопываются в одну (в хабе у «Новой Моды» 416 коробов против 424 в Сводке — отчёт объясняет расхождение). Метка источника без DDL: запись `warehouse.legacy_import` в `audit_log`.
+
+**Режимы и коды выхода.** Без флагов — сухой прогон (тот же путь, в конце ROLLBACK). `--apply` — запись одной транзакцией. `--rollback` — откат последнего переноса (по умолчанию тоже сухой, `--rollback --apply` — удаление; возможен только до начала живой работы). `--tz` — часовой пояс листов, по умолчанию `Europe/Moscow` (проверяется самопроверкой по ID сканов и версиям раскладок). Файл — путь или `-` (stdin). Коды выхода: 0 — успех / чистый сухой прогон; 1 — ошибки файла (в том числе неизвестные почты и часовой пояс); 2 — конфликт с данными БД или откат невозможен; 3 — сверка со Сводкой или с представлением не сошлась. КИ в выводе и журнале только маской, `full_code` и почты не печатаются.
+
+**Порядок боевого выката** (шаги 0–9 — по ТЗ `docs/TZ-warehouse-legacy-import.md`; шаг 3а добавлен по решению Q-M4):
+0. Ответить на Q-M1…Q-M9. Merge в `main` → автодеплой. Миграций нет, stamp не нужен. Проверить:
+   ```
+   docker exec trendsetter-hub-api python -c "import openpyxl, app.modules.warehouse.legacy_import"
+   ```
+1. В админке хаба завести пользователей с почтами из «Кто» (Q-M1).
+2. **Заморозка старой системы:**
+   - все ПК закрывают открытые короба и онлайн отправляют очереди;
+   - сканирование останавливается;
+   - владелец переводит Google Таблицу в «только чтение» (Q-M9);
+   - «Файл → Скачать → xlsx».
+3. На сервер (вне репозитория):
+   ```
+   ssh … 'install -d -m 700 /opt/trendsetter-hub/import'
+   scp sklad.xlsx …:/opt/trendsetter-hub/import/sklad.xlsx
+   chmod 600 /opt/trendsetter-hub/import/sklad.xlsx
+   ```
+3а. **Очистка тестовых данных Склада (Q-M4).** Владелец БД под doadmin в `defaultdb` выполняет `db/modules/warehouse/cleanup_test_data.sql` (удаляет все данные `warehouse_*`, необратимо; `users` и `audit_log` не трогает). Иначе сухой прогон вернёт код 2.
+4. Сухой прогон:
+   ```
+   docker exec -i trendsetter-hub-api python -m app.modules.warehouse.legacy_import - < /opt/trendsetter-hub/import/sklad.xlsx
+   ```
+   Ожидается exit 0. Предупреждение о временных коробах — около 0 (было 482). Exit 2 — в БД есть тестовые данные (Q-M4).
+5. Перед записью запомнить время (запасной вариант — восстановление DO на момент времени).
+6. Запись:
+   ```
+   docker exec -i trendsetter-hub-api python -m app.modules.warehouse.legacy_import - --apply < /opt/trendsetter-hub/import/sklad.xlsx
+   ```
+   Ожидается exit 0, сверка «OK» по обеим приёмкам. Сохранить вывод (без КИ).
+7. Проверка в интерфейсе — **только просмотр**:
+   - список приёмок (открыта «Новая Мода»);
+   - раскладка подтягивается;
+   - «Хранение» — 433 короба, 36 палетов.
+   - Не выдавать номера коробов и не закрывать короба до решения «откат не нужен»: любая живая операция делает автоматический откат невозможным.
+   - Учесть: секции 01, 03, 15 заполнены, новые короба категорий 01 и 03 пойдут в доп. секции.
+8. Удалить файл: `shred -u /opt/trendsetter-hub/import/sklad.xlsx`. В контейнер файл не попадал. Локальная копия остаётся только в `modules/warehouse/` (в `.gitignore`).
+9. Открыть работу склада в хабе.
+
+**Откат** (только до первой живой операции):
+```
+docker exec trendsetter-hub-api python -m app.modules.warehouse.legacy_import --rollback           # сухой прогон
+docker exec trendsetter-hub-api python -m app.modules.warehouse.legacy_import --rollback --apply
+```
+Файл не нужен. После начала живой работы — только ручное решение: восстановление DO на момент времени с потерей живых данных.
+
+**Проверочные SQL** (необязательно; выполняет владелец БД по принятой практике этого файла, только чтение; основная проверка — отчёт команды):
+```sql
+SELECT * FROM trendsetter_hub.warehouse_receipt_summary ORDER BY receipt;
+SELECT r.name, count(*) FILTER (WHERE s.box_code !~ '^S') AS scans_in_open_boxes
+  FROM trendsetter_hub.warehouse_scans s JOIN trendsetter_hub.warehouse_receipts r ON r.id = s.receipt_id GROUP BY r.name;
+SELECT (SELECT count(*) FROM trendsetter_hub.warehouse_marks) AS marks,
+       (SELECT count(*) FROM trendsetter_hub.warehouse_scans WHERE ki IS NOT NULL) AS scans_with_ki,
+       (SELECT count(*) FROM trendsetter_hub.warehouse_storage_boxes) AS storage,
+       (SELECT count(*) FROM trendsetter_hub.warehouse_boxes) AS boxes;
+SELECT category, last_number FROM trendsetter_hub.warehouse_box_counters ORDER BY category;
+SELECT section, current_pallet FROM trendsetter_hub.warehouse_pallet_pointers ORDER BY section;
+SELECT pallet_code, count(*) FROM trendsetter_hub.warehouse_storage_boxes GROUP BY 1 HAVING count(*) > 16;  -- ожидается пусто
+SELECT id, at, details->'receipts', details->>'file_sha256' FROM trendsetter_hub.audit_log
+ WHERE action LIKE 'warehouse.legacy_import%' ORDER BY id;
+```
+
 ## Как добавить новый модуль
 Скопируйте `modules/_template.sql` в `db/modules/<имя>/001_<имя>.sql`, назовите таблицы `<имя>_…`, выполните на `defaultdb`. Права для `hub_app` на новые таблицы схемы выдаются автоматически.
 
