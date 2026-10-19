@@ -1,8 +1,10 @@
 // Чистые функции прав доступа. Без React, sessionStorage и мока.
 export const ACCESS_LEVELS = ['admin', 'superuser', 'employee', 'viewer']
 
-// Доступ к модулю: 'none' | 'structure' | 'view' | 'run'
-export function computeModuleAccess(user, moduleDepartmentIds) {
+export const GROUP_PERMISSIONS = ['view', 'run', 'responsible']
+const ACCESS_ORDER = ['none', 'structure', 'view', 'run']
+
+function baseAccess(user, moduleDepartmentIds) {
   if (!user || user.is_active === false) return 'none'
   if (!ACCESS_LEVELS.includes(user.access_level)) return 'none'
   switch (user.access_level) {
@@ -17,6 +19,25 @@ export function computeModuleAccess(user, moduleDepartmentIds) {
       return shared ? 'run' : 'view'
     }
   }
+}
+
+// Доступ к модулю: 'none' | 'structure' | 'view' | 'run'. Группы только расширяют права (максимум).
+export function computeModuleAccess(user, moduleDepartmentIds, groupPermissions = []) {
+  const base = baseAccess(user, moduleDepartmentIds)
+  if (base === 'none') return 'none'
+  const perms = [...groupPermissions]
+  // TODO(Q-G1): группа поднимает и viewer
+  const granted =
+    perms.includes('run') || perms.includes('responsible') ? 'run' : perms.includes('view') ? 'view' : 'none'
+  return ACCESS_ORDER[Math.max(ACCESS_ORDER.indexOf(base), ACCESS_ORDER.indexOf(granted))]
+}
+
+// Ответственный по группе (флаг отдельно от module_access: там значения 'responsible' нет)
+export function isModuleResponsible(user, groupPermissions = []) {
+  if (!user || user.is_active === false) return false
+  if (!ACCESS_LEVELS.includes(user.access_level)) return false
+  // TODO(Q-G2): admin/superuser автоматически не ответственные
+  return [...groupPermissions].includes('responsible')
 }
 
 export const canSeeData = (access) => access === 'view' || access === 'run'

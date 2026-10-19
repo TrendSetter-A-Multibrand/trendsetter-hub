@@ -1,13 +1,14 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import strings from '../strings.js'
-import { validateDepartmentName, validateDepartmentCode, validateUserForm } from './validation.js'
+import { validateGroupName, validateDepartmentName, validateDepartmentCode, validateUserForm } from './validation.js'
 
 const v = strings.admin.validation
 const departments = [
   { id: 1, code: 'purchasing', name: 'Закупки' },
   { id: 2, code: 'wb', name: 'WB-отдел' },
 ]
+const groups = [{ id: 1, name: 'Ответственные склада' }]
 const users = [{ id: 1, email: 'Karen@example.com', full_name: 'Карен В.' }]
 
 test('имя отдела: пустое и пробельное', () => {
@@ -26,6 +27,19 @@ test('имя отдела: дубликат «закупки» vs «Закупк
 test('имя отдела: переименование в своё имя допустимо', () => {
   assert.equal(validateDepartmentName('Закупки', departments, 1), null)
   assert.equal(validateDepartmentName('Логистика', departments), null)
+})
+
+test('имя группы: пустое, пробелы, длина 65', () => {
+  assert.equal(validateGroupName('', groups), v.groupNameEmpty)
+  assert.equal(validateGroupName('   ', groups), v.groupNameEmpty)
+  assert.equal(validateGroupName('а'.repeat(65), groups), v.groupNameTooLong)
+  assert.equal(validateGroupName('а'.repeat(64), groups), null)
+})
+
+test('имя группы: дубль без регистра и своё имя при редактировании', () => {
+  assert.equal(validateGroupName(' ответственные СКЛАДА ', groups), v.groupNameDuplicate)
+  assert.equal(validateGroupName('Ответственные склада', groups, 1), null)
+  assert.equal(validateGroupName('Смена', groups), null)
 })
 
 test('код отдела: кириллица, заглавная, дубликат, валидный', () => {

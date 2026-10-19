@@ -140,6 +140,7 @@ const strings = {
     checking: 'Проверяю…',
     loading: 'Загружаю…',
     pin: 'ПИН',
+    pinNotNeeded: 'ПИН не нужен: вы ответственный склада',
     demoPin: (pin) => `Демо-версия: ПИН ответственного — ${pin}`,
     receiptTitle: 'Приемка',
     receiptPlaceholder: 'Например: Поставка 1543 от 12.10',

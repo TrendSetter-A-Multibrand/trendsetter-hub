@@ -106,7 +106,7 @@ function UserModal({ mode, user, users, departments, onClose, onSaved }) {
   )
 }
 
-export default function UsersTab({ users, departments, reload }) {
+export default function UsersTab({ users, departments, groups, reload }) {
   const { message } = App.useApp()
   const { me } = useAuth()
   const [modal, setModal] = useState(null) // { mode: 'add' } | { mode: 'edit', user }
@@ -137,6 +137,14 @@ export default function UsersTab({ users, departments, reload }) {
         ids.length === 0
           ? strings.dash
           : ids.map((id) => <Tag key={id}>{departments.find((d) => d.id === id)?.name ?? id}</Tag>),
+    },
+    {
+      title: s.groups,
+      dataIndex: 'id',
+      render: (id) => {
+        const own = groups.filter((g) => g.user_ids.includes(id))
+        return own.length === 0 ? strings.dash : own.map((g) => <Tag key={g.id}>{g.name}</Tag>)
+      },
     },
     {
       title: s.status,

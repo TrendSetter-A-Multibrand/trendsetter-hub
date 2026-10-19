@@ -792,9 +792,9 @@ export async function reopenByCode(raw) {
   return { done: true }
 }
 
-export async function importOldFile(file, pin) {
+export async function importOldFile(file, pin, pinFree = false) {
   if (!file) return { error: M.chooseImportFile }
-  if (!/^\d{4}$/.test(pin)) return { error: M.enterPin }
+  if (!pinFree && !/^\d{4}$/.test(pin)) return { error: M.enterPin }
   const rows = parseCsv(await file.text()).filter((r) => r.length > 1)
   const H = rows.shift() || []
   const ix = (n) => H.indexOf(n)
