@@ -324,3 +324,78 @@ def test_me_module_responsible(client, db):
     assert me["module_access"]["warehouse"] == "run"
     admin = client.get("/core/me", headers=login(client, "admin@example.com")).json()
     assert admin["module_responsible"] == {mod.id: False for mod in MODULES}
+
+
+# ---------- состояние приёмки (только чтение) ----------
+
+STATE_TABLES = ("receipts", "receipt_plans", "scans", "boxes", "storage_boxes", "marks", "box_counters", "pallet_pointers", "extra_sections")
+
+
+def test_receipt_state_access_and_unknown_receipt(client, wh, db):
+    make_user(db, "viewer@example.com", "viewer")
+    make_user(db, "buyer@example.com", "employee", [dept_id(db, "purchasing")])
+    receipt(client, wh)
+    params = {"receipt": "Поставка 1"}
+    assert client.get(f"{BASE}/receipt-state", params=params).status_code == 401
+    for email in ("viewer@example.com", "buyer@example.com"):
+        assert client.get(f"{BASE}/receipt-state", params=params, headers=login(client, email)).status_code == 403
+    assert client.get(f"{BASE}/receipt-state", params=params, headers=wh).status_code == 200
+    assert client.get(f"{BASE}/receipt-state", params={"receipt": "Нет такой"}, headers=wh).status_code == 422
+
+
+def test_receipt_state_content_and_read_only(client, wh, db):
+    receipt(client, wh)
+    receipt(client, wh, "Поставка 2")
+    full = KI1 + "91EE10"
+    ops = [
+        scan_op(1, code="05_0001"),
+        scan_op(2, code="05_0001", status="unknown", bc="111"),
+        scan_op(3, box="5", code="05_0001", ki=KI1, full=full, bc="4620270011115"),
+        scan_op(4, box="20", code="20_0001", status="extra", noCz=True),
+        scan_op(5, box="6", code="06_0001", status="foreign"),
+        scan_op(6, box="6", code="06_0001"),
+        scan_op(7, box="7", code="07_0001"),
+        {**scan_op(8, box="9", code="09_0001"), "receipt": "Поставка 2"},
+    ]
+    ops[1]["t"] = ops[0]["t"]  # одно и то же время: порядок по id
+    client.post(f"{BASE}/sync", json={"ops": ops}, headers=wh)
+    # короб A: палет и замена временного кода
+    a = assign(client, wh, "05_0001", count=3).json()
+    closes = [{"op": "close", "boxCode": a["box"], "tmp": "05_0001", "box": "5", "count": 3, "opened": 1792155000000, "closedAt": 1792155100000, "receipt": "Поставка 1"}]
+    # короб B: закрыт без палета
+    closes.append({"op": "close", "boxCode": "06_0001", "box": "6", "count": 2, "opened": 1792155000000, "closedAt": 1792155200000, "receipt": "Поставка 1"})
+    # короб C: закрыт и снова открыт
+    c = assign(client, wh, "07_0001", cat="7", count=1).json()
+    closes.append({"op": "close", "boxCode": c["box"], "tmp": "07_0001", "box": "7", "count": 1, "opened": 1792155000000, "closedAt": 1792155300000, "receipt": "Поставка 1"})
+    client.post(f"{BASE}/sync", json={"ops": closes}, headers=wh)
+    assert client.post(f"{BASE}/boxes/{c['box']}/reopen", headers=wh).status_code == 200
+
+    before = {t: count(db, t) for t in STATE_TABLES}
+    audit_before = db.execute(text("SELECT count(*) FROM trendsetter_hub.audit_log")).scalar_one()
+    r = client.get(f"{BASE}/receipt-state", params={"receipt": "поставка 1"}, headers=wh)
+    assert r.status_code == 200, r.text
+    state = r.json()
+    after = {t: count(db, t) for t in STATE_TABLES}
+    assert before == after
+    assert db.execute(text("SELECT count(*) FROM trendsetter_hub.audit_log")).scalar_one() == audit_before
+
+    assert state["receipt"] == "Поставка 1" and state["status"] == "open"
+    scans = state["scans"]
+    assert [s[0] for s in scans] == ["W-1", "W-2", "W-3", "W-4", "W-5", "W-6", "W-7"]  # (scanned_at, id), второй приёмки нет
+    assert scans[0][1] == ops[0]["t"] and scans[1][1] == ops[0]["t"] and scans[2][1] == ops[2]["t"]
+    assert {s[0]: s[4] for s in scans}["W-1"] == a["box"] and {s[0]: s[4] for s in scans}["W-3"] == a["box"]
+    assert scans[2][8] == KI1 and scans[2][9] == "" and scans[2][5] == "4620270011115"
+    assert client.get(f"{BASE}/receipt-state", params={"receipt": "Поставка 1", "full": True}, headers=wh).json()["scans"][2][9] == full
+
+    closed = {b["code"]: b for b in state["closed"]}
+    assert set(closed) == {a["box"], "06_0001"}  # C переоткрыт
+    assert closed[a["box"]]["storage"] == {"code": "S05_P1", "sector": "05", "pallet": 1, "pos": 1, "cap": 16, "box": a["box"]}
+    assert closed[a["box"]]["pallet"] == "S05_P1" and closed[a["box"]]["count"] == 3 and closed[a["box"]]["opened"] == 1792155000000
+    assert closed["06_0001"]["storage"] is None and closed["06_0001"]["pallet"] == ""
+    assert [b["code"] for b in state["closed"]] == ["06_0001", a["box"]]  # closed_at по убыванию
+
+    summary = db.execute(
+        text("SELECT scanned, not_in_file, surplus, boxes_closed FROM trendsetter_hub.warehouse_receipt_summary WHERE receipt = 'Поставка 1'")
+    ).one()
+    by_status = [s[6] for s in scans]
+    assert (len(scans), by_status.count("unknown") + by_status.count("foreign"), by_status.count("extra"), len(state["closed"])) == tuple(summary)

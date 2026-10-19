@@ -31,4 +31,6 @@ export const httpBackend = {
   savePlan: (receipt, json, name, worker) => api.post(`${base}/plan`, { receipt, json_data: json, name, worker }),
   getPlanInfo: (receipt) => api.get(`${base}/plan-info?receipt=${enc(receipt)}`),
   getPlan: (receipt) => api.get(`${base}/plan?receipt=${enc(receipt)}`),
+
+  receiptState: (receipt, full) => api.get(`${base}/receipt-state?receipt=${enc(receipt)}${full ? '&full=true' : ''}`),
 }

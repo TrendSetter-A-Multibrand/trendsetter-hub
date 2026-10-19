@@ -81,9 +81,6 @@ export default function Header() {
       <span className={`wh-sync ${syncCls}`} title={lastErr || ''}>
         {syncText}
       </span>
-      <button type="button" onClick={() => showTarget('err msg', u.sheetOffTitle, u.sheetOffSub)}>
-        {u.sheet}
-      </button>
       <button type="button" className="wh-primary" onClick={() => startLoad(() => { fileRef.current.value = ''; fileRef.current.click() })}>
         {u.loadExcel}
       </button>

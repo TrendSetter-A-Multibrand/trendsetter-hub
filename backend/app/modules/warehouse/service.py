@@ -597,3 +597,50 @@ def import_old(session: Session, user: User, d: dict, pin, responsible: bool = F
     log_action(session, user.id, "warehouse.import_old", MODULE_ID, receipt=receipt_name, boxes=len(boxes), scans=len(scans), via="group" if responsible else "pin")
     session.commit()
     return {"boxes": len(boxes), "scans": len(scans), "marks": len(kis)}
+
+
+# ---------- состояние приёмки для чтения (только SELECT) ----------
+
+
+def receipt_state(session: Session, name: str, full: bool) -> dict:
+    """Все сканы и закрытые короба приёмки одним ответом. Ничего не пишет."""
+    rid = receipt_id(session, name)
+    head = session.execute(text("SELECT name, status FROM trendsetter_hub.warehouse_receipts WHERE id = :r"), {"r": rid}).one()
+    # порядок обязателен: сначала сканы, потом короба (короб, закрытый между запросами, не должен выглядеть открытым)
+    scans = session.execute(
+        text(
+            """SELECT id, scanned_at, worker, box_category, box_code, barcode, status, no_cz, ki,
+                      CASE WHEN :full THEN full_code END AS full_code
+               FROM trendsetter_hub.warehouse_scans WHERE receipt_id = :r ORDER BY scanned_at, id"""
+        ),
+        {"r": rid, "full": full},
+    ).all()
+    boxes = session.execute(
+        text(
+            """SELECT b.code, b.category, b.item_count, b.worker, b.opened_at, b.closed_at,
+                      s.pallet_code, s.section, s.pallet_no, s.pos
+               FROM trendsetter_hub.warehouse_boxes b
+               LEFT JOIN (SELECT box_code, pallet_code, section, pallet_no,
+                                 row_number() OVER (PARTITION BY pallet_code ORDER BY placed_at, box_code) AS pos
+                          FROM trendsetter_hub.warehouse_storage_boxes) s ON s.box_code = b.code
+               WHERE b.receipt_id = :r ORDER BY b.closed_at DESC, b.code"""
+        ),
+        {"r": rid},
+    ).all()
+    return {
+        "receipt": head.name,
+        "status": head.status,
+        "scans": [
+            [r.id, ms(r.scanned_at), r.worker, r.box_category, r.box_code, r.barcode, r.status, r.no_cz, r.ki or "", r.full_code or ""]
+            for r in scans
+        ],
+        "closed": [
+            {
+                "code": b.code, "box": b.category, "count": b.item_count, "worker": b.worker,
+                "opened": ms(b.opened_at) if b.opened_at else None, "closedAt": ms(b.closed_at), "pallet": b.pallet_code or "",
+                "storage": {"code": b.pallet_code, "sector": b.section, "pallet": b.pallet_no, "pos": b.pos, "cap": cap(b.pallet_no), "box": b.code}
+                if b.pallet_code else None,
+            }
+            for b in boxes
+        ],
+    }

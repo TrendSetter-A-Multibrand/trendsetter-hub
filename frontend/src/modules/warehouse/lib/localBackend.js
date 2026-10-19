@@ -239,6 +239,10 @@ export const backend = {
     persist()
     return backend.listReceipts()
   },
+
+  receiptState() {
+    return null // снимок из базы только у серверного бэкенда
+  },
 }
 
 // Сброс тестовых данных этого браузера (для проверки «с нуля»)
