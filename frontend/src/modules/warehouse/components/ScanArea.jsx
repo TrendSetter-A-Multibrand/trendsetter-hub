@@ -1,4 +1,4 @@
-import { S, handleScan, undo, setUi, focusScan } from '../store.js'
+import { S, view, handleScan, undo, setUi, focusScan } from '../store.js'
 import strings from '../strings.js'
 import { useStore } from './useStore.js'
 
@@ -6,12 +6,15 @@ const u = strings.scan
 
 export default function ScanArea() {
   useStore()
-  const { cfg, plan, st, target } = S
+  const { cfg, plan, target } = S
+  const v = view()
+  // TODO(Q-S3): «нет в файле» и «излишки» — отдельные плитки (как в Сводке)
   const stats = [
-    { v: st.scans.length, l: u.scanned },
+    { v: v.scans.length, l: u.scanned },
     { v: plan ? (plan.hasExp ? plan.total : plan.lines + u.barcodesSuffix) : '—', l: u.expected },
-    { v: st.scans.filter((s) => s.status !== 'ok').length, l: u.notInFile, bad: true },
-    { v: st.closed.length, l: u.boxesClosed },
+    { v: v.scans.filter((s) => s.status === 'unknown' || s.status === 'foreign').length, l: u.notInFile, bad: true },
+    { v: v.scans.filter((s) => s.status === 'extra').length, l: u.extra, bad: true },
+    { v: v.closed.length, l: u.boxesClosed },
   ]
   return (
     <div>
@@ -46,7 +49,7 @@ export default function ScanArea() {
         ) : null}
       </div>
       <div className="wh-under">
-        <div className="wh-stats">
+        <div className="wh-stats" style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}>
           {stats.map((s) => (
             <div key={s.l} className={s.bad ? 'bad' : ''}>
               <b>{s.v}</b>

@@ -1,5 +1,5 @@
 import {
-  S, ask, boxCount, openKeys, closeBox, closeAll, printOne, printOpen, printTest,
+  S, view, ask, boxCount, openKeys, closeBox, closeAll, printOne, printOpen, printTest,
   exportTxt, exportKiz, exportCopy, exportByBox, exportDiff, exportStorage,
 } from '../store.js'
 import { UNK, byNum } from '../lib/format.js'
@@ -26,7 +26,7 @@ function Grid() {
         const tag = c.box && c.box.reopened
           ? u.reopened(c.box.storage ? c.box.storage.code : '')
           : c.box && c.box.from ? u.carried(c.box.from) : ''
-        const fact = st.fact[k] || 0
+        const fact = view().fact[k] || 0
         const exp = plan.expBox[k]
         const isU = k === UNK
         const cnt = plan.hasExp && !isU ? `${fact}/${exp}` : `${fact}`
@@ -63,7 +63,7 @@ function Grid() {
 
 export default function SidePanel() {
   useStore()
-  const { st } = S
+  const v = view()
   return (
     <div className="wh-side">
       <div className="wh-box">
@@ -85,7 +85,7 @@ export default function SidePanel() {
           <button type="button" onClick={exportStorage}>{u.exportStorage}</button>
         </div>
         <div className="wh-log">
-          {st.scans.slice(-60).reverse().map((s, i) => (
+          {v.scans.slice(-60).reverse().map((s, i) => (
             <div key={s.id || i} className={s.status === 'ok' ? '' : 'u'}>
               <span>
                 {s.bc}

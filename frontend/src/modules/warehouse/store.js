@@ -5,6 +5,7 @@ import { UNK, pad, norm, byNum, boxId, BOX_RE, STOR_RE } from './lib/format.js'
 import { fixLayout, isDM, parseDM, gtinEan } from './lib/marks.js'
 import { guess, updCandidates, buildPlan, route, routeMarked, markedMap, eanOf } from './lib/plan.js'
 import { allLines, kizLines, byBoxCsv, diffCsv, updDiffCsv, download, stamp, toCsv, parseCsv, parseRuTime } from './lib/csv.js'
+import { merge, fromRow } from './lib/hydrate.js'
 import { labelHTML, storLabelHTML, printHTML } from './lib/print.js'
 import { backend as localBackend } from './lib/localBackend.js'
 import { httpBackend } from './lib/httpBackend.js'
@@ -60,6 +61,10 @@ export const S = {
   q: load(Q_KEY, []),
   inflight: false,
   lastErr: null,
+  // снимок приёмки из базы: только в памяти, в localStorage не пишется (слишком большой)
+  db: null,
+  undone: new Set(), // id сканов, отменённых после начала запроса снимка, и ссылки undo из очереди
+  reopened: new Set(), // коды коробов, переоткрытых после начала запроса снимка
   // элементы для фокуса
   scanEl: null,
   workerEl: null,
@@ -90,6 +95,17 @@ export function emit() {
 const persist = () => {
   save(ST_KEY, S.st)
   save(CFG_KEY, S.cfg)
+}
+
+/* ---------- Состояние приёмки целиком: снимок из базы + этот ПК ---------- */
+let viewCache = null
+// Всё, что показывается и выгружается, строится отсюда (форма как у S.st). Кэш — по версии и по identity входов.
+export function view() {
+  const c = viewCache
+  if (c && c.version === version && c.st === S.st && c.db === S.db && c.plan === S.plan) return c.v
+  const v = merge(S.db, S.st, { plan: S.plan, undone: S.undone, reopened: S.reopened, queue: S.q })
+  viewCache = { version, st: S.st, db: S.db, plan: S.plan, v }
+  return v
 }
 
 /* ---------- API (единственный шов: позже здесь будут запросы к серверу) ---------- */
@@ -385,8 +401,8 @@ export function handleScan(raw, force) {
     return
   }
   lastAt[n0] = now
-  if (marked) recordScan(bc, n0, routeMarked(plan, st.alloc, n0), { noCz: true })
-  else recordScan(bc, n0, route(plan, st.alloc, n0), {})
+  if (marked) recordScan(bc, n0, routeMarked(plan, view().alloc, n0), { noCz: true })
+  else recordScan(bc, n0, route(plan, view().alloc, n0), {})
 }
 
 async function czScan(raw) {
@@ -397,7 +413,7 @@ async function czScan(raw) {
     beep(false)
     return
   }
-  if (markReg.has(p.ki) || st.scans.some((s) => s.ki === p.ki)) {
+  if (markReg.has(p.ki) || view().scans.some((s) => s.ki === p.ki)) {
     showTarget('err', M.dup, M.dupHere(p.ki), M.czAccepted)
     beep(false)
     return
@@ -408,7 +424,7 @@ async function czScan(raw) {
     ? plan.kiMap[p.ki]
       ? { box: plan.kiMap[p.ki], status: 'ok' }
       : { box: UNK, status: plan.gtinMarked[norm(p.gtin)] ? 'foreign' : 'unknown' }
-    : route(plan, st.alloc, n)
+    : route(plan, view().alloc, n)
   showTarget('idle', M.checking, p.ki)
   const ean = eanOf(plan, p.ki, p.gtin)
   const res = await api('registerMark', { ki: p.ki, gtin: p.gtin, ean, full: p.full, receipt: st.receipt, box: r.box, pc: cfg.worker || '' })
@@ -425,6 +441,7 @@ async function czScan(raw) {
 function recordScan(bc, n, r, extra) {
   const { plan, st, cfg } = S
   const cell = boxOf(r.box)
+  const allocBefore = r.status === 'ok' ? (view().alloc[n] && view().alloc[n][r.box]) || 0 : 0 // уже принято по всей приёмке
   let isNew = false
   if (!cell.box) {
     cell.box = { code: null, opened: Date.now() }
@@ -452,10 +469,10 @@ function recordScan(bc, n, r, extra) {
     let sub = shown
     if (extra.noCz) {
       const need = markedMap(plan)[n].find((x) => x.box === r.box).qty
-      sub += M.itemsInBox(st.alloc[n][r.box], need)
+      sub += M.itemsInBox(allocBefore + 1, need)
     } else if (plan.hasQty && plan.map[n]) {
       const need = plan.map[n].find((x) => x.box === r.box).qty
-      sub += M.itemsInBox(st.alloc[n][r.box], need)
+      sub += M.itemsInBox(allocBefore + 1, need)
     }
     showTarget('ok', r.box, sub + (extra.noCz ? M.acceptedNoCz : ''), M.boxCaption)
     beep(true)
@@ -483,6 +500,7 @@ export function undo() {
       pl.splice(pi, 1)
       if (s.ki) enqueue({ op: 'undo', ref: s.id, ki: s.ki }) // скан ещё не ушёл, но код ЧЗ уже занят в таблице — освобождаем
     } else if (s.id) enqueue(s.ki ? { op: 'undo', ref: s.id, ki: s.ki } : { op: 'undo', ref: s.id })
+    if (s.id) S.undone.add(s.id)
     if (s.ki) {
       markReg.delete(s.ki)
       save('whf_marks', [...markReg])
@@ -581,7 +599,7 @@ export const printOne = (k) => {
   const c = S.st.boxes[k]
   printLabels([{ code: c.box.code, box: k, opened: c.box.opened }])
 }
-export const printClosed = (i) => printLabels([S.st.closed[i]])
+export const printClosed = (i) => printLabels([view().closed[i]])
 export const printTest = () => printLabels([{ code: '005_0000', box: '5', opened: Date.now() }])
 
 /* ---------- Выгрузки ---------- */
@@ -600,35 +618,108 @@ export function refreshPalCache() {
 }
 
 const rcpt = () => S.st.receipt
-export function exportTxt() {
-  if (!S.st.scans.length) return showTarget('err msg', M.listEmpty, M.listEmptySub)
-  download(`barkody_${stamp(rcpt())}.txt`, allLines(S.st))
+
+let dbReq = 0
+let dbLast = null // последний запрос снимка: { p, full, name }
+// Перечитать снимок приёмки из базы. true — снимок свежий (или он не нужен: демо, нет приёмки), false — ошибка связи.
+// Идущий запрос переиспользуется (полный запрос не вытесняется обычным); вытесненный запрос возвращает результат последнего.
+export function refreshDb(full = false) {
+  const name = S.st.receipt
+  if (!backend.shared || !name) return Promise.resolve(true)
+  if (dbLast && dbLast.name === name && (dbLast.full || !full)) return dbLast.p
+  const req = ++dbReq
+  const undoneBefore = new Set(S.undone)
+  const reopenedBefore = new Set(S.reopened)
+  const queuedUndo = S.q.filter((o) => o.op === 'undo').map((o) => o.ref) // могут уйти на сервер уже после чтения снимка
+  const cur = { full, name }
+  cur.p = (async () => {
+    let r
+    try {
+      r = await api('receiptState', name, full)
+    } catch (e) {
+      if (req !== dbReq || S.st.receipt !== name) return stale(req)
+      showTarget('err msg', M.dbLoadFailed, M.dbLoadFailedSub(e.message))
+      return false
+    }
+    if (req !== dbReq || S.st.receipt !== name) return stale(req) // ответ на устаревший запрос
+    // отмены и переоткрытия до старта запроса уже учтены в снимке (кроме неотправленных undo из очереди), добавленные во время запроса — сохраняем
+    S.undone = new Set([...queuedUndo, ...S.q.filter((o) => o.op === 'undo').map((o) => o.ref), ...[...S.undone].filter((id) => !undoneBefore.has(id))])
+    S.reopened = new Set([...S.reopened].filter((c) => !reopenedBefore.has(c)))
+    S.db = { receipt: r.receipt, status: r.status, scans: r.scans.map(fromRow), closed: r.closed }
+    emit()
+    dropClosedElsewhere()
+    return true
+  })().finally(() => {
+    if (dbLast === cur) dbLast = null
+  })
+  dbLast = cur
+  return cur.p
 }
-export function exportKiz() {
-  if (!S.st.scans.some((s) => s.ki)) return showTarget('err msg', M.listEmpty, M.noCzInReceipt)
-  download(`kiz_${stamp(rcpt())}.txt`, kizLines(S.st))
+const stale = (req) => (dbLast && dbReq > req ? dbLast.p : Promise.resolve(true))
+
+// Короб открыт на этом ПК, а в базе уже закрыт (на другом ПК)
+function dropClosedElsewhere() {
+  const codes = view().closedElsewhere
+  if (!codes.length) return
+  for (const code of codes) {
+    const k = Object.keys(S.st.boxes).find((x) => S.st.boxes[x].box && S.st.boxes[x].box.code === code)
+    if (k === undefined) continue
+    const sent = S.q.some((o) => o.boxCode === code || o.tmp === code) || (S.st.pend[k] || []).length
+    if (!sent) S.st.boxes[k] = { box: null, items: [] }
+  }
+  persist()
+  emit()
+  showTarget('warn', M.closedElsewhere, M.closedElsewhereSub(codes))
+  beep(false)
+}
+
+// TODO(Q-S4): без связи с базой выгрузка делается по последнему снимку или по данным ПК, с красным предупреждением
+async function freshView(full) {
+  const ok = await refreshDb(full)
+  return { v: view(), ok }
+}
+const warnStale = () => showTarget('err msg', M.exportStale, M.exportStaleSub)
+
+export async function exportTxt() {
+  const { v, ok } = await freshView(false)
+  if (!v.scans.length) return showTarget('err msg', M.listEmpty, M.listEmptySub)
+  download(`barkody_${stamp(rcpt())}.txt`, allLines(v))
+  if (!ok) warnStale()
+}
+export async function exportKiz() {
+  const { v, ok } = await freshView(false)
+  if (!v.scans.some((s) => s.ki)) return showTarget('err msg', M.listEmpty, M.noCzInReceipt)
+  download(`kiz_${stamp(rcpt())}.txt`, kizLines(v))
+  if (!ok) warnStale()
 }
 export async function exportCopy() {
+  const { v, ok } = await freshView(false)
+  const text = allLines(v)
   try {
-    await navigator.clipboard.writeText(allLines(S.st))
+    await navigator.clipboard.writeText(text)
   } catch {
     const ta = document.createElement('textarea')
-    ta.value = allLines(S.st)
+    ta.value = text
     document.body.appendChild(ta)
     ta.select()
     document.execCommand('copy')
     ta.remove()
   }
-  showTarget('idle', M.copied, M.copiedSub(S.st.scans.length))
+  if (ok) showTarget('idle', M.copied, M.copiedSub(v.scans.length))
+  else warnStale()
   focusScan()
 }
 export async function exportByBox() {
-  const pm = await fetchPalMap([...new Set(S.st.scans.map((s) => s.boxCode))])
-  download(`priemka_po_korobkam_${stamp(rcpt())}.csv`, byBoxCsv(S.st, S.cfg, pm), true)
+  const { v, ok } = await freshView(true)
+  const pm = await fetchPalMap([...new Set(v.scans.map((s) => s.boxCode))])
+  download(`priemka_po_korobkam_${stamp(rcpt())}.csv`, byBoxCsv(v, S.cfg, pm), true)
+  if (!ok) warnStale()
 }
-export function exportDiff() {
+export async function exportDiff() {
   if (!S.plan) return
-  download(`rashozhdeniya_${stamp(rcpt())}.csv`, diffCsv(S.st, S.plan), true)
+  const { v, ok } = await freshView(false)
+  download(`rashozhdeniya_${stamp(rcpt())}.csv`, diffCsv(v, S.plan), true)
+  if (!ok) warnStale()
 }
 export function exportUpdDiff() {
   download(`rashozhdeniya_UPD_${stamp(rcpt())}.csv`, updDiffCsv(S.plan, gtinEan), true)
@@ -675,6 +766,7 @@ export async function switchReceipt(name) {
   if (name === S.st.receipt) {
     setUi({ receipts: false })
     if (pendingPlan) await sharePlan(name)
+    await refreshDb()
     focusScan()
     return
   }
@@ -704,12 +796,16 @@ export async function switchReceipt(name) {
   S.st = fresh(name)
   S.st.boxes = keep.boxes
   S.st.pend = keep.pend
+  S.db = null
+  S.undone = new Set()
+  S.reopened = new Set()
   S.hit = null
   persist()
   emit()
   showTarget('idle', M.canScan, M.receiptSub(name, Object.keys(keep.boxes).length))
   if (pendingPlan) await sharePlan(name)
   else await pullPlan(name)
+  await refreshDb()
   focusScan()
 }
 export async function createReceipt(name) {
@@ -778,6 +874,7 @@ export async function reopenByCode(raw) {
     const r = await api('reopenBox', code)
     S.st.boxes[k] = { box: { code, opened: r.opened || Date.now(), base: r.count, reopened: true, storage: r.storage || null }, items: [] }
     S.st.closed = S.st.closed.filter((c) => c.code !== code)
+    S.reopened.add(code)
     delete boxReg[code]
     save(BREG_KEY, boxReg)
     S.hit = k
@@ -954,5 +1051,6 @@ export function boot() {
   })
   if (S.plan) showTarget('idle', M.canScan, S.st.receipt ? M.receiptWord(S.st.receipt) : M.chooseReceiptTop)
   if (S.st.receipt && (!S.plan || S.plan.receipt !== S.st.receipt)) setTimeout(() => pullPlan(S.st.receipt, true), 500)
+  if (S.st.receipt) refreshDb()
 }
 

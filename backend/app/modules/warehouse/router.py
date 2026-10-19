@@ -175,3 +175,11 @@ class ImportBody(BaseModel):
 @router.post("/import")
 def import_old(body: ImportBody, user: User = Run, responsible: bool = Responsible, session: Session = Db) -> dict:
     return service.import_old(session, user, body.data, body.pin, responsible)
+
+
+# ---------- состояние приёмки (только чтение) ----------
+
+
+@router.get("/receipt-state")
+def receipt_state(receipt: str, full: bool = False, _: User = Run, session: Session = Db) -> dict:
+    return service.receipt_state(session, receipt, full)

@@ -1,4 +1,4 @@
-import { S, getPalCache, printClosed } from '../store.js'
+import { view, getPalCache, printClosed } from '../store.js'
 import { fmtTime } from '../lib/format.js'
 import strings from '../strings.js'
 import { useStore } from './useStore.js'
@@ -7,7 +7,7 @@ const u = strings.closed
 
 export default function ClosedTable() {
   useStore()
-  const { st } = S
+  const closed = view().closed
   const pc = getPalCache()
   return (
     <section className="wh-closed">
@@ -23,8 +23,8 @@ export default function ClosedTable() {
             </tr>
           </thead>
           <tbody>
-            {st.closed.length ? (
-              st.closed.map((c, i) => {
+            {closed.length ? (
+              closed.map((c, i) => {
                 const pal = c.pallet || pc[c.code]
                 return (
                   <tr key={c.code}>
@@ -32,7 +32,7 @@ export default function ClosedTable() {
                     <td>{c.box}</td>
                     <td>{c.count != null ? c.count : c.items.length}</td>
                     <td>{pal ? <b>{pal}</b> : <span className="wh-bad">{u.noPallet}</span>}</td>
-                    <td>{fmtTime(c.opened)}</td>
+                    <td>{c.opened ? fmtTime(c.opened) : ''}</td>
                     <td>{fmtTime(c.closedAt)}</td>
                     <td><button type="button" onClick={() => printClosed(i)}>{u.print}</button></td>
                   </tr>
