@@ -354,8 +354,9 @@ def list_sectors(session: Session) -> list[dict]:
     return [{"cat": r.category, "sector": r.section, "boxes": r.boxes} for r in rows]
 
 
-def add_sector(session: Session, user: User, cat, sector, pin, known: list) -> list[dict]:
-    check_pin(pin)
+def add_sector(session: Session, user: User, cat, sector, pin, known: list, responsible: bool = False) -> list[dict]:
+    if not responsible:  # TODO(Q-G3): ответственный по группе проходит без ПИН
+        check_pin(pin)
     cat, sector = part(cat), part(sector)
     _lock(session)
     if sector == cat:
@@ -379,13 +380,14 @@ def add_sector(session: Session, user: User, cat, sector, pin, known: list) -> l
         text("INSERT INTO trendsetter_hub.warehouse_extra_sections (section, category, assigned_by) VALUES (:s, :c, :u)"),
         {"s": sector, "c": cat, "u": user.id},
     )
-    log_action(session, user.id, "warehouse.sector_add", MODULE_ID, category=cat, section=sector)
+    log_action(session, user.id, "warehouse.sector_add", MODULE_ID, category=cat, section=sector, via="group" if responsible else "pin")
     session.commit()
     return list_sectors(session)
 
 
-def remove_sector(session: Session, user: User, cat, sector, pin) -> list[dict]:
-    check_pin(pin)
+def remove_sector(session: Session, user: User, cat, sector, pin, responsible: bool = False) -> list[dict]:
+    if not responsible:  # TODO(Q-G3): ответственный по группе проходит без ПИН
+        check_pin(pin)
     cat, sector = part(cat), part(sector)
     _lock(session)
     if session.execute(
@@ -395,7 +397,7 @@ def remove_sector(session: Session, user: User, cat, sector, pin) -> list[dict]:
     session.execute(
         text("DELETE FROM trendsetter_hub.warehouse_extra_sections WHERE section = :s AND category = :c"), {"s": sector, "c": cat}
     )
-    log_action(session, user.id, "warehouse.sector_remove", MODULE_ID, category=cat, section=sector)
+    log_action(session, user.id, "warehouse.sector_remove", MODULE_ID, category=cat, section=sector, via="group" if responsible else "pin")
     session.commit()
     return list_sectors(session)
 
@@ -487,8 +489,9 @@ def sync(session: Session, user: User, ops: list[dict], worker: str) -> dict:
 # ---------- импорт старых коробов (по ПИН) ----------
 
 
-def import_old(session: Session, user: User, d: dict, pin) -> dict:
-    check_pin(pin)
+def import_old(session: Session, user: User, d: dict, pin, responsible: bool = False) -> dict:
+    if not responsible:  # TODO(Q-G3): ответственный по группе проходит без ПИН
+        check_pin(pin)
     boxes = d.get("boxes") or []
     scans = d.get("scans") or []
     receipt_name = str(d.get("receipt") or "").strip()
@@ -591,6 +594,6 @@ def import_old(session: Session, user: User, d: dict, pin) -> dict:
             text("INSERT INTO trendsetter_hub.warehouse_pallet_pointers (section, current_pallet) VALUES (:s, :p) ON CONFLICT DO NOTHING"),
             {"s": sec, "p": int(b["pallet"].split("_P")[1])},
         )
-    log_action(session, user.id, "warehouse.import_old", MODULE_ID, receipt=receipt_name, boxes=len(boxes), scans=len(scans))
+    log_action(session, user.id, "warehouse.import_old", MODULE_ID, receipt=receipt_name, boxes=len(boxes), scans=len(scans), via="group" if responsible else "pin")
     session.commit()
     return {"boxes": len(boxes), "scans": len(scans), "marks": len(kis)}

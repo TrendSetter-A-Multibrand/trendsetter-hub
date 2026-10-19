@@ -1,17 +1,18 @@
-"""Маршруты модуля «Склад». Все требуют права запуска модуля: admin/superuser или сотрудник отдела «Склад»."""
+"""Маршруты модуля «Склад». Все требуют права запуска модуля: admin/superuser, сотрудник отдела «Склад» или участник группы с правом запуска."""
 from typing import Any
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.core.deps import require_module_run
+from app.core.deps import module_responsible, require_module_run
 from app.core.models import User
 from app.db.database import get_session
 from app.modules.warehouse import service
 
 router = APIRouter(prefix="/modules/warehouse", tags=["warehouse"])
 Run = Depends(require_module_run(service.MODULE_ID))
+Responsible = Depends(module_responsible(service.MODULE_ID))
 Db = Depends(get_session)
 
 
@@ -129,13 +130,13 @@ class SectorBody(BaseModel):
 
 
 @router.post("/sectors")
-def add_sector(body: SectorBody, user: User = Run, session: Session = Db) -> list[dict]:
-    return service.add_sector(session, user, body.cat, body.sector, body.pin, body.known)
+def add_sector(body: SectorBody, user: User = Run, responsible: bool = Responsible, session: Session = Db) -> list[dict]:
+    return service.add_sector(session, user, body.cat, body.sector, body.pin, body.known, responsible)
 
 
 @router.post("/sectors/remove")
-def remove_sector(body: SectorBody, user: User = Run, session: Session = Db) -> list[dict]:
-    return service.remove_sector(session, user, body.cat, body.sector, body.pin)
+def remove_sector(body: SectorBody, user: User = Run, responsible: bool = Responsible, session: Session = Db) -> list[dict]:
+    return service.remove_sector(session, user, body.cat, body.sector, body.pin, responsible)
 
 
 # ---------- Честный знак, запись сканов, импорт ----------
@@ -172,5 +173,5 @@ class ImportBody(BaseModel):
 
 
 @router.post("/import")
-def import_old(body: ImportBody, user: User = Run, session: Session = Db) -> dict:
-    return service.import_old(session, user, body.data, body.pin)
+def import_old(body: ImportBody, user: User = Run, responsible: bool = Responsible, session: Session = Db) -> dict:
+    return service.import_old(session, user, body.data, body.pin, responsible)

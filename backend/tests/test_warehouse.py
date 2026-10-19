@@ -257,3 +257,70 @@ def test_import_old(client, wh, db):
     assert count(db, "scans") == 3
     # импортированный короб можно открыть повторно, а следующий номер категории 1 — 0003
     assert client.post(f"{BASE}/box-code", json={"category": "1"}, headers=wh).json() == "01_0003"
+
+
+# ---------- ответственный по группе доступа ----------
+
+
+def make_group(db, name, permissions, user_ids):
+    from app.core.models import AccessGroup, AccessGroupMember, AccessGroupPermission
+
+    group = AccessGroup(name=name)
+    db.add(group)
+    db.flush()
+    for module_id, permission in permissions.items():
+        db.add(AccessGroupPermission(group_id=group.id, module_id=module_id, permission=permission))
+    for user_id in user_ids:
+        db.add(AccessGroupMember(group_id=group.id, user_id=user_id))
+    db.commit()
+    return group
+
+
+def test_responsible_by_group_skips_pin(client, db):
+    buyer = make_user(db, "buyer@example.com", "employee", [dept_id(db, "purchasing")])
+    make_group(db, "Ответственные склада", {"warehouse": "responsible"}, [buyer.id])
+    h = login(client, "buyer@example.com")
+    r = client.post(f"{BASE}/sectors", json={"cat": "5", "sector": "6", "pin": "", "known": ["5"]}, headers=h)
+    assert r.status_code == 200, r.text
+    via = db.execute(text("SELECT details->>'via' FROM trendsetter_hub.audit_log WHERE action = 'warehouse.sector_add'")).scalar_one()
+    assert via == "group"
+    assert client.post(f"{BASE}/sectors/remove", json={"cat": "5", "sector": "6", "pin": ""}, headers=h).status_code == 200
+
+
+def test_group_run_without_responsible_still_needs_pin(client, db):
+    buyer = make_user(db, "buyer@example.com", "employee", [dept_id(db, "purchasing")])
+    make_group(db, "Запуск склада", {"warehouse": "run"}, [buyer.id])
+    h = login(client, "buyer@example.com")
+    r = client.post(f"{BASE}/sectors", json={"cat": "5", "sector": "6", "pin": "", "known": ["5"]}, headers=h)
+    assert r.status_code == 403 and r.json() == {"detail": "Неверный ПИН"}
+
+
+def test_pin_by_pin_logs_via_pin(client, wh, db):
+    r = client.post(f"{BASE}/sectors", json={"cat": "5", "sector": "6", "pin": "4321", "known": ["5"]}, headers=wh)
+    assert r.status_code == 200
+    via = db.execute(text("SELECT details->>'via' FROM trendsetter_hub.audit_log WHERE action = 'warehouse.sector_add'")).scalar_one()
+    assert via == "pin"
+
+
+def test_responsible_passes_when_pin_not_configured(client, db, monkeypatch):
+    monkeypatch.delenv("HUB_WAREHOUSE_PIN")
+    buyer = make_user(db, "buyer@example.com", "employee", [dept_id(db, "purchasing")])
+    make_user(db, "wh@example.com", "employee", [dept_id(db, "warehouse")])
+    make_group(db, "Ответственные склада", {"warehouse": "responsible"}, [buyer.id])
+    body = {"cat": "5", "sector": "6", "pin": "", "known": ["5"]}
+    assert client.post(f"{BASE}/sectors", json=body, headers=login(client, "buyer@example.com")).status_code == 200
+    r = client.post(f"{BASE}/sectors", json=body, headers=login(client, "wh@example.com"))
+    assert r.status_code == 403 and "не настроен" in r.json()["detail"]
+
+
+def test_me_module_responsible(client, db):
+    from app.core.registry import MODULES
+
+    buyer = make_user(db, "buyer@example.com", "employee", [dept_id(db, "purchasing")])
+    make_user(db, "admin@example.com", "admin")
+    make_group(db, "Ответственные склада", {"warehouse": "responsible"}, [buyer.id])
+    me = client.get("/core/me", headers=login(client, "buyer@example.com")).json()
+    assert me["module_responsible"] == {mod.id: mod.id == "warehouse" for mod in MODULES}
+    assert me["module_access"]["warehouse"] == "run"
+    admin = client.get("/core/me", headers=login(client, "admin@example.com")).json()
+    assert admin["module_responsible"] == {mod.id: False for mod in MODULES}

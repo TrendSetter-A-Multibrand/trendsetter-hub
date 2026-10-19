@@ -26,6 +26,18 @@ def validate_department_name(name: str | None, existing: list[tuple[int, str]], 
     return None
 
 
+def validate_group_name(name: str | None, existing: list[tuple[int, str]], self_id: int | None = None) -> str | None:
+    value = (name or "").strip()
+    if not value:
+        return m.GROUP_NAME_EMPTY
+    if len(value) > 64:
+        return m.GROUP_NAME_TOO_LONG
+    lower = value.lower()
+    if any(group_id != self_id and group_name.strip().lower() == lower for group_id, group_name in existing):
+        return m.GROUP_NAME_DUPLICATE
+    return None
+
+
 def validate_department_code(code: str | None, existing_codes: list[str]) -> str | None:
     if not CODE_RE.match(code or ""):
         return m.CODE_INVALID
