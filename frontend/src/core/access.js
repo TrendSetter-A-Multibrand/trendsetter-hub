@@ -16,15 +16,15 @@ function baseAccess(user, moduleDepartmentIds) {
     default: {
       const own = user.department_ids ?? []
       const shared = (moduleDepartmentIds ?? []).some((id) => own.includes(id))
-      return shared ? 'run' : 'view'
+      return shared ? 'run' : 'none'
     }
   }
 }
 
 // Доступ к модулю: 'none' | 'structure' | 'view' | 'run'. Группы только расширяют права (максимум).
 export function computeModuleAccess(user, moduleDepartmentIds, groupPermissions = []) {
+  if (!user || user.is_active === false || !ACCESS_LEVELS.includes(user.access_level)) return 'none'
   const base = baseAccess(user, moduleDepartmentIds)
-  if (base === 'none') return 'none'
   const perms = [...groupPermissions]
   // TODO(Q-G1): группа поднимает и viewer
   const granted =
