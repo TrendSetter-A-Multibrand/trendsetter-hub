@@ -13,7 +13,7 @@ import pricingStrings from './pricing/strings.js'
 import warehouseStrings from './warehouse/strings.js'
 
 export const MODULES = [
-  { id: 'purchasing', status: 'mvp', strings: purchasingStrings, Component: lazy(() => import('./purchasing/PurchasingPage.jsx')) },
+  { id: 'purchasing', status: 'roadmap', strings: purchasingStrings, Component: lazy(() => import('./purchasing/PurchasingPage.jsx')) },
   { id: 'warehouse', status: 'mvp', wide: true, strings: warehouseStrings, Component: lazy(() => import('./warehouse/WarehousePage.jsx')) },
   { id: 'wb', status: 'roadmap', strings: wbStrings, Component: null },
   { id: 'analytics', status: 'roadmap', strings: analyticsStrings, Component: null },

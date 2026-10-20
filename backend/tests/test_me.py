@@ -22,7 +22,7 @@ def test_me_employee_runs_only_own_department_modules(client, db):
     assert me["can_manage_users"] is False
     assert [d["code"] for d in me["departments"]] == ["warehouse"]
     assert me["module_access"]["warehouse"] == "run"
-    assert me["module_access"]["purchasing"] == "view"
+    assert me["module_access"]["purchasing"] == "none"
 
 
 def test_me_viewer_sees_only_structure(client, db):

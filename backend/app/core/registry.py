@@ -15,7 +15,7 @@ class ModuleManifest:
 
 
 MODULES: list[ModuleManifest] = [
-    ModuleManifest("purchasing", "Закупки", "mvp"),
+    ModuleManifest("purchasing", "Закупки", "roadmap"),
     ModuleManifest("warehouse", "Склад", "mvp", warehouse_router),
     ModuleManifest("wb", "WB-карточки", "roadmap"),
     ModuleManifest("analytics", "Аналитика", "roadmap"),

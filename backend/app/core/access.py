@@ -17,9 +17,9 @@ def compute_module_access(
     module_department_ids: Iterable[int],
     group_permissions: Iterable[str] = (),
 ) -> str:
-    base = _base_access(access_level, is_active, department_ids, module_department_ids)
-    if base == "none":
+    if access_level is None or not is_active or access_level not in ACCESS_LEVELS:
         return "none"
+    base = _base_access(access_level, is_active, department_ids, module_department_ids)
     # Группы только расширяют права; неизвестные значения игнорируются
     permissions = set(group_permissions)
     # TODO(Q-G1): группа поднимает и viewer
@@ -40,7 +40,7 @@ def _base_access(access_level, is_active, department_ids, module_department_ids)
     if access_level == "viewer":
         return "structure"
     shared = set(department_ids) & set(module_department_ids)
-    return "run" if shared else "view"
+    return "run" if shared else "none"
 
 
 def is_module_responsible(*, access_level: str | None, is_active: bool, group_permissions: Iterable[str]) -> bool:
