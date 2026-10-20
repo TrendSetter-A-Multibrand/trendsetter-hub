@@ -22,11 +22,14 @@ export default function AppLayout() {
   const location = useLocation()
   const navigate = useNavigate()
 
-  const visibleModules = MODULES.map((m, i) => ({ ...m, idx: String(i + 1).padStart(2, '0') })).filter(
-    (m) => (me.module_access[m.id] ?? 'none') !== 'none',
-  )
+  // Все модули остаются в меню; недоступные открываются заглушкой «Нет доступа» (ModulePage)
+  const navModules = MODULES.map((m, i) => ({
+    ...m,
+    idx: String(i + 1).padStart(2, '0'),
+    allowed: (me.module_access[m.id] ?? 'none') !== 'none',
+  }))
 
-  const wide = Boolean(visibleModules.find((m) => m.wide && location.pathname === `/modules/${m.id}`))
+  const wide = Boolean(navModules.find((m) => m.allowed && m.wide && location.pathname === `/modules/${m.id}`))
 
   const dropdownItems = [
     {
@@ -66,11 +69,11 @@ export default function AppLayout() {
           </Link>
           <div className="nav-label mono">{s.departmentsLabel}</div>
           <div className="nav-list">
-            {visibleModules.map((m) => {
+            {navModules.map((m) => {
               const path = `/modules/${m.id}`
               const active = location.pathname === path
               return (
-                <Link key={m.id} to={path} className={`nav-item${m.Component ? ' live' : ''}${active ? ' active' : ''}`}>
+                <Link key={m.id} to={path} className={`nav-item${m.Component && m.allowed ? ' live' : ''}${active ? ' active' : ''}`}>
                   <span className="nav-dot" />
                   <span className="nav-text">
                     <span className="nav-title">{m.strings.tool}</span>
