@@ -4,15 +4,17 @@ import strings from '../strings.js'
 
 export default function ForbiddenPage() {
   return (
-    <Result
-      status="403"
-      title="403"
-      subTitle={strings.forbidden}
-      extra={
-        <Link to="/">
-          <Button type="primary">{strings.toHome}</Button>
-        </Link>
-      }
-    />
+    <div className="forbidden">
+      <Result
+        status="403"
+        title="403"
+        subTitle={strings.forbidden}
+        extra={
+          <Link to="/">
+            <Button type="primary">{strings.toHome}</Button>
+          </Link>
+        }
+      />
+    </div>
   )
 }
