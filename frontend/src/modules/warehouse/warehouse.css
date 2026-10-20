@@ -113,8 +113,8 @@
 .wh-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
 .wh-cell { background: #F6F4F2; border: 2px solid var(--line); border-radius: 4px; padding: 6px 8px; display: flex; flex-direction: column; }
 .wh-cell .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; }
-.wh-cell .num { font-size: 34px; font-weight: 700; line-height: .95; word-break: break-all; }
-.wh-cell .cnt { font-size: 20px; font-weight: 700; text-align: right; white-space: nowrap; }
+.wh-cell .num { font-size: 28px; font-weight: 700; line-height: .95; word-break: break-all; }
+.wh-cell .cnt { font-size: 13px; font-weight: 700; text-align: right; white-space: nowrap; }
 .wh-cell .cnt small { display: block; font-size: 12px; font-weight: 400; color: var(--muted); }
 .wh-cell .bar { height: 6px; background: #E6E1DE; border-radius: 3px; margin-top: 6px; overflow: hidden; }
 .wh-cell .bar i { display: block; height: 100%; background: var(--ok); }
