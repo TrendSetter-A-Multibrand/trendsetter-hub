@@ -236,10 +236,10 @@ a:hover { color: #7E1A1C; }
 .ant-collapse-header-text { text-transform: lowercase; }
 
 /* ---- страница «Нет доступа»: по центру, масштабируется под экран ---- */
+.page:has(.forbidden) { max-width: none; }
 .forbidden { min-height: calc(100vh - 160px); display: flex; align-items: center; justify-content: center; }
-.forbidden .ant-result { width: 100%; max-width: 720px; padding: 24px 16px; }
-.forbidden .ant-result-image { width: clamp(220px, 32vw, 460px); height: auto; }
-.forbidden .ant-result-image svg { width: 100%; height: auto; }
-.forbidden .ant-result-title { font-size: clamp(32px, 4vw, 56px); line-height: 1.1; }
-.forbidden .ant-result-subtitle { font-size: clamp(15px, 1.4vw, 20px); }
-.forbidden .ant-btn { height: auto; padding: 10px 24px; font-size: clamp(14px, 1.2vw, 18px); }
+.forbidden .ant-result { width: 100%; max-width: 900px; padding: 24px 16px; }
+.forbidden .ant-result .ant-result-image { width: clamp(220px, 28vw, 520px) !important; height: auto !important; }
+.forbidden .ant-result-title { font-size: clamp(32px, 4vw, 64px); line-height: 1.1; }
+.forbidden .ant-result-subtitle { font-size: clamp(15px, 1.4vw, 22px); }
+.forbidden .ant-btn { height: auto; padding: 10px 24px; font-size: clamp(14px, 1.2vw, 20px); }
