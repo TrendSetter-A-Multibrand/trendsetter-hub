@@ -12,6 +12,7 @@ class ModuleManifest:
     title: str
     status: str  # "mvp" | "roadmap"
     router: APIRouter | None = None  # None — модуль без бэкенда (roadmap или пока на моках)
+    for_all: bool = False  # True — виден всем активным сотрудникам независимо от отдела (просмотр)
 
 
 MODULES: list[ModuleManifest] = [
@@ -20,4 +21,6 @@ MODULES: list[ModuleManifest] = [
     ModuleManifest("wb", "WB-карточки", "roadmap"),
     ModuleManifest("analytics", "Аналитика", "roadmap"),
     ModuleManifest("pricing", "Цены", "roadmap"),
+    ModuleManifest("hr", "HR", "roadmap"),
+    ModuleManifest("team", "Карта команды", "roadmap", for_all=True),
 ]

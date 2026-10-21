@@ -16,10 +16,14 @@ def compute_module_access(
     department_ids: Iterable[int],
     module_department_ids: Iterable[int],
     group_permissions: Iterable[str] = (),
+    for_all: bool = False,
 ) -> str:
     if access_level is None or not is_active or access_level not in ACCESS_LEVELS:
         return "none"
     base = _base_access(access_level, is_active, department_ids, module_department_ids)
+    # Модуль «для всех» (for_all): сотрудник без своего отдела получает просмотр
+    if for_all and base == "none":
+        base = "view"
     # Группы только расширяют права; неизвестные значения игнорируются
     permissions = set(group_permissions)
     # TODO(Q-G1): группа поднимает и viewer

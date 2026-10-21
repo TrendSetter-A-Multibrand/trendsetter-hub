@@ -32,6 +32,9 @@ def require_manager(user: User = Depends(get_current_user)) -> User:
 
 def module_rights(session: Session, user: User, module_ids: list[str]) -> dict[str, tuple[str, bool]]:
     """{module_id: (access, responsible)}; читается из БД на каждый вызов (права групп действуют сразу)."""
+    from app.core.registry import MODULES  # отложенный импорт: registry тянет роутеры модулей, а они — deps
+
+    for_all_ids = {mod.id for mod in MODULES if mod.for_all}
     own = session.scalars(select(UserDepartment.department_id).where(UserDepartment.user_id == user.id)).all()
     module_deps: dict[str, list[int]] = {}
     group_perms: dict[str, list[str]] = {}
@@ -54,6 +57,7 @@ def module_rights(session: Session, user: User, module_ids: list[str]) -> dict[s
                 department_ids=own,
                 module_department_ids=module_deps.get(module_id, []),
                 group_permissions=group_perms.get(module_id, []),
+                for_all=module_id in for_all_ids,
             ),
             is_module_responsible(
                 access_level=user.access_level, is_active=user.is_active, group_permissions=group_perms.get(module_id, [])

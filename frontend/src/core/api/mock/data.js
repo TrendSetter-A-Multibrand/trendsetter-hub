@@ -8,6 +8,7 @@ export const data = {
     { id: 3, code: 'analytics', name: 'Аналитика' },
     { id: 4, code: 'pricing', name: 'Ценообразование' },
     { id: 5, code: 'warehouse', name: 'Склад' },
+    { id: 6, code: 'hr', name: 'HR' },
   ],
 
   // Привязка модулей к отделам — данные, а не реестр. Новый модуль добавляется сюда разработчиком.
@@ -17,6 +18,7 @@ export const data = {
     analytics: [3],
     pricing: [4],
     warehouse: [5],
+    hr: [6],
   },
 
   users: [
@@ -150,5 +152,5 @@ export const data = {
     },
   ],
 
-  nextId: { user: 8, department: 5, preset: 4, group: 2 },
+  nextId: { user: 8, department: 6, preset: 4, group: 2 },
 }

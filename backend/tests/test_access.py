@@ -27,6 +27,15 @@ CASES = [
 ]
 
 
+def test_for_all_gives_view_to_employee_without_department():
+    args = {"access_level": "employee", "is_active": True, "department_ids": [], "module_department_ids": []}
+    assert compute_module_access(**args) == "none"
+    assert compute_module_access(**args, for_all=True) == "view"
+    assert compute_module_access(**{**args, "access_level": "viewer"}, for_all=True) == "structure"
+    assert compute_module_access(**{**args, "is_active": False}, for_all=True) == "none"
+    assert compute_module_access(**{**args, "department_ids": [1], "module_department_ids": [1]}, for_all=True) == "run"
+
+
 @pytest.mark.parametrize("n,user,module_deps,expected", CASES)
 def test_compute_module_access(n, user, module_deps, expected):
     assert (
