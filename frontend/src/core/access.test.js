@@ -61,6 +61,14 @@ for (const [n, user, moduleDeps, groups, expected] of groupCases) {
   })
 }
 
+test('computeModuleAccess: forAll даёт сотруднику без отдела просмотр', () => {
+  assert.equal(computeModuleAccess(u('employee', []), [], [], true), 'view')
+  assert.equal(computeModuleAccess(u('employee', []), [], [], false), 'none')
+  assert.equal(computeModuleAccess(u('viewer', []), [], [], true), 'structure')
+  assert.equal(computeModuleAccess(u('employee', [1], { is_active: false }), [], [], true), 'none')
+  assert.equal(computeModuleAccess(u('employee', [1]), [1], [], true), 'run')
+})
+
 test('computeModuleAccess: права групп по умолчанию пустые', () => {
   assert.equal(computeModuleAccess(u('viewer', []), [1]), 'structure')
 })

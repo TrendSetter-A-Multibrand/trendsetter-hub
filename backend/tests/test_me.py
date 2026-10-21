@@ -13,7 +13,7 @@ def test_me_for_admin(client, db):
     assert me["full_name"] == "Карен В."
     assert me["can_manage_users"] is True
     assert me["departments"] == []
-    assert me["module_access"] == {m: "run" for m in ("purchasing", "warehouse", "wb", "analytics", "pricing")}
+    assert me["module_access"] == {m: "run" for m in ("purchasing", "warehouse", "wb", "analytics", "pricing", "hr", "team")}
 
 
 def test_me_employee_runs_only_own_department_modules(client, db):

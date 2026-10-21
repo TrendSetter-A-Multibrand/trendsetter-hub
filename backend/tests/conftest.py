@@ -74,7 +74,7 @@ def clean(database):
             "trendsetter_hub.warehouse_receipts, trendsetter_hub.warehouse_box_counters, trendsetter_hub.warehouse_pallet_pointers "
             "RESTART IDENTITY CASCADE"
         )
-        conn.execute("DELETE FROM trendsetter_hub.departments WHERE code NOT IN ('purchasing','warehouse','wb','analytics','pricing')")
+        conn.execute("DELETE FROM trendsetter_hub.departments WHERE code NOT IN ('purchasing','warehouse','wb','analytics','pricing','hr')")
 
 
 @pytest.fixture()

@@ -9,7 +9,7 @@ import {
   validatePassword,
   validationMessages,
 } from '../../admin/validation.js'
-import { MODULES } from '../../../modules/registry.js'
+import { MODULES, getModule } from '../../../modules/registry.js'
 import { ApiError } from '../client.js'
 import { data, DEMO_PASSWORD } from './data.js'
 
@@ -34,7 +34,7 @@ const groupPermissionsOf = (user, moduleId) =>
   data.groups.filter((g) => g.user_ids.includes(user.id) && g.permissions[moduleId]).map((g) => g.permissions[moduleId])
 
 const accessTo = (user, moduleId) =>
-  computeModuleAccess(user, data.moduleDepartments[moduleId] ?? [], groupPermissionsOf(user, moduleId))
+  computeModuleAccess(user, data.moduleDepartments[moduleId] ?? [], groupPermissionsOf(user, moduleId), Boolean(getModule(moduleId)?.forAll))
 
 function checkGroupPermissions(permissions) {
   for (const [moduleId, permission] of Object.entries(permissions)) {

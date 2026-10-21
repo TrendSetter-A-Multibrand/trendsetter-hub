@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 import { Alert, Button, Card, Divider, Form, Input, Space, Typography } from 'antd'
 import { api } from '../api/index.js'
 import { DEMO_MODE } from '../config.js'
@@ -11,13 +11,12 @@ const s = strings.login
 
 export default function LoginPage() {
   const { me, expired, login, demoLogin } = useAuth()
-  const location = useLocation()
   const navigate = useNavigate()
   const [error, setError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [demoUsers, setDemoUsers] = useState([])
-  const from = location.state?.from
-  const target = from ? `${from.pathname}${from.search ?? ''}${from.hash ?? ''}` : '/'
+  // После входа всегда открывается «Главная» (возврат на прежнюю страницу не используется)
+  const target = '/'
 
   useEffect(() => {
     if (!DEMO_MODE) return

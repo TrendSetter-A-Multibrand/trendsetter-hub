@@ -35,6 +35,9 @@ SQL-скрипты для базы хаба. Секретов (паролей) �
 2. Под doadmin выполнить `deploy/stamp_alembic_0002.sql` (версия миграции `0001` → `0002`).
 3. Только после этого — merge в `main`. Иначе деплой будет «зелёным», а `/core/me` и Склад начнут отвечать 500.
 
+## Модули «HR» и «Карта команды»
+`03_hr_team_modules.sql` (ревизия `0003`): отдел `hr` и привязка модуля `hr` к нему. Модуль `team` привязки не имеет: он помечен `for_all` в манифесте бэкенда и виден всем активным сотрудникам (просмотр). Порядок выката как у группы доступа: под doadmin `db/03_hr_team_modules.sql`, затем `deploy/stamp_alembic_0003.sql` (`0002` → `0003`), только потом merge в `main`.
+
 ## Модуль «Склад»
 Листы Google Таблицы «Склад-приёмка» стали таблицами: Приемки → `warehouse_receipts`, Раскладки → `warehouse_receipt_plans`, Счётчики → `warehouse_box_counters` и `warehouse_pallet_pointers`, Сканы → `warehouse_scans`, Короба → `warehouse_boxes`, Хранение → `warehouse_storage_boxes`, Хранение — архив → `warehouse_storage_archive`, Секции → `warehouse_extra_sections`, Коды ЧЗ → `warehouse_marks`, Сводка → представление `warehouse_receipt_summary`. Условия, которые раньше защищал `LockService`, держит база: уникальность кода ЧЗ, одно место на короб, уникальное имя приёмки, номера коробов через функцию `warehouse_next_box_number()`, повтор отправки скана отсекается по id.
 

@@ -22,9 +22,11 @@ function baseAccess(user, moduleDepartmentIds) {
 }
 
 // Доступ к модулю: 'none' | 'structure' | 'view' | 'run'. Группы только расширяют права (максимум).
-export function computeModuleAccess(user, moduleDepartmentIds, groupPermissions = []) {
+// forAll — модуль виден всем активным сотрудникам независимо от отдела (просмотр)
+export function computeModuleAccess(user, moduleDepartmentIds, groupPermissions = [], forAll = false) {
   if (!user || user.is_active === false || !ACCESS_LEVELS.includes(user.access_level)) return 'none'
-  const base = baseAccess(user, moduleDepartmentIds)
+  let base = baseAccess(user, moduleDepartmentIds)
+  if (forAll && base === 'none') base = 'view'
   const perms = [...groupPermissions]
   // TODO(Q-G1): группа поднимает и viewer
   const granted =
