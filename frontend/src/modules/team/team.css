@@ -211,3 +211,36 @@
 .tm-report-title { font-size: 12px; color: var(--muted); }
 .tm-report-sub { font-size: 10.5px; color: var(--faint); letter-spacing: 0; }
 .tm-reports-count { font-size: 10.5px; color: var(--dim); letter-spacing: 0; }
+
+/* ---- вид «Отпуска» ---- */
+.tm-tl-wrap { padding: 16px 28px 64px; }
+.tm-tl-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.tm-tl-title { margin: 0 10px; font-size: 20px; font-weight: 600; letter-spacing: -0.02em; min-width: 150px; }
+.tm-tl-legend { display: flex; gap: 14px; margin-left: auto; font-size: 12px; color: var(--muted); }
+.tm-tl-legend span { display: flex; align-items: center; gap: 6px; }
+.tm-tl-legend i { width: 12px; height: 12px; border-radius: 3px; display: block; }
+.tm-tl-loading { font-size: 11px; color: var(--faint); }
+.tm-tl-empty { color: var(--muted); font-size: 14px; }
+.tm-tl-panels { display: flex; flex-direction: column; gap: 16px; }
+.tm-tl { background: #fff; border: 1px solid #E6E1DE; border-radius: 10px; overflow-x: auto; }
+.tm-tl-row { display: grid; grid-template-columns: 240px repeat(var(--n), minmax(24px, 1fr)); min-width: calc(240px + var(--n) * 24px); background: #fff; border-top: 1px solid #F0ECEA; }
+.tm-tl-row.head { border-top: 0; }
+.tm-tl-row > * { grid-row: 1; }
+.tm-tl-row.person { cursor: pointer; }
+.tm-tl-row.person:hover { background: #FAF8F7; }
+.tm-tl-name { grid-column: 1; position: sticky; left: 0; z-index: 3; display: flex; align-items: center; gap: 8px; min-width: 0; padding: 6px 8px; background: inherit; border-right: 1px solid #F0ECEA; }
+.tm-tl-row.head .tm-tl-name { background: #fff; padding-top: 10px; padding-bottom: 10px; }
+.tm-tl-person { flex: 1; min-width: 0; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tm-tl-cell { border-left: 1px solid #F4F0EE; min-height: 34px; }
+.tm-tl-cell.we { background: #F6F3F1; }
+.tm-tl-cell.today { background: #FBF0F0; box-shadow: inset 1.5px 0 0 var(--red), inset -1.5px 0 0 var(--red); }
+.tm-tl-cell.head { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-height: 44px; font-size: 11px; }
+.tm-tl-wd { font-size: 9.5px; color: var(--faint); letter-spacing: 0; }
+.tm-tl-dn { font-weight: 500; }
+.tm-tl-seg { z-index: 2; align-self: center; height: 18px; border-radius: 4px; margin: 0 1px; cursor: pointer; }
+
+/* ---- метка «в отпуске» ---- */
+.tm-away { align-self: flex-start; margin-top: 3px; font-size: 10px; line-height: 1; padding: 2px 6px; border-radius: 8px; background: #E8F1EC; color: #2F6B4F; border: 1px solid #C5DCCF; letter-spacing: 0; white-space: nowrap; }
+.tm-ceo-text .tm-away, .tm-asst-text .tm-away { margin-top: 2px; }
+.tm-away-abs { position: absolute; bottom: -9px; left: 10px; margin: 0; z-index: 1; }
+.tm-drawer-name .tm-away { margin-top: 4px; font-size: 11px; padding: 3px 8px; }

@@ -6,6 +6,7 @@ import strings from '../strings.js'
 import { splitValues, valuesOfPerson } from '../lib/values.js'
 import { directionOptions, managerOptions, splitFullName } from '../lib/options.js'
 import ProfileForm from '../../team/components/ProfileForm.jsx'
+import PersonTabs from './PersonTabs.jsx'
 
 const s = strings.people
 // manager_claim — подсказка для HR, в форме HR не показывается
@@ -36,6 +37,7 @@ export default function PersonModal({ person, fromUser, fields, people, directio
   const [userId, setUserId] = useState(null)
   const [photo, setPhoto] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [tab, setTab] = useState('card')
 
   const freeUsers = users.filter((u) => u.personId === null)
   const setValue = (key, v) => setValues((cur) => ({ ...cur, [key]: v }))
@@ -80,18 +82,8 @@ export default function PersonModal({ person, fromUser, fields, people, directio
   }
 
   const title = isEdit ? s.editTitle(person.name) : fromUser ? s.addFromUserTitle : s.addTitle
-  return (
-    <Modal
-      open
-      width={640}
-      title={title}
-      okText={coreStrings.save}
-      cancelText={coreStrings.cancel}
-      confirmLoading={saving}
-      onCancel={onClose}
-      onOk={submit}
-      styles={{ body: { maxHeight: '70vh', overflowY: 'auto', paddingRight: 8 } }}
-    >
+  const card = (
+    <>
       {!isEdit && (
         <Labeled label={fromUser ? s.user : s.userOptional}>
           <Select
@@ -141,6 +133,24 @@ export default function PersonModal({ person, fromUser, fields, people, directio
         {s.formSection}
       </Divider>
       <ProfileForm fields={fields} values={values} onChange={setValue} photo={photo} onPhoto={setPhoto} currentPhoto={person?.thumb ?? null} skip={HR_SKIP} />
+    </>
+  )
+
+  // у существующего сотрудника форма карточки — одна из вкладок; на остальных вкладках свои кнопки «Сохранить», футер модалки скрыт
+  return (
+    <Modal
+      open
+      width={720}
+      title={title}
+      okText={coreStrings.save}
+      cancelText={coreStrings.cancel}
+      confirmLoading={saving}
+      onCancel={onClose}
+      onOk={submit}
+      footer={isEdit && tab !== 'card' ? null : undefined}
+      styles={{ body: { maxHeight: '70vh', overflowY: 'auto', paddingRight: 8 } }}
+    >
+      {isEdit ? <PersonTabs person={person} tab={tab} onTab={setTab} card={card} /> : card}
     </Modal>
   )
 }

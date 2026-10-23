@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import Avatar from './Avatar.jsx'
+import AwayTag from './AwayTag.jsx'
 import strings from '../strings.js'
 import { cardState, isOpen } from '../lib/tree.js'
 import { layoutScheme, zoomAt } from '../lib/scheme.js'
@@ -11,7 +12,7 @@ const LINE = '#D3CCC9'
 const clampZoom = (z) => Math.min(1.5, Math.max(0.3, Math.round(z * 10) / 10))
 const canFullscreen = typeof document !== 'undefined' && !!document.documentElement.requestFullscreen
 
-export default function SchemeView({ idx, selectedId, matches, path, collapsed, forceOpen, dirFilter, onSelect, onToggle, children }) {
+export default function SchemeView({ idx, selectedId, matches, path, collapsed, forceOpen, dirFilter, away, onSelect, onToggle, children }) {
   const { by, ceoId, assistantIds, dirs } = idx
   const [zoom, setZoom] = useState(0.8)
   const scrollRef = useRef(null)
@@ -198,6 +199,7 @@ export default function SchemeView({ idx, selectedId, matches, path, collapsed, 
                     }
                   }}
                 >
+                  <AwayTag away={away[n.id]} className="tm-away-abs" />
                   <Avatar person={p} size={32} font={11} />
                   <div className="tm-sn-text">
                     <span className="tm-sn-name">{p.name}</span>

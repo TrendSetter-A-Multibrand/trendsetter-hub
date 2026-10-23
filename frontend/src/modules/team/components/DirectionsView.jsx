@@ -1,4 +1,5 @@
 import Avatar from './Avatar.jsx'
+import AwayTag from './AwayTag.jsx'
 import strings from '../strings.js'
 import { buildRows, cardState, rootsOnPath } from '../lib/tree.js'
 
@@ -41,7 +42,7 @@ function Guide({ g }) {
   )
 }
 
-export default function DirectionsView({ idx, selectedId, matches, path, collapsed, forceOpen, dirFilter, onSelect, onToggle }) {
+export default function DirectionsView({ idx, selectedId, matches, path, collapsed, forceOpen, dirFilter, away, onSelect, onToggle }) {
   const { by, ceoId, assistantIds } = idx
   const ceo = ceoId === null ? null : by[ceoId]
   const state = { selectedId, matches, path }
@@ -60,6 +61,7 @@ export default function DirectionsView({ idx, selectedId, matches, path, collaps
               <div className="tm-ceo-text">
                 <span className="tm-ceo-name">{ceo.name}</span>
                 <span className="mono tm-ceo-sub">{s.ceoReports(idx.ceoReports)}</span>
+                <AwayTag away={away[ceo.id]} />
               </div>
             </Card>
             {assistantIds.map((aid) => (
@@ -73,6 +75,7 @@ export default function DirectionsView({ idx, selectedId, matches, path, collaps
                   <div className="tm-asst-text">
                     <span className="tm-asst-name">{by[aid].name}</span>
                     <span className="tm-asst-title">{by[aid].title}</span>
+                    <AwayTag away={away[aid]} />
                   </div>
                 </Card>
               </div>
@@ -114,6 +117,7 @@ export default function DirectionsView({ idx, selectedId, matches, path, collaps
                           </span>
                           <span className="tm-card-title">{person.title}</span>
                           {person.tag && <span className="mono tm-tag">{person.tag}</span>}
+                          <AwayTag away={away[row.id]} />
                         </div>
                         {row.hasKids && (
                           <button

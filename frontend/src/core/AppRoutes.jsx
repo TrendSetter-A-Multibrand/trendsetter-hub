@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage.jsx'
 import HubPage from './pages/HubPage.jsx'
 import ModulePage from './pages/ModulePage.jsx'
 import NotFoundPage from './pages/NotFoundPage.jsx'
+import ProfilePage from './pages/ProfilePage.jsx'
 import AdminPage from './admin/AdminPage.jsx'
 
 export default function AppRoutes() {
@@ -16,6 +17,7 @@ export default function AppRoutes() {
         <Route element={<AppLayout />}>
           <Route index element={<HubPage />} />
           <Route path="modules/:moduleId" element={<ModulePage />} />
+          <Route path="profile" element={<ProfilePage />} />
           <Route element={<RequireAdmin />}>
             <Route path="admin" element={<AdminPage />} />
           </Route>

@@ -13,6 +13,8 @@ import { MODULES, getModule } from '../../../modules/registry.js'
 import { ApiError } from '../client.js'
 import { data, DEMO_PASSWORD } from './data.js'
 import { createTeamHandlers } from './team.js'
+import { createNotificationHandlers } from './notifications.js'
+import { createHrHandlers } from './hr.js'
 
 const err = strings.errors
 
@@ -31,8 +33,11 @@ function requireManager(token) {
   return user
 }
 
-const groupPermissionsOf = (user, moduleId) =>
-  data.groups.filter((g) => g.user_ids.includes(user.id) && g.permissions[moduleId]).map((g) => g.permissions[moduleId])
+// Права на модуль из групп и личные («особые права»); итог считает computeModuleAccess как максимум
+const groupPermissionsOf = (user, moduleId) => [
+  ...data.groups.filter((g) => g.user_ids.includes(user.id) && g.permissions[moduleId]).map((g) => g.permissions[moduleId]),
+  ...[data.userModulePermissions[user.id]?.[moduleId]].filter(Boolean),
+]
 
 const accessTo = (user, moduleId) =>
   computeModuleAccess(user, data.moduleDepartments[moduleId] ?? [], groupPermissionsOf(user, moduleId), Boolean(getModule(moduleId)?.forAll))
@@ -80,6 +85,21 @@ function findUser(id) {
 }
 
 const team = createTeamHandlers({ userFromToken, accessTo })
+const notifications = createNotificationHandlers({ userFromToken, requireManager, findUser })
+const hr = createHrHandlers({
+  userFromToken,
+  accessTo,
+  isResponsible: (user) => isModuleResponsible(user, groupPermissionsOf(user, 'hr')),
+  team,
+  notify: notifications.notify,
+})
+
+// Бейджи модулей из разных источников суммируются (hr: анкеты на проверку + заявки на отпуск, ждущие HR)
+function moduleBadges(user) {
+  const badges = { ...team.moduleBadges(user) }
+  for (const [id, n] of Object.entries(hr.moduleBadges(user))) badges[id] = (badges[id] ?? 0) + n
+  return badges
+}
 
 export const handlers = {
   'POST /auth/login': ({ body }) => {
@@ -120,7 +140,8 @@ export const handlers = {
       module_responsible: Object.fromEntries(
         MODULES.map((m) => [m.id, isModuleResponsible(user, groupPermissionsOf(user, m.id))]),
       ),
-      module_badges: team.moduleBadges(user),
+      module_badges: moduleBadges(user),
+      unread_notifications: notifications.unreadCount(user),
     }
   },
 
@@ -307,4 +328,6 @@ export const handlers = {
   },
 
   ...team.handlers,
+  ...notifications.handlers,
+  ...hr.handlers,
 }

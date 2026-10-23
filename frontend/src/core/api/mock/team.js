@@ -71,7 +71,7 @@ function seed() {
     mk(8, 'Радин', 'Артём', 'SMM-менеджер', 7, 'mkt', { answers: { location: 'Ереван', telegram: 'radin_demo' } }),
     mk(9, 'Орлова', 'Вера', 'Графический дизайнер', 7, 'mkt'),
     mk(10, 'Кравцов', 'Денис', 'Руководитель закупок', 1, 'buy', {
-      team: 'Закупки', email: 'denis.kravtsov@example.com',
+      userId: 10, team: 'Закупки', email: 'denis.kravtsov@example.com',
       answers: {
         location: 'Москва', work_format: 'Пятидневка в офисе',
         responsibility: 'Закупки и отношения с поставщиками, планирование лотов.',
@@ -83,7 +83,7 @@ function seed() {
       userId: 3, email: 'ani@example.com',
       answers: { location: 'Ереван', work_format: 'Гибрид', telegram: 'ani_demo', hobbies: ['Танго'] },
     }),
-    mk(12, 'Жуков', 'Лев', 'Аналитик закупок', 10, 'buy', { team: 'Аналитика' }),
+    mk(12, 'Жуков', 'Лев', 'Аналитик закупок', 10, 'buy', { userId: 11, team: 'Аналитика' }),
     mk(13, 'Захарова', 'Полина', 'Ассистент отдела закупок', 10, 'buy', { tag: 'Закупки' }),
     mk(14, 'Фролова', 'Ирина', 'Руководитель отдела кадров', 1, 'hr', {
       userId: 9, email: 'hr@example.com', tag: 'HR', team: 'HR',
@@ -94,7 +94,7 @@ function seed() {
         hobbies: ['Книжный клуб'], telegram: 'frolova_demo',
       },
     }),
-    mk(15, 'Назаров', 'Тимур', 'Менеджер по персоналу', 14, 'hr', { tag: 'HR' }),
+    mk(15, 'Назаров', 'Тимур', 'Менеджер по персоналу', 14, 'hr', { userId: 13, tag: 'HR' }),
     // скрыт с карты: HR может включить кнопкой «Показывать в карте»
     mk(16, 'Беляев', 'Захар', 'Специалист по рекламе', 8, 'mkt', { userId: 4, email: 'wb@example.com', showInMap: false }),
   ]
@@ -124,7 +124,8 @@ function seed() {
     f(10, 'email', 'Корпоративная почта', 'text', { hint: 'По умолчанию — почта учётки' }),
     f(11, 'hobbies', 'Увлечения и таланты', 'chips', { required: true }),
     f(12, 'socials', 'Соцсети', 'links', { isSystem: false }),
-    f(13, 'photo', 'Фото', 'photo', { required: true }),
+    f(13, 'photo', 'Фото', 'photo', { required: true, sort: 14 }),
+    f(14, 'video_link', 'Видеосвязь: Zoom / Яндекс Телемост', 'links', { isSystem: false, sort: 13 }),
   ]
 
   const submissions = [
@@ -156,7 +157,7 @@ function seed() {
     },
   ]
 
-  return { directions, people, photos, fields, submissions, nextId: { person: 17, field: 14, submission: 4 } }
+  return { directions, people, photos, fields, submissions, nextId: { person: 17, field: 15, submission: 4 } }
 }
 
 function bytesOf(dataUrl) {
@@ -693,5 +694,6 @@ export function createTeamHandlers({ userFromToken, accessTo }) {
     return badges
   }
 
-  return { handlers, moduleBadges }
+  // people/personOf/byId — для mock-слоя HR (hr.js): отпуска привязаны к карточкам и иерархии
+  return { handlers, moduleBadges, people: () => db.people, personOf, byId, directions: () => db.directions }
 }

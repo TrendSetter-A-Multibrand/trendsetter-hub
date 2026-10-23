@@ -30,8 +30,16 @@ export const data = {
     { id: 6, email: 'multi@example.com', full_name: 'Сотрудник закупок и аналитики', access_level: 'employee', department_ids: [1, 3], is_active: true },
     { id: 8, email: 'warehouse@example.com', full_name: 'Сотрудник склада', access_level: 'employee', department_ids: [5], is_active: true },
     { id: 9, email: 'hr@example.com', full_name: 'Сотрудник HR', access_level: 'employee', department_ids: [6], is_active: true },
+    // Демо-карта: руководитель с подчинёнными, коллега по команде, сотрудник без карточки, HR с личным правом responsible
+    { id: 10, email: 'denis.kravtsov@example.com', full_name: 'Кравцов Денис', access_level: 'employee', department_ids: [1], is_active: true },
+    { id: 11, email: 'lev.zhukov@example.com', full_name: 'Жуков Лев', access_level: 'employee', department_ids: [1], is_active: true },
+    { id: 12, email: 'newcomer@example.com', full_name: 'Новичок без карточки', access_level: 'employee', department_ids: [1], is_active: true },
+    { id: 13, email: 'timur.nazarov@example.com', full_name: 'Назаров Тимур', access_level: 'employee', department_ids: [6], is_active: true },
     { id: 7, email: 'former@example.com', full_name: 'Бывший сотрудник', access_level: 'employee', department_ids: [1], is_active: false },
   ],
+
+  // Личные права на модули (поверх групповых; итог — максимум): { userId: { moduleId: 'view' | 'run' | 'responsible' } }
+  userModulePermissions: { 13: { hr: 'responsible' } },
 
   groups: [{ id: 1, name: 'Ответственные склада', permissions: { warehouse: 'responsible' }, user_ids: [8] }],
 
@@ -153,5 +161,5 @@ export const data = {
     },
   ],
 
-  nextId: { user: 8, department: 6, preset: 4, group: 2 },
+  nextId: { user: 14, department: 6, preset: 4, group: 2 },
 }

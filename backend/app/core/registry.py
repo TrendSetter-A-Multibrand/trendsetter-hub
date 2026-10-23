@@ -6,7 +6,8 @@ from fastapi import APIRouter
 from sqlalchemy.orm import Session
 
 from app.core.models import User
-from app.modules.team import service as team_service
+from app.modules.hr import service as hr_service
+from app.modules.hr.router import router as hr_router
 from app.modules.team.router import router as team_router
 from app.modules.warehouse.router import router as warehouse_router
 
@@ -27,6 +28,6 @@ MODULES: list[ModuleManifest] = [
     ModuleManifest("wb", "WB-карточки", "roadmap"),
     ModuleManifest("analytics", "Аналитика", "roadmap"),
     ModuleManifest("pricing", "Цены", "roadmap"),
-    ModuleManifest("hr", "HR", "roadmap", badge=team_service.pending_badge),
+    ModuleManifest("hr", "HR", "roadmap", hr_router, badge=hr_service.badge),
     ModuleManifest("team", "Карта команды", "roadmap", team_router, for_all=True),
 ]

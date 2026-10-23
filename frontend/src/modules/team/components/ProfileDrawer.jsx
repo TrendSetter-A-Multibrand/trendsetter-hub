@@ -1,4 +1,5 @@
 import Avatar from './Avatar.jsx'
+import AwayTag from './AwayTag.jsx'
 import strings from '../strings.js'
 import { chainOf } from '../lib/tree.js'
 import { useFullPhoto } from '../lib/useTeamMap.js'
@@ -41,7 +42,7 @@ function ExtraValue({ item }) {
   return <p className="tm-text">{String(item.value)}</p>
 }
 
-export default function ProfileDrawer({ person, by, limited, onSelect, onClose, onEditOwn }) {
+export default function ProfileDrawer({ person, by, limited, away, onSelect, onClose, onEditOwn }) {
   const fullPhoto = useFullPhoto(person.id, !limited && Boolean(person.thumb))
   const chain = chainOf(by, person.id)
   const facts = [
@@ -70,6 +71,7 @@ export default function ProfileDrawer({ person, by, limited, onSelect, onClose, 
           <div className="tm-drawer-name">
             <span className="tm-drawer-title">{person.name}</span>
             <span className="tm-drawer-sub">{person.title}</span>
+            <AwayTag away={away} />
           </div>
         </div>
 

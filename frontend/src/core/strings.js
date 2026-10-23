@@ -55,8 +55,27 @@ const strings = {
     userMenu: 'Меню пользователя',
     departments: 'Отделы',
     adminLink: 'Пользователи и отделы',
+    profileLink: 'Профиль',
+    openProfile: 'Открыть профиль',
+    moreActions: 'Ещё',
     logout: 'Выйти',
     moduleBadge: (n) => `Требует внимания: ${n}`,
+  },
+
+  notifications: {
+    title: 'Уведомления',
+    open: 'Уведомления',
+    unread: (n) => `Непрочитанных: ${n}`,
+    empty: 'Уведомлений нет',
+    markAll: 'Прочитать все',
+    loadFailed: 'Не удалось загрузить уведомления',
+    newMark: 'Новое',
+  },
+
+  profile: {
+    title: 'Профиль',
+    loadFailed: 'Не удалось загрузить профиль',
+    noSections: 'Для вашего уровня доступа в профиле пока нет разделов.',
   },
 
   hub: {
@@ -116,6 +135,12 @@ const strings = {
       enabledDone: 'Пользователь включён',
       departmentsPlaceholder: 'Выберите отделы',
       levelPlaceholder: 'Выберите уровень',
+      specialRights: 'Особые права',
+      specialRightsTitle: (name) => `Особые права: ${name}`,
+      specialRightsHint:
+        'Личные права на модули добавляются к уровню, отделам и группам сотрудника (итог — максимум). Право «Ответственный» на модуле HR открывает блок «Деньги и документы»; администраторы и руководители автоматически ответственными не считаются.',
+      specialRightsLoadFailed: 'Не удалось загрузить особые права',
+      specialRightsSaved: 'Особые права сохранены',
     },
     departments: {
       code: 'Код',
