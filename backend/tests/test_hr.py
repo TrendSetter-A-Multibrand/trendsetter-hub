@@ -216,6 +216,42 @@ def test_my_file_exposes_only_four_fields(client, db, hr, resp, team):
     assert client.get(f"{BASE}/me/file").status_code == 401
 
 
+def test_my_compensation_own_only(client, db, hr, resp, team):
+    e, c = team["ids"]["e"], team["ids"]["c"]
+    url = f"{BASE}/me/compensation"
+    assert client.get(url, headers=team["e"]).json() == {"person": {"id": e, "name": "Ермолов Егор"}, "compensation": None}  # записи нет
+    client.patch(f"{BASE}/people/{e}/sensitive", json={"salary": 777777.5, "currency": "RUB", "payDay1": 5, "payDay2": 20, "passport": "1234 567890", "taxId": "770012345678", "bankDetails": "СЧЁТ-42", "bonusNote": "премия-секрет"}, headers=resp)
+    client.patch(f"{BASE}/people/{c}/sensitive", json={"salary": 111222}, headers=resp)
+    r = client.get(url, headers=team["e"])
+    assert r.json() == {"person": {"id": e, "name": "Ермолов Егор"}, "compensation": {"salary": 777777.5, "currency": "RUB", "payDay1": 5, "payDay2": 20}}
+    for secret in ("567890", "770012345678", "СЧЁТ", "премия", "111222"):
+        assert secret not in r.text
+    other = client.get(url, headers=team["c"]).json()
+    assert other["person"]["id"] == c and other["compensation"]["salary"] == 111222 and "777777" not in json.dumps(other)
+    assert client.get(url).status_code == 401
+    dump = json.dumps(audit(db, "hr.compensation_view"), ensure_ascii=False)
+    assert audit(db, "hr.compensation_view")[0] == {"person_id": e}
+    for secret in ("777777", "111222", "RUB"):
+        assert secret not in dump
+    # деньги не утекают в другие «свои» эндпоинты, карту и список людей
+    for u in (f"{BASE}/me/file", f"{BASE}/me/leave"):
+        assert "777777" not in client.get(u, headers=team["e"]).text, u
+    for h in (resp, hr):
+        for u in ("/modules/team/map", "/modules/team/hr/people"):
+            assert "777777" not in client.get(u, headers=h).text, u
+
+
+def test_my_compensation_requires_user_id_link(client, db, resp):
+    pid = add_person(db, "Одинокий", "Человек")
+    user = make_user(db, "solo@example.com", "employee", name="Одинокий Человек")  # имя совпадает, user_id не привязан
+    client.patch(f"{BASE}/people/{pid}/sensitive", json={"salary": 999000}, headers=resp)
+    me = login(client, "solo@example.com")
+    assert client.get(f"{BASE}/me/compensation", headers=me).json() == {"person": None, "compensation": None}
+    assert audit(db, "hr.compensation_view") == []
+    link(db, pid, user)
+    assert client.get(f"{BASE}/me/compensation", headers=me).json()["compensation"]["salary"] == 999000
+
+
 def test_notification_links(client, hr, team):
     req = request(client, team["e"]).json()
     assert notes(client, team["m"])[0]["link"] == "/profile?section=approvals"

@@ -101,7 +101,11 @@ function seed() {
     doc(2, 11, 'id_doc', 'Скан паспорта', 'passport-demo.png', PNG_1X1, -45),
     doc(3, 12, 'order', 'Приказ о приёме', 'order-demo.txt', b64('Demo file. No real content.'), -20),
   ]
-  return { policies, files, sensitive: {}, requests, adjustments, documents, nextId: { request: 5, adjustment: 2, document: 4 } }
+  const sensitive = {
+    10: { ...emptySensitive(10), salary: 250000, currency: 'RUB', payDay1: 5, payDay2: 20, passport: 'QQ 777', updatedAt: stamp(-30) },
+    12: { ...emptySensitive(12), salary: 420000, currency: 'AMD', payDay1: 10, updatedAt: stamp(-30) },
+  }
+  return { policies, files, sensitive, requests, adjustments, documents, nextId: { request: 5, adjustment: 2, document: 4 } }
 }
 
 // deps: userFromToken, accessTo(user, moduleId), isResponsible(user) — responsible на hr,
@@ -277,6 +281,18 @@ export function createHrHandlers({ userFromToken, accessTo, isResponsible, team,
       return {
         person: { id: person.id, name: personName(person) },
         file: { legalName: f.legalName, hiredAt: f.hiredAt, country: f.country, workSchedule: f.workSchedule },
+      }
+    },
+
+    // Q-D5: сотрудник видит свой оклад. «Своя» карточка строго по userId (без поиска по почте); только 4 поля.
+    [`GET ${BASE}/me/compensation`]: ({ token }) => {
+      const user = userFromToken(token)
+      const person = team.people().find((p) => p.userId === user.id)
+      if (!person) return { person: null, compensation: null }
+      const row = db.sensitive[person.id]
+      return {
+        person: { id: person.id, name: personName(person) },
+        compensation: row ? { salary: row.salary, currency: row.currency, payDay1: row.payDay1, payDay2: row.payDay2 } : null,
       }
     },
 

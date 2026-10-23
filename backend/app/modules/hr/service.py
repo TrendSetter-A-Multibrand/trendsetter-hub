@@ -556,6 +556,24 @@ def get_sensitive(session: Session, person_id: int) -> dict:
     return {name: _out_value(kind, row[col] if row else None) for name, (col, kind, _) in SENSITIVE_FIELDS.items()}
 
 
+MY_COMPENSATION_FIELDS = ("salary", "currency", "payDay1", "payDay2")
+
+
+def get_my_compensation(session: Session, user: User) -> dict:
+    """Решение Q-D5: сотрудник видит свой оклад. «Своя» карточка — строго по team_people.user_id; отдаём только 4 поля."""
+    pid = _own_card_by_user_id(session, user)
+    if pid is None:
+        return {"person": None, "compensation": None}
+    person = _person(session, pid)
+    row = session.execute(text(f"SELECT * FROM {H}employee_sensitive WHERE person_id = :p"), {"p": pid}).mappings().first()
+    compensation = None
+    if row is not None:
+        compensation = {name: _out_value(kind, row[col]) for name, (col, kind, _) in SENSITIVE_FIELDS.items() if name in MY_COMPENSATION_FIELDS}
+    log_action(session, user.id, "hr.compensation_view", MODULE_ID, person_id=pid)
+    session.commit()
+    return {"person": {"id": pid, "name": _name(person)}, "compensation": compensation}
+
+
 def update_sensitive(session: Session, user: User, person_id: int, d: dict) -> dict:
     _person(session, person_id, lock=True)
     cols = {SENSITIVE_FIELDS[k][0]: _clean_field(k, SENSITIVE_FIELDS[k][1], SENSITIVE_FIELDS[k][2], v) for k, v in d.items()}

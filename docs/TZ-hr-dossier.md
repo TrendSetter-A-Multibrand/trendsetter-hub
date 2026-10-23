@@ -47,6 +47,7 @@
 - `POST /modules/hr/me/leave/requests/{id}/cancel` → `LeaveRequest` (свою `pending`, либо `approved` с `start_date >= today`; для approved — уведомить коллег).
 - `GET /modules/hr/me/approvals` → заявки, где я approver (`pending`) и недавние решённые мной; `POST /modules/hr/leave/requests/{id}/decision` `{approve: bool, comment?}` — approver этой заявки или `Hr`; `approve` → `approved`, уведомления коллегам (`kind='leave_approved'`, тело: «Фамилия Имя не будет на работе с … по …. Сообщение: …»), сотруднику; `reject` → comment обязателен (1–500), уведомление сотруднику. 409 если заявка не `pending`.
 - `GET /modules/hr/me/file` (`Me`) → `{person:{id,name}|null, file:{legalName,hiredAt,country,workSchedule}|null}`: только эти четыре поля своего базового досье (без денег и остального); нет карточки или досье — `file: null`.
+- `GET /modules/hr/me/compensation` (`Me`, решение Q-D5) → `{person:{id,name}|null, compensation:{salary,currency,payDay1,payDay2}|null}`: «своя» карточка строго по `team_people.user_id` (без поиска по почте/имени), только четыре поля из `hr_employee_sensitive` (без паспорта, ИНН, СНИЛС, реквизитов, bonus_note); нет привязки — `person: null`; нет записи — `compensation: null`. Журнал `hr.compensation_view` `{person_id}` (без значений).
 - Ссылки уведомлений: заявка руководителю — `/profile?section=approvals`; решение/отклонение сотруднику — `/profile?section=leave`; заявка, ждущая HR, — `/modules/hr`; коллегам (согласовано/отмена) — `/modules/team`.
 - `LeaveRequest = {id,personId,personName,kind,start,end,days,message,status,decidedBy,decidedAt,decisionComment,createdAt,awaitingHr}`; `awaitingHr` = `pending` без руководителя с активным аккаунтом (ждёт HR; решение может принять и любой HR).
 
@@ -93,4 +94,4 @@
 - Q-D2: праздники внутри отпуска (в РФ не входят в календарные дни отпуска).
 - Q-D3: шифрование ПДн (паспорт, ИНН, реквизиты) на уровне приложения.
 - Q-D4: канал уведомлений вне хаба (Telegram-бот / почта).
-- Q-D5: видит ли сотрудник свой оклад в профиле (сейчас — нет).
+- Q-D5: РЕШЕНО владельцем — сотрудник видит свой оклад в профиле («Мои данные» → «Моя зарплата»). Эндпоинт `GET /modules/hr/me/compensation` (см. раздел «Me»); остальные деньги (паспорт, ИНН, СНИЛС, реквизиты, премии) сотруднику не отдаются.

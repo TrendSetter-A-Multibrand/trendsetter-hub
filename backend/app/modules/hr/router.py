@@ -207,6 +207,11 @@ def my_file(user: User = Me, session: Session = Db) -> dict:
     return service.get_my_file(session, user)
 
 
+@router.get("/me/compensation")
+def my_compensation(user: User = Me, session: Session = Db) -> dict:
+    return service.get_my_compensation(session, user)
+
+
 @router.post("/me/leave/requests")
 def create_my_request(body: LeaveRequestBody, user: User = Me, session: Session = Db) -> dict:
     return service.create_my_request(session, user, _dump(body))
