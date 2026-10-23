@@ -1,6 +1,30 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { canDeleteHistory, checklistProgress, isEquipmentOverdue, isItemOverdue } from './ops.js'
+import { canDeleteHistory, checklistProgress, copyTemplateItems, defaultBaseTemplate, isEquipmentOverdue, isItemOverdue, itemsEdited } from './ops.js'
+
+test('новый шаблон: основа — первый активный шаблон вида, пункты копируются', () => {
+  const templates = [
+    { id: 1, kind: 'onboarding', active: false, items: [{ title: 'Старый', daysOffset: 1 }] },
+    { id: 2, kind: 'offboarding', active: true, items: [{ title: 'Сдать ноутбук', daysOffset: 0 }] },
+    { id: 3, kind: 'onboarding', active: true, items: [{ title: 'Выдать доступы', daysOffset: 0 }, { title: 'Знакомство' }] },
+  ]
+  const base = defaultBaseTemplate(templates, 'onboarding')
+  assert.equal(base.id, 3)
+  assert.equal(defaultBaseTemplate([templates[0]], 'onboarding'), null)
+  const copy = copyTemplateItems(base)
+  assert.deepEqual(copy, [{ title: 'Выдать доступы', daysOffset: 0 }, { title: 'Знакомство', daysOffset: null }])
+  copy[0].title = 'X'
+  assert.equal(base.items[0].title, 'Выдать доступы', 'копия не меняет оригинал')
+  assert.deepEqual(copyTemplateItems(null), [{ title: '', daysOffset: null }])
+})
+
+test('новый шаблон: правки пунктов относительно заполнения', () => {
+  const seed = [{ title: 'А', daysOffset: 2 }]
+  assert.equal(itemsEdited([{ key: 5, title: 'А', daysOffset: 2 }], seed), false)
+  assert.equal(itemsEdited([{ key: 5, title: 'Б', daysOffset: 2 }], seed), true)
+  assert.equal(itemsEdited([{ key: 5, title: 'А', daysOffset: null }], seed), true)
+  assert.equal(itemsEdited([], seed), true)
+})
 
 test('оборудование: просрочено только невозвращённое с прошедшим сроком', () => {
   const today = '2026-10-23'

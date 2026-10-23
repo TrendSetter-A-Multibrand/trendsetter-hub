@@ -14,6 +14,17 @@ export const ITEM_TITLE_LIMIT = 200
 export const ITEM_NOTE_LIMIT = 500
 export const DAYS_OFFSET_MAX = 365
 
+// Шаблон «основа» нового шаблона: первый активный шаблон вида (по порядку списка) или null
+export const defaultBaseTemplate = (templates, kind) => templates.find((t) => t.kind === kind && t.active) ?? null
+
+// Пункты нового шаблона копией пунктов основы (названия и сроки); без основы — одна пустая строка
+export const copyTemplateItems = (base) =>
+  base && base.items.length > 0 ? base.items.map((i) => ({ title: i.title, daysOffset: i.daysOffset ?? null })) : [{ title: '', daysOffset: null }]
+
+// Отличаются ли пункты в форме от того, чем их заполнили (ключи строк формы не учитываются)
+export const itemsEdited = (items, seed) =>
+  items.length !== seed.length || items.some((i, n) => i.title !== seed[n].title || (i.daysOffset ?? null) !== (seed[n].daysOffset ?? null))
+
 // Не возвращено и срок возврата уже прошёл (сегодня — ещё не просрочено)
 export const isEquipmentOverdue = (item, today) => Boolean(item.returnDue) && !item.returnedAt && item.returnDue < today
 

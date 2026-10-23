@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Alert, Spin, Tabs, Typography } from 'antd'
+import { Alert, Spin, Tabs } from 'antd'
 import { api } from '../api/index.js'
 import strings from '../strings.js'
 import UsersTab from './UsersTab.jsx'
@@ -43,9 +43,6 @@ export default function AdminPage() {
 
   return (
     <>
-      <Typography.Title level={2} style={{ marginTop: 0 }}>
-        {strings.admin.title}
-      </Typography.Title>
       <Tabs
         items={[
           {
