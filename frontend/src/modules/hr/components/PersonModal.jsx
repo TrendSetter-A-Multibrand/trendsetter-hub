@@ -24,7 +24,7 @@ function Labeled({ label, children }) {
 }
 
 // Создание/правка карточки HR. person — null для создания; fromUser — режим «Добавить в карту из пользователя» (пользователь обязателен).
-export default function PersonModal({ person, fromUser, fields, people, directions, users, onClose, onSaved }) {
+export default function PersonModal({ person, fromUser, initialTab, fields, people, directions, users, onClose, onSaved }) {
   const { message } = App.useApp()
   const isEdit = Boolean(person)
   const activeFields = fields.filter((f) => f.active)
@@ -37,7 +37,7 @@ export default function PersonModal({ person, fromUser, fields, people, directio
   const [userId, setUserId] = useState(null)
   const [photo, setPhoto] = useState(null)
   const [saving, setSaving] = useState(false)
-  const [tab, setTab] = useState('card')
+  const [tab, setTab] = useState(initialTab ?? 'card')
 
   const freeUsers = users.filter((u) => u.personId === null)
   const setValue = (key, v) => setValues((cur) => ({ ...cur, [key]: v }))
@@ -140,7 +140,7 @@ export default function PersonModal({ person, fromUser, fields, people, directio
   return (
     <Modal
       open
-      width={720}
+      width={860}
       title={title}
       okText={coreStrings.save}
       cancelText={coreStrings.cancel}
@@ -150,7 +150,7 @@ export default function PersonModal({ person, fromUser, fields, people, directio
       footer={isEdit && tab !== 'card' ? null : undefined}
       styles={{ body: { maxHeight: '70vh', overflowY: 'auto', paddingRight: 8 } }}
     >
-      {isEdit ? <PersonTabs person={person} tab={tab} onTab={setTab} card={card} /> : card}
+      {isEdit ? <PersonTabs person={person} tab={tab} onTab={setTab} card={card} users={users} /> : card}
     </Modal>
   )
 }

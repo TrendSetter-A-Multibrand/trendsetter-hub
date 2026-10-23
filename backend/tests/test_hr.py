@@ -546,7 +546,7 @@ def test_document_roundtrip_same_bytes(client, db, resp, person):
     d = r.json()
     assert d["title"] == "Договор" and d["fileName"] == "my file.PDF" and d["mime"] == "application/pdf"
     assert d["sizeBytes"] == len(PDF) and d["uploadedBy"] == "Ответ Ственный" and d["category"] == "contract" and d["uploadedAt"]
-    assert set(d) == {"id", "category", "title", "fileName", "mime", "sizeBytes", "uploadedBy", "uploadedAt"}
+    assert set(d) == {"id", "category", "title", "fileName", "mime", "sizeBytes", "uploadedBy", "uploadedAt", "visibleToEmployee"}
     assert client.get(f"{BASE}/people/{person}/documents", headers=resp).json() == [d]
     got = client.get(f"{BASE}/documents/{d['id']}", headers=resp).json()
     assert got["fileName"] == "my file.PDF" and got["mime"] == "application/pdf" and got["sizeBytes"] == len(PDF)

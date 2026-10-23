@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { FILE_FIELDS, MONEY_FIELDS, buildDraft, buildPatch, parseRuDate } from './dossier.js'
+import { FILE_FIELDS, MONEY_FIELDS, buildDraft, buildPatch, parseRuDate, withBirthdayHidden } from './dossier.js'
 
 test('parseRuDate: ДД.ММ.ГГГГ в ISO, мусор и несуществующие даты — null', () => {
   assert.equal(parseRuDate('05.03.2026'), '2026-03-05')
@@ -36,4 +36,11 @@ test('buildPatch: числа денег', () => {
   const source = { salary: 100000, currency: 'RUB' }
   const draft = { ...buildDraft(MONEY_FIELDS, source), salary: 120000.5, payDay1: 5 }
   assert.deepEqual(buildPatch(MONEY_FIELDS, draft, source).patch, { salary: 120000.5, payDay1: 5 })
+})
+
+test('birthdayHidden: в patch только при изменении', () => {
+  assert.deepEqual(withBirthdayHidden({}, false, { birthdayHidden: false }), {})
+  assert.deepEqual(withBirthdayHidden({}, false, {}), {}, 'нет поля в файле = false')
+  assert.deepEqual(withBirthdayHidden({ notes: 'x' }, true, { birthdayHidden: false }), { notes: 'x', birthdayHidden: true })
+  assert.deepEqual(withBirthdayHidden({}, false, { birthdayHidden: true }), { birthdayHidden: false })
 })

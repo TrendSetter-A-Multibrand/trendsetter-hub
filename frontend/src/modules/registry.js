@@ -52,6 +52,13 @@ export const PROFILE_SECTIONS = [
     Component: lazy(() => import('./hr/leave/LeaveSection.jsx')),
   },
   {
+    id: 'plan',
+    label: hrStrings.profile.plan,
+    load: ownData((api) => api.get('/modules/hr/me/leave')),
+    visible: (me, data) => Boolean(data?.person),
+    Component: lazy(() => import('./hr/plan/PlanSection.jsx')),
+  },
+  {
     id: 'approvals',
     label: hrStrings.profile.approvals,
     load: ownData((api) => api.get('/modules/hr/me/approvals')),
@@ -65,5 +72,16 @@ export const PROFILE_SECTIONS = [
     load: ownData((api) => api.get('/modules/hr/me/file')),
     visible: (me, data) => Boolean(data?.file),
     Component: lazy(() => import('./hr/leave/MyDataSection.jsx')),
+  },
+  {
+    // только документы, отмеченные HR; раздел скрыт, если у сотрудника нет карточки
+    id: 'documents',
+    label: hrStrings.profile.documents,
+    load: ownData(async (api) => {
+      const [docs, leave] = await Promise.all([api.get('/modules/hr/me/documents'), api.get('/modules/hr/me/leave')])
+      return { docs, hasCard: Boolean(leave.person) }
+    }),
+    visible: (me, data) => Boolean(data?.hasCard),
+    Component: lazy(() => import('./hr/leave/MyDocumentsSection.jsx')),
   },
 ]

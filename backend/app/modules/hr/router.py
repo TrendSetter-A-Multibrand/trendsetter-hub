@@ -1,5 +1,6 @@
 """Маршруты модуля «HR»: профиль и отпуск сотрудника, календарь, досье, деньги и документы, нормы отпуска.
-Права: Me — любой активный сотрудник; Team — team не ниже view; Hr — run на hr; Resp — responsible на hr."""
+Права: Me — любой активный сотрудник; Team — team не ниже view; Hr — run на hr; Resp — responsible на hr;
+Mgr — руководитель (проверяется в сервисе). Новое (история, оборудование, чек-листы, график, экспорт) — в history/equipment/checklists/plans/exports."""
 from decimal import Decimal
 from typing import Literal
 
@@ -11,7 +12,7 @@ from app.core import messages as m
 from app.core.deps import get_current_user
 from app.core.models import User
 from app.db.database import get_session
-from app.modules.hr import service
+from app.modules.hr import checklists, equipment, exports, history, plans, service
 from app.modules.team.router import team_viewer
 
 router = APIRouter(prefix="/modules/hr", tags=["hr"])
@@ -74,6 +75,7 @@ class FilePatchBody(BaseModel):
     personalEmail: str | None = None
     emergencyContact: str | None = None
     notes: str | None = None
+    birthdayHidden: bool | None = None
 
 
 class SensitivePatchBody(BaseModel):
@@ -94,6 +96,91 @@ class DocumentBody(BaseModel):
     title: str
     fileName: str
     dataBase64: str
+    visibleToEmployee: bool = False
+
+
+class DocumentPatchBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    visibleToEmployee: bool | None = None
+    title: str | None = None
+    category: str | None = None
+
+
+class HistoryBody(BaseModel):
+    kind: str
+    effectiveDate: str
+    title: str
+    oldValue: str | None = None
+    newValue: str | None = None
+    comment: str | None = None
+
+
+class EquipmentBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    kind: str
+    name: str
+    serial: str | None = None
+    issuedAt: str
+    returnDue: str | None = None
+    comment: str | None = None
+
+
+class EquipmentPatchBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    kind: str | None = None
+    name: str | None = None
+    serial: str | None = None
+    issuedAt: str | None = None
+    returnDue: str | None = None
+    returnedAt: str | None = None
+    comment: str | None = None
+
+
+class TemplateItemBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    title: str
+    daysOffset: int | None = None
+
+
+class TemplateBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    kind: str
+    title: str
+    items: list[TemplateItemBody]
+
+
+class TemplatePatchBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    title: str | None = None
+    active: bool | None = None
+    items: list[TemplateItemBody] | None = None
+
+
+class ChecklistStartBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    templateId: int
+    startedAt: str | None = None
+
+
+class ChecklistItemPatchBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    done: bool | None = None
+    assigneeUserId: int | None = None
+    dueDate: str | None = None
+    note: str | None = None
+
+
+class PlanBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    start: str
+    end: str
+    comment: str | None = None
+
+
+class PlanRequestBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    kind: str | None = None
+    message: str | None = None
 
 
 class PolicyPatchBody(BaseModel):
@@ -221,3 +308,169 @@ def list_policies(_: User = Hr, session: Session = Db) -> list[dict]:
 @router.patch("/leave/policies/{country}")
 def patch_policy(country: str, body: PolicyPatchBody, user: User = Resp, session: Session = Db) -> dict:
     return service.update_policy(session, user, country, _dump(body))
+
+
+@router.patch("/documents/{doc_id}")
+def patch_document(doc_id: int, body: DocumentPatchBody, user: User = Resp, session: Session = Db) -> dict:
+    return service.update_document(session, user, doc_id, _dump(body))
+
+
+# ---------- свои документы (Me) ----------
+
+
+@router.get("/me/documents")
+def my_documents(user: User = Me, session: Session = Db) -> list[dict]:
+    return service.my_documents(session, user)
+
+
+@router.get("/me/documents/{doc_id}")
+def download_my_document(doc_id: int, user: User = Me, session: Session = Db) -> dict:
+    return service.download_my_document(session, user, doc_id)
+
+
+# ---------- дни рождения (Team) ----------
+
+
+@router.get("/birthdays")
+def birthdays(month: str | None = None, _: User = Team, session: Session = Db) -> list[dict]:
+    return service.birthdays(session, month)
+
+
+# ---------- экспорт (Hr) ----------
+
+
+@router.get("/export/people")
+def export_people(user: User = Hr, session: Session = Db) -> dict:
+    return exports.export_people(session, user)
+
+
+@router.get("/export/leave")
+def export_leave(start: str = Query(alias="from"), end: str = Query(alias="to"), user: User = Hr, session: Session = Db) -> dict:
+    return exports.export_leave(session, user, start, end)
+
+
+# ---------- история (Hr; salary — Resp) ----------
+
+
+@router.get("/people/{person_id}/history")
+def list_history(person_id: int, user: User = Hr, session: Session = Db) -> list[dict]:
+    return history.list_history(session, user, person_id)
+
+
+@router.post("/people/{person_id}/history")
+def add_history(person_id: int, body: HistoryBody, user: User = Hr, session: Session = Db) -> dict:
+    return history.add_history(session, user, person_id, _dump(body))
+
+
+@router.post("/history/{history_id}/delete")
+def delete_history(history_id: int, user: User = Hr, session: Session = Db) -> dict:
+    return history.delete_history(session, user, history_id)
+
+
+# ---------- оборудование (Hr) ----------
+
+
+@router.get("/people/{person_id}/equipment")
+def list_equipment(person_id: int, _: User = Hr, session: Session = Db) -> list[dict]:
+    return equipment.list_equipment(session, person_id)
+
+
+@router.post("/people/{person_id}/equipment")
+def add_equipment(person_id: int, body: EquipmentBody, user: User = Hr, session: Session = Db) -> dict:
+    return equipment.add_equipment(session, user, person_id, _dump(body))
+
+
+@router.patch("/equipment/{item_id}")
+def patch_equipment(item_id: int, body: EquipmentPatchBody, user: User = Hr, session: Session = Db) -> dict:
+    return equipment.update_equipment(session, user, item_id, _dump(body))
+
+
+@router.post("/equipment/{item_id}/delete")
+def delete_equipment(item_id: int, user: User = Hr, session: Session = Db) -> dict:
+    return equipment.delete_equipment(session, user, item_id)
+
+
+# ---------- чек-листы ----------
+
+
+@router.get("/checklist-templates")
+def list_templates(_: User = Hr, session: Session = Db) -> list[dict]:
+    return checklists.list_templates(session)
+
+
+@router.post("/checklist-templates")
+def create_template(body: TemplateBody, user: User = Hr, session: Session = Db) -> dict:
+    return checklists.create_template(session, user, _dump(body))
+
+
+@router.patch("/checklist-templates/{template_id}")
+def patch_template(template_id: int, body: TemplatePatchBody, user: User = Hr, session: Session = Db) -> dict:
+    return checklists.update_template(session, user, template_id, _dump(body))
+
+
+@router.get("/checklists")
+def checklist_overview(status: str = "active", _: User = Hr, session: Session = Db) -> list[dict]:
+    return checklists.overview(session, status)
+
+
+@router.get("/checklists/mine")
+def my_checklist_items(user: User = Me, session: Session = Db) -> list[dict]:
+    return checklists.my_items(session, user)
+
+
+@router.get("/people/{person_id}/checklists")
+def list_checklists(person_id: int, _: User = Hr, session: Session = Db) -> list[dict]:
+    return checklists.list_for_person(session, person_id)
+
+
+@router.post("/people/{person_id}/checklists")
+def start_checklist(person_id: int, body: ChecklistStartBody, user: User = Hr, session: Session = Db) -> dict:
+    return checklists.start_checklist(session, user, person_id, _dump(body))
+
+
+@router.patch("/checklist-items/{item_id}")
+def patch_checklist_item(item_id: int, body: ChecklistItemPatchBody, user: User = Me, session: Session = Db) -> dict:
+    return checklists.update_item(session, user, item_id, _dump(body))  # HR — любой пункт; исполнитель — только свой (done/note)
+
+
+@router.post("/checklists/{checklist_id}/close")
+def close_checklist(checklist_id: int, user: User = Hr, session: Session = Db) -> dict:
+    return checklists.close_checklist(session, user, checklist_id, "done")
+
+
+@router.post("/checklists/{checklist_id}/cancel")
+def cancel_checklist(checklist_id: int, user: User = Hr, session: Session = Db) -> dict:
+    return checklists.close_checklist(session, user, checklist_id, "cancelled")
+
+
+# ---------- годовой график отпусков ----------
+
+
+@router.get("/me/leave/plans")
+def my_plans(year: int | None = None, user: User = Me, session: Session = Db) -> list[dict]:
+    return plans.my_plans(session, user, year)
+
+
+@router.post("/me/leave/plans")
+def create_plan(body: PlanBody, user: User = Me, session: Session = Db) -> dict:
+    return plans.create_plan(session, user, _dump(body))
+
+
+@router.post("/me/leave/plans/{plan_id}/cancel")
+def cancel_plan(plan_id: int, user: User = Me, session: Session = Db) -> dict:
+    return plans.cancel_plan(session, user, plan_id)
+
+
+@router.post("/me/leave/plans/{plan_id}/request")
+def convert_plan(plan_id: int, body: PlanRequestBody, user: User = Me, session: Session = Db) -> dict:
+    return plans.convert_plan(session, user, plan_id, _dump(body))
+
+
+@router.get("/me/leave/team-plan")
+def team_plan(year: int | None = None, user: User = Me, session: Session = Db) -> list[dict]:
+    return plans.team_plans(session, user, year)  # Mgr: 403, если нет подчинённых
+
+
+@router.get("/leave/plan")
+def hr_plan(year: int | None = None, _: User = Hr, session: Session = Db) -> list[dict]:
+    return plans.all_plans(session, year)

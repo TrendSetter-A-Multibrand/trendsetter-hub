@@ -69,3 +69,8 @@ export function buildPatch(fields, draft, source) {
   }
   return { patch, invalid }
 }
+
+// Переключатель «Скрыть день рождения»: в patch попадает только при изменении (поле HrFile.birthdayHidden)
+export function withBirthdayHidden(patch, hidden, file) {
+  return hidden === Boolean(file?.birthdayHidden) ? patch : { ...patch, birthdayHidden: hidden }
+}

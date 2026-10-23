@@ -1,14 +1,17 @@
 import { useMemo, useState } from 'react'
 import { Alert } from 'antd'
-import { formatDate, todayIso } from '../../../core/dates.js'
+import { addDays, formatDate, todayIso } from '../../../core/dates.js'
 import Avatar from './Avatar.jsx'
 import strings from '../strings.js'
 import { buildRows, cardState } from '../lib/tree.js'
 import { monthDays, monthEnd, monthStart, segmentsOf, shiftMonth } from '../lib/leave.js'
 import { useLeaveRange } from '../lib/useLeave.js'
+import { useBirthdays } from '../lib/useBirthdays.js'
+import { dayByPerson, monthKey, UPCOMING_DAYS, upcomingBirthdays } from '../lib/birthdays.js'
 
 const s = strings.leave
 const pn = strings.panel
+const bd = strings.birthdays
 const KIND_COLORS = { annual: '#6FA287', unpaid: '#C9A227', study: '#4A7FB5', other: '#8A8381', sick: '#B55A5A' }
 const LEGEND_KINDS = ['annual', 'unpaid', 'study', 'other']
 
@@ -21,6 +24,11 @@ export default function LeaveView({ idx, selectedId, matches, path, collapsed, f
   const [first, setFirst] = useState(monthStart(today))
   const { data, error } = useLeaveRange(first, monthEnd(first), true)
   const leaves = data ?? []
+  // Дни рождения: месяц таймлайна (маркер в ячейке дня) + ближайшие 7 дней от сегодня (окно может зайти в следующий месяц)
+  const monthBirthdays = useBirthdays([monthKey(first)], true)
+  const upcomingEntries = useBirthdays([monthKey(today), monthKey(addDays(today, UPCOMING_DAYS))], true)
+  const birthdayDays = useMemo(() => dayByPerson(monthBirthdays?.[0]?.items), [monthBirthdays])
+  const upcoming = useMemo(() => (upcomingEntries ? upcomingBirthdays(upcomingEntries, today) : null), [upcomingEntries, today])
   const days = useMemo(() => monthDays(first), [first])
   const { by, ceoId, assistantIds } = idx
   const state = { selectedId, matches, path }
@@ -74,6 +82,21 @@ export default function LeaveView({ idx, selectedId, matches, path, collapsed, f
         </div>
         {!data && !error && <span className="mono tm-tl-loading">{s.loading}</span>}
       </div>
+      {upcoming && (
+        <section className="tm-bd" aria-label={bd.title}>
+          <span className="mono tm-bd-title">{bd.title}</span>
+          {upcoming.length === 0 ? (
+            <span className="tm-bd-empty">{bd.empty}</span>
+          ) : (
+            upcoming.map((b) => (
+              <span className="tm-bd-item" key={`${b.personId}-${b.date}`}>
+                {b.name}
+                <span className="mono tm-bd-when">{b.inDays === 0 ? bd.today : b.inDays === 1 ? bd.tomorrow : `${formatDate(b.date).slice(0, 5)}, ${bd.inDays(b.inDays)}`}</span>
+              </span>
+            ))
+          )}
+        </section>
+      )}
       {error && <Alert type="error" showIcon title={s.loadError} description={error} style={{ margin: '0 28px 12px' }} />}
       {groups.length === 0 && <p className="tm-tl-empty">{s.empty}</p>}
       <div className="tm-tl-panels">
@@ -125,6 +148,11 @@ export default function LeaveView({ idx, selectedId, matches, path, collapsed, f
                     )}
                   </div>
                   {dayCells(false)}
+                  {birthdayDays[row.id] && (
+                    <div className="tm-tl-bd" style={{ gridColumn: birthdayDays[row.id] + 1 }} title={bd.tip(person.name)} aria-label={bd.tip(person.name)}>
+                      {bd.marker}
+                    </div>
+                  )}
                   {segs.map((seg) => (
                     <div
                       key={`${seg.start}-${seg.kind}`}

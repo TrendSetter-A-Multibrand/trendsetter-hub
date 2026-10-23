@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Alert, App, Button, Form, Input, Modal, Popconfirm, Select, Space, Table, Tag, Typography, Upload } from 'antd'
+import { Alert, App, Button, Checkbox, Form, Input, Modal, Popconfirm, Select, Space, Switch, Table, Tag, Typography, Upload } from 'antd'
 import { api } from '../../../core/api/index.js'
 import { formatDate } from '../../../core/dates.js'
 import { checkFile, downloadBase64, formatBytes, readAsBase64 } from '../../../core/lib/files.js'
@@ -45,6 +45,7 @@ function UploadModal({ personId, onClose, onDone }) {
         title: values.title.trim(),
         fileName: file.name,
         dataBase64,
+        visibleToEmployee: Boolean(values.visibleToEmployee),
       })
       message.success(t.uploaded)
       onDone()
@@ -56,7 +57,7 @@ function UploadModal({ personId, onClose, onDone }) {
 
   return (
     <Modal open title={t.uploadTitle} okText={t.upload} cancelText={t.removeCancel} confirmLoading={saving} onOk={submit} onCancel={onClose} mask={{ closable: false }}>
-      <Form form={form} layout="vertical">
+      <Form form={form} layout="vertical" initialValues={{ visibleToEmployee: false }}>
         <Form.Item label={t.file} validateStatus={fileError ? 'error' : undefined} help={fileError ?? undefined} required>
           <Upload
             accept={DOC_EXTENSIONS.map((e) => `.${e}`).join(',')}
@@ -73,6 +74,9 @@ function UploadModal({ personId, onClose, onDone }) {
         </Form.Item>
         <Form.Item name="title" label={t.docTitle} rules={[{ required: true, whitespace: true, max: DOC_TITLE_LIMIT, message: t.needTitle }]}>
           <Input maxLength={DOC_TITLE_LIMIT} />
+        </Form.Item>
+        <Form.Item name="visibleToEmployee" valuePropName="checked" extra={t.visibleHint}>
+          <Checkbox>{t.visibleToEmployee}</Checkbox>
         </Form.Item>
       </Form>
     </Modal>
@@ -108,6 +112,18 @@ export default function DocumentsSection({ person }) {
     setBusyId(null)
   }
 
+  const setVisible = async (doc, visibleToEmployee) => {
+    setBusyId(doc.id)
+    try {
+      await api.patch(`/modules/hr/documents/${doc.id}`, { visibleToEmployee })
+      message.success(t.visibleChanged)
+      reload()
+    } catch (e) {
+      message.error(e.message)
+    }
+    setBusyId(null)
+  }
+
   const full = Boolean(data) && data.length >= DOC_MAX_COUNT
   const columns = [
     { title: t.category, dataIndex: 'category', render: (c) => <Tag>{t.categories[c] ?? c}</Tag> },
@@ -116,6 +132,11 @@ export default function DocumentsSection({ person }) {
     { title: t.size, dataIndex: 'sizeBytes', render: formatBytes },
     { title: t.date, dataIndex: 'uploadedAt', render: (v) => formatDate(v.slice(0, 10)) },
     { title: t.by, dataIndex: 'uploadedBy', render: (v) => v ?? '—' },
+    {
+      title: t.visibleToEmployee,
+      dataIndex: 'visibleToEmployee',
+      render: (v, doc) => <Switch size="small" checked={Boolean(v)} disabled={busyId === doc.id} aria-label={t.visibleToEmployee} onChange={(checked) => setVisible(doc, checked)} />,
+    },
     {
       title: '',
       key: 'actions',
