@@ -3,7 +3,7 @@ import logoUrl from '../assets/trendsetter-logo.svg'
 
 const s = strings.header
 
-export default function TeamHeader({ query, onQuery, found, onLeaders, onExpand, view, onView, dirs, total, dirFilter, onDir, onMyProfile }) {
+export default function TeamHeader({ query, onQuery, found, onLeaders, onExpand, view, onView, canLeave, dirs, total, dirFilter, onDir, onMyProfile }) {
   const chips = [
     { id: null, label: s.all, color: '#A22325', count: total },
     ...dirs.map((d) => ({ id: d.id, label: d.shortName, color: d.color, count: d.count })),
@@ -48,6 +48,7 @@ export default function TeamHeader({ query, onQuery, found, onLeaders, onExpand,
           {[
             ['cards', s.viewCards],
             ['scheme', s.viewScheme],
+            ...(canLeave ? [['leave', s.viewLeave]] : []),
           ].map(([id, label]) => (
             <button type="button" key={id} className={view === id ? 'on' : ''} aria-pressed={view === id} onClick={() => onView(id)}>
               {label}

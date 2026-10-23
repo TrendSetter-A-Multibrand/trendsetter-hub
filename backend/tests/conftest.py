@@ -77,6 +77,9 @@ def clean(database):
         # team_people/photos/submissions очищены каскадом от users; конструктор полей возвращается к стартовому набору (скрипт идемпотентен)
         conn.execute("DELETE FROM trendsetter_hub.team_form_fields")
         conn.execute((BACKEND.parent / "db" / "04_team.sql").read_text(encoding="utf-8"))
+        # нормы отпуска возвращаются к стартовым; поле video_link — как после миграции 0005
+        conn.execute("DELETE FROM trendsetter_hub.hr_leave_policies")
+        conn.execute((BACKEND.parent / "db" / "05_hr_dossier.sql").read_text(encoding="utf-8"))
         conn.execute("DELETE FROM trendsetter_hub.departments WHERE code NOT IN ('purchasing','warehouse','wb','analytics','pricing','hr')")
 
 

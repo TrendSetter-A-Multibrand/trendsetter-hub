@@ -6,6 +6,7 @@ import { useAuth } from '../auth/useAuth.js'
 import strings from '../strings.js'
 import { validateUserForm, validationMessages } from './validation.js'
 import ResetPasswordModal from './ResetPasswordModal.jsx'
+import UserPermissionsModal from './UserPermissionsModal.jsx'
 
 const s = strings.admin.users
 
@@ -111,6 +112,7 @@ export default function UsersTab({ users, departments, groups, reload }) {
   const { me } = useAuth()
   const [modal, setModal] = useState(null) // { mode: 'add' } | { mode: 'edit', user }
   const [resetFor, setResetFor] = useState(null)
+  const [rightsFor, setRightsFor] = useState(null)
 
   const toggleActive = async (user) => {
     try {
@@ -160,6 +162,9 @@ export default function UsersTab({ users, departments, groups, reload }) {
           <Button size="small" onClick={() => setModal({ mode: 'edit', user })}>
             {s.edit}
           </Button>
+          <Button size="small" onClick={() => setRightsFor(user)}>
+            {s.specialRights}
+          </Button>
           <Button size="small" onClick={() => setResetFor(user)}>
             {s.resetPassword}
           </Button>
@@ -197,6 +202,7 @@ export default function UsersTab({ users, departments, groups, reload }) {
         onRow={(user) => ({ style: user.is_active ? undefined : { opacity: 0.5 } })}
       />
       {resetFor && <ResetPasswordModal user={resetFor} onClose={() => setResetFor(null)} />}
+      {rightsFor && <UserPermissionsModal user={rightsFor} onClose={() => setRightsFor(null)} />}
       {modal && (
         <UserModal
           mode={modal.mode}

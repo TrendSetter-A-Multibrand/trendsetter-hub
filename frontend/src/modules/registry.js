@@ -26,3 +26,44 @@ export const MODULES = [
 ]
 
 export const getModule = (id) => MODULES.find((m) => m.id === id)
+
+// Разделы страницы профиля (/profile). Ядро само ничего не знает про модули: порядок вкладок = порядок здесь.
+//   id        — значение ?section= в адресе;
+//   label     — подпись вкладки;
+//   load      — (api, me) => Promise с данными раздела (необязательно); ошибка/null = данных нет;
+//   visible   — (me, data) => показывать ли раздел (data — результат load);
+//   badge     — (data) => число рядом с названием (необязательно);
+//   Component — получает { me, data, reload }; reload() перечитывает данные раздела и /core/me.
+// Данные личные (карточка, отпуска): наблюдатель (viewer) их не видит.
+const ownData = (request) => (api, me) => (me.access_level === 'viewer' ? Promise.resolve(null) : request(api).catch(() => null))
+
+export const PROFILE_SECTIONS = [
+  {
+    id: 'form',
+    label: teamStrings.profile.title,
+    visible: (me) => ['view', 'run'].includes(me.module_access.team),
+    Component: lazy(() => import('./team/components/MyProfileSection.jsx')),
+  },
+  {
+    id: 'leave',
+    label: hrStrings.profile.leave,
+    load: ownData((api) => api.get('/modules/hr/me/leave')),
+    visible: (me, data) => Boolean(data?.person),
+    Component: lazy(() => import('./hr/leave/LeaveSection.jsx')),
+  },
+  {
+    id: 'approvals',
+    label: hrStrings.profile.approvals,
+    load: ownData((api) => api.get('/modules/hr/me/approvals')),
+    visible: (me, data) => Boolean(data?.length),
+    badge: (data) => data.filter((r) => r.status === 'pending').length,
+    Component: lazy(() => import('./hr/leave/ApprovalsSection.jsx')),
+  },
+  {
+    id: 'data',
+    label: hrStrings.profile.myData,
+    load: ownData((api) => api.get('/modules/hr/me/file')),
+    visible: (me, data) => Boolean(data?.file),
+    Component: lazy(() => import('./hr/leave/MyDataSection.jsx')),
+  },
+]

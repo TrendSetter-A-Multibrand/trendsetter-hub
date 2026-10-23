@@ -8,7 +8,7 @@ from app.core import messages as m
 from app.core.access import ACCESS_LEVELS, GROUP_PERMISSIONS
 from app.core.audit import log_action
 from app.core.deps import require_manager
-from app.core.models import AccessGroup, AccessGroupMember, AccessGroupPermission, Department, User, UserDepartment
+from app.core.models import AccessGroup, AccessGroupMember, AccessGroupPermission, Department, User, UserDepartment, UserModulePermission
 from app.core.registry import MODULES
 from app.core.security import hash_password, password_is_valid
 from app.core.validation import validate_department_code, validate_department_name, validate_group_name, validate_new_user
@@ -342,3 +342,47 @@ def patch_group(group_id: int, body: PatchGroupBody, me: User = Depends(require_
     log_action(session, me.id, "group.update", group_id=group.id, **changes)
     session.commit()
     return _group_out(session, group)
+
+
+# ---------- личные права на модуль (в дополнение к групповым; итог — максимум) ----------
+
+
+def _user_permissions(session: Session, user_id: int) -> dict[str, str]:
+    return {
+        module_id: permission
+        for module_id, permission in session.execute(
+            select(UserModulePermission.module_id, UserModulePermission.permission)
+            .where(UserModulePermission.user_id == user_id)
+            .order_by(UserModulePermission.module_id)
+        )
+    }
+
+
+@router.get("/users/{user_id}/module-permissions")
+def get_user_permissions(user_id: int, _: User = Depends(require_manager), session: Session = Depends(get_session)) -> dict:
+    _get_user(session, user_id)
+    return {"permissions": _user_permissions(session, user_id)}
+
+
+class UserPermissionBody(BaseModel):
+    moduleId: str
+    permission: str | None = None
+
+
+@router.patch("/users/{user_id}/module-permissions")
+def set_user_permission(
+    user_id: int, body: UserPermissionBody, me: User = Depends(require_manager), session: Session = Depends(get_session)
+) -> dict:
+    _get_user(session, user_id)
+    _check_permissions({body.moduleId: body.permission or GROUP_PERMISSIONS[0]})
+    existing = session.get(UserModulePermission, (user_id, body.moduleId))
+    if body.permission is None:
+        if existing is not None:
+            session.delete(existing)
+    elif existing is None:
+        session.add(UserModulePermission(user_id=user_id, module_id=body.moduleId, permission=body.permission))
+    else:
+        existing.permission = body.permission
+    log_action(session, me.id, "core.user_permission_set", target_user_id=user_id, module_id=body.moduleId, permission=body.permission)
+    session.commit()
+    return {"permissions": _user_permissions(session, user_id)}

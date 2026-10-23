@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.core import messages as m
 from app.core.access import can_manage_users, can_run, compute_module_access, is_module_responsible
-from app.core.models import AccessGroupMember, AccessGroupPermission, ModuleDepartment, User, UserDepartment
+from app.core.models import AccessGroupMember, AccessGroupPermission, ModuleDepartment, User, UserDepartment, UserModulePermission
 from app.core.security import read_token
 from app.db.database import get_session
 
@@ -31,7 +31,7 @@ def require_manager(user: User = Depends(get_current_user)) -> User:
 
 
 def module_rights(session: Session, user: User, module_ids: list[str]) -> dict[str, tuple[str, bool]]:
-    """{module_id: (access, responsible)}; читается из БД на каждый вызов (права групп действуют сразу)."""
+    """{module_id: (access, responsible)}; читается из БД на каждый вызов (права групп и личные права действуют сразу)."""
     from app.core.registry import MODULES  # отложенный импорт: registry тянет роутеры модулей, а они — deps
 
     for_all_ids = {mod.id for mod in MODULES if mod.for_all}
@@ -47,6 +47,13 @@ def module_rights(session: Session, user: User, module_ids: list[str]) -> dict[s
             select(AccessGroupPermission.module_id, AccessGroupPermission.permission)
             .join(AccessGroupMember, AccessGroupMember.group_id == AccessGroupPermission.group_id)
             .where(AccessGroupMember.user_id == user.id, AccessGroupPermission.module_id.in_(module_ids))
+        ):
+            group_perms.setdefault(module_id, []).append(permission)
+        # Личные права (user_module_permissions) складываются с групповыми: итог — максимум
+        for module_id, permission in session.execute(
+            select(UserModulePermission.module_id, UserModulePermission.permission).where(
+                UserModulePermission.user_id == user.id, UserModulePermission.module_id.in_(module_ids)
+            )
         ):
             group_perms.setdefault(module_id, []).append(permission)
     return {

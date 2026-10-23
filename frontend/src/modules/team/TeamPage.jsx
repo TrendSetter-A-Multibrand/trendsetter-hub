@@ -5,10 +5,14 @@ import strings from './strings.js'
 import TeamHeader from './components/TeamHeader.jsx'
 import DirectionsView from './components/DirectionsView.jsx'
 import SchemeView from './components/SchemeView.jsx'
+import LeaveView from './components/LeaveView.jsx'
 import ProfileDrawer from './components/ProfileDrawer.jsx'
 import MyProfileDrawer from './components/MyProfileDrawer.jsx'
 import { buildIndex, collapseLeaders, findMatches, forceOpenSet, parseId, pathSet } from './lib/tree.js'
 import { useMyProfile, useTeamMap } from './lib/useTeamMap.js'
+import { useLeaveRange } from './lib/useLeave.js'
+import { awayMap, monthEnd, monthStart } from './lib/leave.js'
+import { todayIso } from '../../core/dates.js'
 import './team.css'
 
 function TeamMap({ map, access }) {
@@ -20,8 +24,14 @@ function TeamMap({ map, access }) {
   const { me, reload: reloadMe } = useMyProfile(!limited)
   const idx = useMemo(() => buildIndex(map.people, map.directions), [map])
 
+  // Метка «в отпуске»: один запрос календаря на текущий месяц при открытии карты; при ошибке/403 метки просто нет
+  const today = todayIso()
+  const { data: monthLeaves } = useLeaveRange(monthStart(today), monthEnd(monthStart(today)), !limited)
+  const away = useMemo(() => awayMap(monthLeaves, today), [monthLeaves, today])
+
   // состояние в URL: ?view=scheme&dir=<id направления>&p=<id человека>
-  const view = params.get('view') === 'scheme' ? 'scheme' : 'cards'
+  const viewParam = params.get('view')
+  const view = viewParam === 'scheme' ? 'scheme' : viewParam === 'leave' && !limited ? 'leave' : 'cards'
   const dirParam = params.get('dir')
   const dirFilter = idx.dirs.some((d) => d.id === dirParam) ? dirParam : null
   const selectedId = parseId(params.get('p'), idx.by)
@@ -59,6 +69,7 @@ function TeamMap({ map, access }) {
       person={selected}
       by={idx.by}
       limited={limited}
+      away={away[selected.id]}
       onSelect={(id) => update({ p: id })}
       onClose={() => update({ p: null })}
       onEditOwn={me && me.person?.id === selected.id ? () => setFormOpen(true) : undefined}
@@ -74,7 +85,8 @@ function TeamMap({ map, access }) {
         onLeaders={() => setCollapsed(collapseLeaders(idx.by, idx.ceoId))}
         onExpand={() => setCollapsed({})}
         view={view}
-        onView={(v) => update({ view: v === 'scheme' ? 'scheme' : null })}
+        onView={(v) => update({ view: v === 'cards' ? null : v })}
+        canLeave={!limited}
         dirs={idx.dirs}
         total={idx.totalPeople}
         dirFilter={dirFilter}
@@ -83,6 +95,19 @@ function TeamMap({ map, access }) {
       />
       {view === 'cards' ? (
         <DirectionsView
+          idx={idx}
+          selectedId={selectedId}
+          matches={matches}
+          path={path}
+          collapsed={collapsed}
+          forceOpen={forceOpen}
+          dirFilter={dirFilter}
+          away={away}
+          onSelect={(id) => update({ p: id })}
+          onToggle={toggle}
+        />
+      ) : view === 'leave' ? (
+        <LeaveView
           idx={idx}
           selectedId={selectedId}
           matches={matches}
@@ -102,13 +127,14 @@ function TeamMap({ map, access }) {
           collapsed={collapsed}
           forceOpen={forceOpen}
           dirFilter={dirFilter}
+          away={away}
           onSelect={(id) => update({ p: id })}
           onToggle={toggle}
         >
           {drawer}
         </SchemeView>
       )}
-      {view === 'cards' && drawer}
+      {view !== 'scheme' && drawer}
       {formOpen && me && <MyProfileDrawer me={me} onClose={() => setFormOpen(false)} onChanged={reloadMe} />}
     </div>
   )

@@ -1,10 +1,12 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Dropdown } from 'antd'
+import { EllipsisOutlined } from '@ant-design/icons'
 import { useAuth } from '../auth/useAuth.js'
 import { DEMO_MODE } from '../config.js'
 import { MODULES } from '../../modules/registry.js'
 import strings from '../strings.js'
 import DemoUserSwitcher from './DemoUserSwitcher.jsx'
+import NotificationsBell from './NotificationsBell.jsx'
 
 const s = strings.layout
 
@@ -46,11 +48,13 @@ export default function AppLayout() {
       ),
     },
     { type: 'divider' },
+    { key: 'profile', label: s.profileLink },
     ...(me.can_manage_users ? [{ key: 'admin', label: s.adminLink }] : []),
     { key: 'logout', label: s.logout },
   ]
 
   const onUserMenu = async ({ key }) => {
+    if (key === 'profile') navigate('/profile')
     if (key === 'admin') navigate('/admin')
     if (key === 'logout') await logout()
   }
@@ -92,15 +96,21 @@ export default function AppLayout() {
           </div>
         </nav>
         <div className="user-slot">
-        <Dropdown menu={{ items: dropdownItems, onClick: onUserMenu }} trigger={['click']} placement="topLeft">
-          <div className="user-box" role="button" aria-label={s.userMenu}>
-            <div className="user-avatar mono">{initials(me.full_name)}</div>
-            <div className="user-text">
-              <span className="user-name">{me.full_name}</span>
-              <span className="user-role mono">{strings.levels[me.access_level]}</span>
-            </div>
+          <div className="user-box">
+            <Link to="/profile" className="user-link" aria-label={s.openProfile}>
+              <div className="user-avatar mono">{initials(me.full_name)}</div>
+              <div className="user-text">
+                <span className="user-name">{me.full_name}</span>
+                <span className="user-role mono">{strings.levels[me.access_level]}</span>
+              </div>
+            </Link>
+            <NotificationsBell />
+            <Dropdown menu={{ items: dropdownItems, onClick: onUserMenu }} trigger={['click']} placement="topLeft">
+              <button type="button" className="icon-btn" aria-label={s.userMenu}>
+                <EllipsisOutlined />
+              </button>
+            </Dropdown>
           </div>
-        </Dropdown>
         </div>
       </aside>
 
