@@ -1,6 +1,6 @@
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation, useSearchParams } from 'react-router-dom'
-import { Alert, Badge, Spin, Tabs, Typography } from 'antd'
+import { Alert, Badge, Button, Spin, Tabs, Typography } from 'antd'
 import { api } from '../api/index.js'
 import { useAuth } from '../auth/useAuth.js'
 import { PROFILE_SECTIONS } from '../../modules/registry.js'
@@ -8,12 +8,21 @@ import strings from '../strings.js'
 
 const s = strings.profile
 
+// Раздел ядра: доступен всем активным (включая viewer), первый в списке; остальные приходят из реестра модулей
+const SETTINGS_SECTION = {
+  id: 'settings',
+  label: s.settings.label,
+  visible: () => true,
+  Component: lazy(() => import('./SettingsSection.jsx')),
+}
+const SECTIONS = [SETTINGS_SECTION, ...PROFILE_SECTIONS]
+
 const loadSection = (section, me) =>
   section.load ? Promise.resolve(section.load(api, me)).catch(() => null) : Promise.resolve(undefined)
 
 // Личная страница сотрудника. Разделы приходят из реестра модулей (PROFILE_SECTIONS), ядро их содержания не знает.
 function Profile() {
-  const { me, syncMe } = useAuth()
+  const { me, syncMe, logout } = useAuth()
   const location = useLocation()
   const [params, setParams] = useSearchParams()
   const [datas, setDatas] = useState(null) // { [sectionId]: данные раздела }; null — первая загрузка
@@ -26,8 +35,8 @@ function Profile() {
   // Данные перечитываются при каждом переходе на страницу (в т.ч. по ссылке из уведомления), прежние остаются на экране
   useEffect(() => {
     let alive = true
-    Promise.all(PROFILE_SECTIONS.map((sec) => loadSection(sec, meRef.current))).then((list) => {
-      if (alive) setDatas(Object.fromEntries(PROFILE_SECTIONS.map((sec, i) => [sec.id, list[i]])))
+    Promise.all(SECTIONS.map((sec) => loadSection(sec, meRef.current))).then((list) => {
+      if (alive) setDatas(Object.fromEntries(SECTIONS.map((sec, i) => [sec.id, list[i]])))
     })
     return () => {
       alive = false
@@ -37,7 +46,7 @@ function Profile() {
   // Перечитать один раздел и /core/me (счётчики уведомлений и бейджей)
   const reload = useCallback(
     async (id) => {
-      const sec = PROFILE_SECTIONS.find((x) => x.id === id)
+      const sec = SECTIONS.find((x) => x.id === id)
       const fresh = await loadSection(sec, meRef.current)
       setDatas((cur) => ({ ...cur, [id]: fresh }))
       await syncMe()
@@ -47,15 +56,18 @@ function Profile() {
 
   if (datas === null) return <Spin />
 
-  const visible = PROFILE_SECTIONS.filter((sec) => sec.visible(me, datas[sec.id]))
+  const visible = SECTIONS.filter((sec) => sec.visible(me, datas[sec.id]))
   const requested = params.get('section')
   const active = visible.find((sec) => sec.id === requested) ?? visible[0]
 
   return (
     <div>
-      <Typography.Title level={2} style={{ marginTop: 0, marginBottom: 4 }}>
-        {s.title}
-      </Typography.Title>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <Typography.Title level={2} style={{ marginTop: 0, marginBottom: 4 }}>
+          {s.title}
+        </Typography.Title>
+        <Button onClick={() => logout()}>{strings.layout.logout}</Button>
+      </div>
       <div style={{ color: 'var(--muted)', marginBottom: 20 }}>
         {me.full_name} · {strings.levels[me.access_level]}
       </div>

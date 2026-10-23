@@ -32,6 +32,8 @@ function TeamMap({ map, access }) {
   // состояние в URL: ?view=scheme&dir=<id направления>&p=<id человека>
   const viewParam = params.get('view')
   const view = viewParam === 'scheme' ? 'scheme' : viewParam === 'leave' && !limited ? 'leave' : 'cards'
+  // последний режим структуры («Направления»/«Схема») — к нему возвращает повторный клик «Отпуска»
+  const [lastStruct, setLastStruct] = useState(view === 'scheme' ? 'scheme' : 'cards')
   const dirParam = params.get('dir')
   const dirFilter = idx.dirs.some((d) => d.id === dirParam) ? dirParam : null
   const selectedId = parseId(params.get('p'), idx.by)
@@ -85,7 +87,12 @@ function TeamMap({ map, access }) {
         onLeaders={() => setCollapsed(collapseLeaders(idx.by, idx.ceoId))}
         onExpand={() => setCollapsed({})}
         view={view}
-        onView={(v) => update({ view: v === 'cards' ? null : v })}
+        lastStruct={lastStruct}
+        onView={(v) => {
+          if (v === 'leave' && view !== 'leave') setLastStruct(view)
+          if (v !== 'leave') setLastStruct(v)
+          update({ view: v === 'cards' ? null : v })
+        }}
         canLeave={!limited}
         dirs={idx.dirs}
         total={idx.totalPeople}

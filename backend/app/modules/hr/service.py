@@ -4,7 +4,10 @@
 личное право на модуль задаёт админ (user_module_permissions). В журнал (log_action) пишутся только id и имена полей:
 значения досье, денег и документов, а также тексты сообщений не пишутся.
 """
+import base64
+import binascii
 import re
+import unicodedata
 from datetime import date
 from decimal import Decimal
 
@@ -629,3 +632,151 @@ def update_policy(session: Session, user: User, country: str, d: dict) -> dict:
         log_action(session, user.id, "hr.policy_update", MODULE_ID, country=country, fields=sorted(d))
         session.commit()
     return _policy_out(_policy_row(session, country))
+
+
+# ---------- Resp: документы сотрудника ----------
+
+DOC_CATEGORIES = ("contract", "order", "id_doc", "tax", "bank", "medical", "other")
+DOC_MAX_BYTES = 8 * 1024 * 1024
+DOC_MAX_PER_PERSON = 50
+DOC_TITLE_LIMIT = 120
+DOC_NAME_LIMIT = 120
+DOC_BASE64_LIMIT = (DOC_MAX_BYTES + 2) // 3 * 4  # длина base64 для файла максимального размера
+_PDF, _JPEG, _PNG, _ZIP, _OLE = b"%PDF", b"\xff\xd8\xff", b"\x89PNG", b"PK\x03\x04", b"\xd0\xcf\x11\xe0"
+# расширение -> (mime, допустимые начала файла; None — текст без нулевых байт, валидный UTF-8)
+DOC_TYPES = {
+    "pdf": ("application/pdf", (_PDF,)),
+    "jpg": ("image/jpeg", (_JPEG,)),
+    "jpeg": ("image/jpeg", (_JPEG,)),
+    "png": ("image/png", (_PNG,)),
+    "doc": ("application/msword", (_OLE,)),
+    "docx": ("application/vnd.openxmlformats-officedocument.wordprocessingml.document", (_ZIP,)),
+    "xls": ("application/vnd.ms-excel", (_OLE,)),
+    "xlsx": ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", (_ZIP,)),
+    "txt": ("text/plain", None),
+}
+MSG_DOC_NOT_FOUND = "Документ не найден"
+MSG_DOC_CATEGORY = "Неизвестная категория документа"
+MSG_DOC_TITLE = f"Введите название документа (до {DOC_TITLE_LIMIT} символов)"
+MSG_DOC_NAME = "Укажите имя файла"
+MSG_DOC_EXT = "Допустимые файлы: pdf, jpg, png, doc, docx, xls, xlsx, txt"
+MSG_DOC_BASE64 = "Файл повреждён или передан неверно"
+MSG_DOC_EMPTY = "Файл пустой"
+MSG_DOC_SIZE = "Файл больше 8 МБ"
+MSG_DOC_CONTENT = "Содержимое файла не соответствует его расширению"
+MSG_DOC_LIMIT = f"У сотрудника уже {DOC_MAX_PER_PERSON} документов: удалите ненужные"
+
+
+def _doc_file_name(value) -> tuple[str, str]:
+    """Имя без путей и управляющих символов (до 120, расширение сохраняется) и расширение в нижнем регистре."""
+    name = str(value or "").replace("\\", "/").rsplit("/", 1)[-1]
+    name = "".join(c for c in name if unicodedata.category(c) not in ("Cc", "Cf", "Cs", "Zl", "Zp")).strip()
+    if not name or name in (".", ".."):
+        fail(422, MSG_DOC_NAME)
+    ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
+    if ext not in DOC_TYPES:
+        fail(422, MSG_DOC_EXT)
+    if len(name) > DOC_NAME_LIMIT:
+        suffix = "." + name.rsplit(".", 1)[-1]
+        name = name[: DOC_NAME_LIMIT - len(suffix)].rstrip() + suffix
+    return name, ext
+
+
+def _doc_content(data_base64, ext: str) -> bytes:
+    if not isinstance(data_base64, str):
+        fail(422, MSG_DOC_BASE64)
+    if len(data_base64) > DOC_BASE64_LIMIT:
+        fail(413, MSG_DOC_SIZE)
+    try:
+        content = base64.b64decode(data_base64, validate=True)
+    except (binascii.Error, ValueError):
+        fail(422, MSG_DOC_BASE64)
+    if not content:
+        fail(422, MSG_DOC_EMPTY)
+    if len(content) > DOC_MAX_BYTES:
+        fail(413, MSG_DOC_SIZE)
+    heads = DOC_TYPES[ext][1]
+    if heads is None:
+        try:
+            content.decode("utf-8")
+        except UnicodeDecodeError:
+            fail(422, MSG_DOC_CONTENT)
+        if b"\x00" in content:
+            fail(422, MSG_DOC_CONTENT)
+    elif not content.startswith(heads):
+        fail(422, MSG_DOC_CONTENT)
+    return content
+
+
+def _doc_out(r) -> dict:
+    return {
+        "id": r["id"], "category": r["category"], "title": r["title"], "fileName": r["file_name"], "mime": r["mime"],
+        "sizeBytes": r["size_bytes"], "uploadedBy": r["uploader"], "uploadedAt": r["uploaded_at"].isoformat(),
+    }
+
+
+DOC_SQL = (
+    "SELECT d.id, d.person_id, d.category, d.title, d.file_name, d.mime, d.size_bytes, d.uploaded_at, u.full_name AS uploader "
+    f"FROM {H}documents d LEFT JOIN {U} u ON u.id = d.uploaded_by"
+)
+
+
+def list_documents(session: Session, person_id: int) -> list[dict]:
+    _person(session, person_id)
+    rows = session.execute(text(DOC_SQL + " WHERE d.person_id = :p ORDER BY d.uploaded_at DESC, d.id DESC"), {"p": person_id}).mappings().all()
+    return [_doc_out(r) for r in rows]
+
+
+def upload_document(session: Session, user: User, person_id: int, d: dict) -> dict:
+    _person(session, person_id, lock=True)  # замок на человека: лимит 50 не обходится параллельными загрузками
+    category = d.get("category")
+    if category not in DOC_CATEGORIES:
+        fail(422, MSG_DOC_CATEGORY)
+    title = d.get("title")
+    title = title.strip() if isinstance(title, str) else ""
+    if not 1 <= len(title) <= DOC_TITLE_LIMIT:
+        fail(422, MSG_DOC_TITLE)
+    name, ext = _doc_file_name(d.get("fileName"))
+    content = _doc_content(d.get("dataBase64"), ext)
+    count = session.execute(text(f"SELECT count(*) FROM {H}documents WHERE person_id = :p"), {"p": person_id}).scalar_one()
+    if count >= DOC_MAX_PER_PERSON:
+        fail(409, MSG_DOC_LIMIT)
+    doc_id = session.execute(
+        text(
+            f"INSERT INTO {H}documents (person_id, category, title, file_name, mime, size_bytes, uploaded_by) "
+            "VALUES (:p, :c, :t, :n, :m, :s, :u) RETURNING id"
+        ),
+        {"p": person_id, "c": category, "t": title, "n": name, "m": DOC_TYPES[ext][0], "s": len(content), "u": user.id},
+    ).scalar_one()
+    session.execute(text(f"INSERT INTO {H}document_files (document_id, content) VALUES (:i, :c)"), {"i": doc_id, "c": content})
+    log_action(session, user.id, "hr.document_upload", MODULE_ID, document_id=doc_id, person_id=person_id, category=category)
+    session.commit()
+    return _doc_out(session.execute(text(DOC_SQL + " WHERE d.id = :i"), {"i": doc_id}).mappings().one())
+
+
+def _document(session: Session, doc_id: int):
+    row = session.execute(text(DOC_SQL + " WHERE d.id = :i"), {"i": doc_id}).mappings().first()
+    if row is None:
+        fail(404, MSG_DOC_NOT_FOUND)
+    return row
+
+
+def download_document(session: Session, user: User, doc_id: int) -> dict:
+    doc = _document(session, doc_id)
+    content = session.execute(text(f"SELECT content FROM {H}document_files WHERE document_id = :i"), {"i": doc_id}).scalar_one_or_none()
+    if content is None:
+        fail(404, MSG_DOC_NOT_FOUND)
+    log_action(session, user.id, "hr.document_download", MODULE_ID, document_id=doc_id, person_id=doc["person_id"], category=doc["category"])
+    session.commit()
+    return {
+        "fileName": doc["file_name"], "mime": doc["mime"], "sizeBytes": doc["size_bytes"],
+        "dataBase64": base64.b64encode(bytes(content)).decode("ascii"),
+    }
+
+
+def delete_document(session: Session, user: User, doc_id: int) -> dict:
+    doc = _document(session, doc_id)
+    session.execute(text(f"DELETE FROM {H}documents WHERE id = :i"), {"i": doc_id})  # файл удаляется каскадом
+    log_action(session, user.id, "hr.document_delete", MODULE_ID, document_id=doc_id, person_id=doc["person_id"], category=doc["category"])
+    session.commit()
+    return {"ok": True}
