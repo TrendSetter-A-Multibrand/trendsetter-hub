@@ -432,45 +432,137 @@ def sheet_text(data: dict) -> dict[str, list[list]]:
     return {ws.title: [[c.value for c in row] for row in ws.iter_rows()] for ws in wb.worksheets}
 
 
-def test_export_people_has_no_money_or_documents(client, db, hr, resp, team):
-    e = team["ids"]["e"]
-    assert client.patch(f"{BASE}/people/{e}/sensitive", json={"salary": SALARY, "passport": SECRET_PASSPORT, "taxId": "7700123456", "bankDetails": "СЧЁТ-777"}, headers=resp).status_code == 200
+def raw_xml(data: dict) -> str:
+    import zipfile
+
+    with zipfile.ZipFile(io.BytesIO(base64.b64decode(data["dataBase64"]))) as z:
+        return " ".join(z.read(n).decode("utf-8") for n in z.namelist() if n.endswith(".xml"))
+
+
+def as_dicts(sheet: list[list]) -> list[dict]:
+    return [dict(zip(sheet[0], row)) for row in sheet[1:]]
+
+
+def seed_export(client, db, hr, resp, team) -> None:
+    """Егор: досье, деньги, документ, оборудование, история, чек-лист, отпуска, ответы анкеты; Клим уволен."""
+    e, c = team["ids"]["e"], team["ids"]["c"]
+    sens = {"salary": SALARY, "currency": "AMD", "payDay1": 5, "payDay2": 20, "bonusNote": "Премия-777", "passport": SECRET_PASSPORT, "taxId": "7700123456", "socialId": "СНИЛС-555", "bankDetails": "СЧЁТ-777"}
+    assert client.patch(f"{BASE}/people/{e}/sensitive", json=sens, headers=resp).status_code == 200
     upload(client, resp, e, title=SECRET_DOC_TITLE, fileName="секрет.pdf")
-    client.patch(f"{BASE}/people/{e}/file", json={"hiredAt": "2024-03-01", "country": "AM", "legalName": "Ермолов Е. Е.", "notes": "заметка"}, headers=resp)
+    file_body = {"hiredAt": "2024-03-01", "country": "AM", "legalName": "Ермолов Е. Е.", "notes": "заметка", "employmentType": "gph", "phone": "+374-1", "workSchedule": "5/2"}
+    assert client.patch(f"{BASE}/people/{e}/file", json=file_body, headers=resp).status_code == 200
+    client.post(f"{BASE}/people/{e}/equipment", json={"kind": "laptop", "name": "Ноутбук Lenovo", "issuedAt": iso(-30)}, headers=hr)
+    old = client.post(f"{BASE}/people/{e}/equipment", json={"kind": "phone", "name": "Старый телефон", "issuedAt": iso(-90)}, headers=hr).json()
+    client.patch(f"{BASE}/equipment/{old['id']}", json={"returnedAt": iso(-10)}, headers=hr)
+    client.post(f"{BASE}/people/{e}/history", json={"kind": "other", "effectiveDate": iso(0), "title": "Запись про Егора"}, headers=hr)
+    client.post(f"{BASE}/people/{e}/history", json={"kind": "salary", "effectiveDate": iso(0), "title": "Повышение оклада", "newValue": "150000"}, headers=resp)
+    cl = client.post(f"{BASE}/people/{e}/checklists", json={"templateId": tpl_id(client, hr)}, headers=hr).json()
+    client.patch(f"{BASE}/checklist-items/{cl['items'][0]['id']}", json={"done": True}, headers=hr)
+    assert client.post(f"{BASE}/people/{e}/leave/requests", json={"kind": "annual", "start": iso(5), "end": iso(9), "status": "approved"}, headers=hr).status_code == 200
+    client.post(f"{BASE}/people/{e}/leave/requests", json={"kind": "sick", "start": iso(100), "end": iso(101)}, headers=hr)
+    db.execute(text("UPDATE trendsetter_hub.team_people SET is_archived = true, show_in_map = false WHERE id = :i"), {"i": c})
+    db.execute(
+        text(
+            """INSERT INTO trendsetter_hub.team_form_fields (key, label, kind, active, sort) VALUES
+               ('pet', 'Питомец', 'text', true, 200), ('old_field', 'Старое поле', 'text', false, 210)"""
+        )
+    )
+    answers = '{"telegram": "@ivan", "hobbies": ["чай", "кофе"], "pet": "Барсик", "old_field": "архивный ответ", "socials": [{"label": "VK", "url": "https://vk.com/x"}]}'
+    db.execute(text("UPDATE trendsetter_hub.team_people SET answers = CAST(:a AS jsonb) WHERE id = :i"), {"a": answers, "i": e})
+    db.commit()
+
+
+def test_export_people_without_responsible_has_everything_but_money(client, db, hr, resp, team):
+    seed_export(client, db, hr, resp, team)
     r = client.get(f"{BASE}/export/people", headers=hr)
     assert r.status_code == 200
     data = r.json()
     assert data["fileName"].endswith(".xlsx") and set(data) == {"fileName", "dataBase64"}
     sheets = sheet_text(data)
-    assert list(sheets) == ["Сотрудники"]
-    header, *rows = sheets["Сотрудники"]
-    assert header == ["ФИО", "Должность", "Направление", "Руководитель", "Статус", "Страна", "Дата приёма", "Заполнено, %", "Почта", "Telegram", "Локация", "Формат работы"]
-    egor = next(row for row in rows if row[0] == "Ермолов Егор")
-    assert egor[3] == "Мэнэджер Мария" and egor[4] == "Работает" and egor[5] == "Армения" and egor[6] == "01.03.2024" and 0 <= egor[7] <= 100
-    blob = " ".join(str(c) for rows_ in sheets.values() for row in rows_ for c in row)
-    for secret in ("987654", SECRET_PASSPORT, "7700123456", "СЧЁТ-777", SECRET_DOC_TITLE, "секрет.pdf", "заметка", "Ермолов Е. Е."):
-        assert secret not in blob
-    import zipfile
-
-    with zipfile.ZipFile(io.BytesIO(base64.b64decode(data["dataBase64"]))) as z:  # и в сыром xml файла
-        raw = " ".join(z.read(n).decode("utf-8") for n in z.namelist() if n.endswith(".xml"))
-    for secret in ("987654", "СЧЁТ-777", SECRET_DOC_TITLE):
+    assert list(sheets) == ["Сотрудники", "Оборудование", "История", "Чек-листы", "Отпуска"]  # без «Деньги и документы»
+    header = sheets["Сотрудники"][0]
+    for group in (  # карточка, досье, баланс, оборудование, поля анкеты (активное, добавленное HR, неактивное, chips, links)
+        ["ФИО", "Имя", "Фамилия", "Должность", "Направление", "Руководитель", "Статус", "Тег", "Команда", "Показывать в карте", "Аккаунт привязан", "Почта аккаунта", "Заполнено, %", "Есть фото"],
+        ["ФИО полностью", "Дата рождения", "Страна", "Тип занятости", "Дата приёма", "Испытательный до", "Дата увольнения", "Причина увольнения", "Договор №", "Дата договора", "График работы", "Телефон", "Личная почта", "Экстренный контакт", "Заметки HR", "Скрыть день рождения"],
+        ["Отпуск: накоплено", "Отпуск: использовано", "Отпуск: запланировано", "Отпуск: доступно", "Оборудование на руках"],
+        ["Telegram", "Увлечения и таланты", "Соцсети", "Питомец", "Старое поле"],
+    ):
+        assert set(group) <= set(header), set(group) - set(header)
+    rows = as_dicts(sheets["Сотрудники"])
+    egor = next(r for r in rows if r["ФИО"] == "Ермолов Егор")
+    assert egor["Руководитель"] == "Мэнэджер Мария" and egor["Статус"] == "Работает" and egor["Страна"] == "Армения" and egor["Дата приёма"] == "01.03.2024"
+    assert egor["Тип занятости"] == "ГПХ" and egor["ФИО полностью"] == "Ермолов Е. Е." and egor["Заметки HR"] == "заметка" and egor["Телефон"] == "+374-1"
+    assert egor["Аккаунт привязан"] == "Да" and egor["Почта аккаунта"] == "e@example.com" and egor["Показывать в карте"] == "Да" and egor["Есть фото"] == "Нет"
+    assert egor["Заполнено, %"] >= 0 and egor["Оборудование на руках"] == 1  # возвращённый телефон не считается
+    assert egor["Отпуск: запланировано"] == 5.0 and egor["Отпуск: накоплено"] > 0
+    assert egor["Telegram"] == "@ivan" and egor["Увлечения и таланты"] == "чай, кофе" and egor["Соцсети"] == "VK: https://vk.com/x"
+    assert egor["Питомец"] == "Барсик" and egor["Старое поле"] == "архивный ответ"
+    klim = next(r for r in rows if r["ФИО"] == "Коллегин Клим")  # уволенный и скрытый с карты — тоже в файле
+    assert klim["Статус"] == "Уволен" and klim["Показывать в карте"] == "Нет"
+    assert len(rows) == 4
+    equipment = as_dicts(sheets["Оборудование"])
+    assert {(r["Название"], r["Вид"], r["Возвращено"] is not None) for r in equipment} == {("Ноутбук Lenovo", "Ноутбук", False), ("Старый телефон", "Телефон", True)}
+    history = as_dicts(sheets["История"])
+    assert [r["Заголовок"] for r in history if r["ФИО"] == "Ермолов Егор" and not r["Автозапись"] == "Да"] == ["Запись про Егора"]
+    assert not any(r["Вид"] == "Оклад" for r in history)
+    checklist = as_dicts(sheets["Чек-листы"])
+    assert len(checklist) == 1 and checklist[0]["Вид"] == "Онбординг" and checklist[0]["Статус"] == "Идёт" and checklist[0]["Выполнено"] == 1 and checklist[0]["Всего"] >= 5
+    leave = as_dicts(sheets["Отпуска"])
+    assert {(r["Вид"], r["Статус"]) for r in leave} == {("Ежегодный", "Одобрена"), ("Больничный", "На согласовании")}
+    raw = raw_xml(data)
+    for secret in ("987654", SECRET_PASSPORT, "7700123456", "СЧЁТ-777", "СНИЛС-555", "Премия-777", SECRET_DOC_TITLE, "секрет.pdf", "Повышение оклада", "150000"):
         assert secret not in raw
-    assert audit(db, "hr.export") == [{"kind": "people", "rows": len(rows)}]
+    assert audit(db, "hr.export") == [{"kind": "people", "rows": 4, "sensitive": False}]
 
 
-def test_export_marks_archived_keeps_telegram_and_does_not_make_formulas(client, db, hr, team):
+def test_export_people_with_responsible_adds_money_sheet_and_flags_audit(client, db, hr, resp, team):
+    seed_export(client, db, hr, resp, team)
+    data = client.get(f"{BASE}/export/people", headers=resp).json()
+    sheets = sheet_text(data)
+    assert list(sheets) == ["Сотрудники", "Оборудование", "История", "Чек-листы", "Отпуска", "Деньги и документы"]
+    money = as_dicts(sheets["Деньги и документы"])
+    assert len(money) == 4
+    egor = next(r for r in money if r["ФИО"] == "Ермолов Егор")
+    assert egor["Оклад"] == SALARY and egor["Валюта"] == "AMD" and egor["День выплаты 1"] == 5 and egor["День выплаты 2"] == 20
+    assert egor["Премии (заметка)"] == "Премия-777" and egor["ИНН"] == "7700123456" and egor["СНИЛС / ID"] == "СНИЛС-555"
+    assert egor["Паспорт"] == SECRET_PASSPORT and egor["Реквизиты"] == "СЧЁТ-777" and egor["Документов"] == 1
+    assert next(r for r in money if r["ФИО"] == "Коллегин Клим")["Оклад"] is None
+    assert any(r["Вид"] == "Оклад" and r["Заголовок"] == "Повышение оклада" for r in as_dicts(sheets["История"]))
+    raw = raw_xml(data)
+    for hidden in (SECRET_DOC_TITLE, "секрет.pdf", "%PDF"):  # содержимое и названия файлов документов не выгружаются
+        assert hidden not in raw
+    details = audit(db, "hr.export")
+    assert details == [{"kind": "people", "rows": 4, "sensitive": True}]
+    assert not any(v in str(details) for v in ("987654", SECRET_PASSPORT, "СЧЁТ-777"))
+
+
+def test_export_does_not_make_formulas(client, db, hr, team):
     c, e = team["ids"]["c"], team["ids"]["e"]
-    db.execute(text("UPDATE trendsetter_hub.team_people SET is_archived = true, title = '=SUM(A1)' WHERE id = :i"), {"i": c})
-    db.execute(text("UPDATE trendsetter_hub.team_people SET answers = '{\"telegram\": \"@ivan\"}'::jsonb WHERE id = :i"), {"i": e})
+    db.execute(text("UPDATE trendsetter_hub.team_people SET is_archived = true, title = '=SUM(A1)', tag = '+1', team = '-2' WHERE id = :i"), {"i": c})
+    db.execute(text("UPDATE trendsetter_hub.team_people SET answers = '{\"telegram\": \"@ivan\", \"evil\": \"=1+1\"}'::jsonb WHERE id = :i"), {"i": e})
+    db.execute(text("INSERT INTO trendsetter_hub.team_form_fields (key, label, kind, sort) VALUES ('evil', '=HYPERLINK(1)', 'text', 300)"))
     db.commit()
     data = client.get(f"{BASE}/export/people", headers=hr).json()
-    rows = sheet_text(data)["Сотрудники"]
-    klim = next(r for r in rows if r[0] == "Коллегин Клим")
-    assert klim[4] == "Уволен" and klim[1] == "=SUM(A1)"
-    assert next(r for r in rows if r[0] == "Ермолов Егор")[9] == "@ivan"
+    rows = as_dicts(sheet_text(data)["Сотрудники"])
+    klim = next(r for r in rows if r["ФИО"] == "Коллегин Клим")
+    assert klim["Статус"] == "Уволен" and klim["Должность"] == "=SUM(A1)" and klim["Тег"] == "+1" and klim["Команда"] == "-2"
+    assert next(r for r in rows if r["ФИО"] == "Ермолов Егор")["Telegram"] == "@ivan"  # @handle не меняется
     ws = load_workbook(io.BytesIO(base64.b64decode(data["dataBase64"])))["Сотрудники"]
-    assert next(row[1] for row in ws.iter_rows(min_row=2) if row[0].value == "Коллегин Клим").data_type == "s"  # не формула
+    for row in ws.iter_rows():
+        for cell in row:
+            assert cell.data_type != "f", cell.coordinate  # ни одной формулы, в т.ч. в заголовке и ответах анкеты
+    assert "<f>" not in raw_xml(data)
+
+
+def test_export_new_column_is_one_line(client, db, hr, team, monkeypatch):
+    from app.modules.hr import exports
+
+    monkeypatch.setattr(exports, "EXPORT_COLUMNS", exports.EXPORT_COLUMNS + [exports.Col("x", "Новая колонка", lambda r: "значение")])
+    rows = sheet_text(client.get(f"{BASE}/export/people", headers=hr).json())["Сотрудники"]
+    assert "Новая колонка" in rows[0] and rows[1][rows[0].index("Новая колонка")] == "значение"
+
+
+
 
 
 def test_export_leave_and_balance(client, db, hr, team):

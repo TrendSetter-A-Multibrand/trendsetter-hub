@@ -5,21 +5,44 @@ import { formatDate } from '../../../core/dates.js'
 import strings from '../strings.js'
 import { useLoad } from '../lib/useLoad.js'
 import PersonModal from './PersonModal.jsx'
-import { CHECKLIST_KINDS, DAYS_OFFSET_MAX, ITEM_TITLE_LIMIT, TEMPLATE_TITLE_LIMIT } from '../lib/ops.js'
+import { CHECKLIST_KINDS, DAYS_OFFSET_MAX, ITEM_TITLE_LIMIT, TEMPLATE_TITLE_LIMIT, copyTemplateItems, defaultBaseTemplate, itemsEdited } from '../lib/ops.js'
 
 const s = strings.templates
 const BASE = '/modules/hr/checklist-templates'
+const EMPTY_BASE = 'empty'
 let lastKey = 0
 const row = (title = '', daysOffset = null) => ({ key: (lastKey += 1), title, daysOffset })
 
 // Создание и правка шаблона. Пункты редактируются списком и уходят на сервер целиком.
-function TemplateModal({ template, onClose, onDone }) {
-  const { message } = App.useApp()
+// templates — все шаблоны: из них выбирается «основа» нового шаблона
+function TemplateModal({ template, templates, onClose, onDone }) {
+  const { message, modal } = App.useApp()
   const isEdit = Boolean(template)
   const [kind, setKind] = useState(template?.kind ?? 'onboarding')
   const [title, setTitle] = useState(template?.title ?? '')
-  const [items, setItems] = useState(() => (template ? template.items.map((i) => row(i.title, i.daysOffset)) : [row()]))
+  const [initialBase] = useState(() => (isEdit ? null : defaultBaseTemplate(templates, 'onboarding')))
+  const [baseId, setBaseId] = useState(initialBase?.id ?? null)
+  const [seed, setSeed] = useState(() => (isEdit ? [] : copyTemplateItems(initialBase))) // чем пункты были заполнены последний раз
+  const [items, setItems] = useState(() => (template ? template.items : seed).map((i) => row(i.title, i.daysOffset)))
   const [saving, setSaving] = useState(false)
+
+  // Смена вида/основы заново заполняет пункты; если пользователь уже правил пункты — сначала спрашиваем
+  const applyBase = (nextKind, nextBaseId) => {
+    const apply = () => {
+      const next = copyTemplateItems(templates.find((t) => t.id === nextBaseId))
+      setSeed(next)
+      setKind(nextKind)
+      setBaseId(nextBaseId)
+      setItems(next.map((i) => row(i.title, i.daysOffset)))
+    }
+    if (!itemsEdited(items, seed)) return apply()
+    modal.confirm({ title: s.baseConfirmTitle, content: s.baseConfirmText, okText: s.baseConfirmOk, cancelText: strings.documents.removeCancel, onOk: apply })
+  }
+  const changeKind = (nextKind) => applyBase(nextKind, defaultBaseTemplate(templates, nextKind)?.id ?? null)
+  const baseOptions = [
+    { value: EMPTY_BASE, label: s.baseEmpty },
+    ...templates.filter((t) => t.kind === kind).map((t) => ({ value: t.id, label: t.title })),
+  ]
 
   const setItem = (key, patch) => setItems((cur) => cur.map((i) => (i.key === key ? { ...i, ...patch } : i)))
   const move = (index, delta) =>
@@ -70,10 +93,18 @@ function TemplateModal({ template, onClose, onDone }) {
               style={{ width: '100%' }}
               disabled={isEdit}
               value={kind}
-              onChange={setKind}
+              onChange={changeKind}
               options={CHECKLIST_KINDS.map((value) => ({ value, label: strings.checklists.kinds[value] }))}
             />
           </div>
+          {!isEdit && (
+            <div style={{ width: 220 }}>
+              <div style={{ marginBottom: 4 }}>
+                <Typography.Text strong>{s.base}</Typography.Text>
+              </div>
+              <Select style={{ width: '100%' }} aria-label={s.base} value={baseId ?? EMPTY_BASE} onChange={(v) => applyBase(kind, v === EMPTY_BASE ? null : v)} options={baseOptions} />
+            </div>
+          )}
           <div style={{ flex: 1 }}>
             <div style={{ marginBottom: 4 }}>
               <Typography.Text strong>{s.name}</Typography.Text>
@@ -259,6 +290,7 @@ export default function ChecklistTemplatesTab() {
         <TemplateModal
           key={modal.template?.id ?? 'new'}
           template={modal.template ?? null}
+          templates={data}
           onClose={() => setModal(null)}
           onDone={() => {
             setModal(null)

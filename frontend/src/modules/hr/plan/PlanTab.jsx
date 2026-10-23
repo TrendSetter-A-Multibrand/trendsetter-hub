@@ -177,6 +177,18 @@ export default function PlanTab() {
           ))}
         </Space>
       </Space>
+      <Alert
+        type="info"
+        showIcon
+        title={t.howTitle}
+        description={
+          <ul style={{ margin: 0, paddingLeft: 18 }}>
+            {t.howText.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        }
+      />
       {!ready ? (
         <Spin />
       ) : (

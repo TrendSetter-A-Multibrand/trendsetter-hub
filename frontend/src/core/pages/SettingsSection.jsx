@@ -21,7 +21,7 @@ export default function SettingsSection({ me }) {
         ]}
       />
       <p style={{ color: 'var(--muted)', marginTop: 16 }}>{s.passwordHint}</p>
-      {me.can_manage_users && <Link to="/admin">{s.adminLink}</Link>}
+      {me.can_manage_users && <Link to="/profile?section=admin">{s.adminLink}</Link>}
     </div>
   )
 }

@@ -49,7 +49,7 @@ export default function AppLayout() {
               const active = location.pathname === path
               const badge = me.module_badges?.[m.id] ?? 0
               return (
-                <Link key={m.id} to={path} className={`nav-item${m.Component && m.allowed ? ' live' : ''}${active ? ' active' : ''}`}>
+                <Link key={m.id} to={path} className={`nav-item${m.Component && m.allowed ? ' live' : ' dim'}${active ? ' active' : ''}`}>
                   <span className="nav-dot" />
                   <span className="nav-text">
                     <span className="nav-title">{m.strings.tool}</span>

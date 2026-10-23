@@ -15,7 +15,14 @@ const SETTINGS_SECTION = {
   visible: () => true,
   Component: lazy(() => import('./SettingsSection.jsx')),
 }
-const SECTIONS = [SETTINGS_SECTION, ...PROFILE_SECTIONS]
+// Администрирование — тоже раздел ядра, в конце ряда; только для тех, кто управляет пользователями
+const ADMIN_SECTION = {
+  id: 'admin',
+  label: strings.admin.title,
+  visible: (me) => Boolean(me.can_manage_users),
+  Component: lazy(() => import('../admin/AdminPage.jsx')),
+}
+const SECTIONS = [SETTINGS_SECTION, ...PROFILE_SECTIONS, ADMIN_SECTION]
 
 const loadSection = (section, me) =>
   section.load ? Promise.resolve(section.load(api, me)).catch(() => null) : Promise.resolve(undefined)
@@ -66,7 +73,7 @@ function Profile() {
         <Typography.Title level={2} style={{ marginTop: 0, marginBottom: 4 }}>
           {s.title}
         </Typography.Title>
-        <Button onClick={() => logout()}>{strings.layout.logout}</Button>
+        <Button type="primary" className="logout-btn" onClick={() => logout()}>{strings.layout.logout}</Button>
       </div>
       <div style={{ color: 'var(--muted)', marginBottom: 20 }}>
         {me.full_name} · {strings.levels[me.access_level]}
