@@ -38,6 +38,24 @@ SQL-скрипты для базы хаба. Секретов (паролей) �
 ## Модули «HR» и «Карта команды»
 `03_hr_team_modules.sql` (ревизия `0003`): отдел `hr` и привязка модуля `hr` к нему. Модуль `team` привязки не имеет: он помечен `for_all` в манифесте бэкенда и виден всем активным сотрудникам (просмотр). Порядок выката как у группы доступа: под doadmin `db/03_hr_team_modules.sql`, затем `deploy/stamp_alembic_0003.sql` (`0002` → `0003`), только потом merge в `main`.
 
+## Модуль «Карта команды» (team)
+`04_team.sql` (ревизия `0004`): `team_directions` (справочник направлений, цвета по брендбуку, включая `leadership`), `team_people` (карточки; ответы анкеты — JSONB `answers`), `team_photos` (фото в БД, `photo_full`/`photo_thumb`), `team_form_fields` (поля анкеты для конструктора HR, сид 13 полей), `team_submissions` (заявки сотрудников на модерацию, не более одной `pending` на пользователя). Людей скрипт не создаёт: персональные данные в git не хранятся.
+
+**Порядок выката** (как у `0003`; `deploy.sh` миграции не выполняет):
+1. Под doadmin в `defaultdb` выполнить `db/04_team.sql`.
+2. Под doadmin выполнить `deploy/stamp_alembic_0004.sql` (версия миграции `0003` → `0004`).
+3. Только после этого — merge в `main`. Иначе деплой будет «зелёным», а `/core/me` и модуль `team` начнут отвечать 500.
+
+**Откат миграции** (`alembic downgrade 0003`): удаляются только таблицы `team_*`.
+
+**Загрузка людей из `team.json`** (разово, вне репозитория; файл с ПДн положить на сервер как xlsx склада, `chmod 600`, после загрузки удалить):
+```
+docker exec -i trendsetter-hub-api python -m app.modules.team.seed - < /opt/trendsetter-hub/import/team.json            # сухой прогон
+docker exec -i trendsetter-hub-api python -m app.modules.team.seed - --apply < /opt/trendsetter-hub/import/team.json    # запись
+docker exec trendsetter-hub-api python -m app.modules.team.seed --rollback [--apply]                                    # откат
+```
+Сухой прогон по умолчанию. Коды выхода: 0 — успех; 1 — ошибки файла/БД; 2 — в `team_people` уже есть карточки (загрузка) или началась живая работа (откат). В выводе и журнале только счётчики и id из файла, почты и telegram не печатаются.
+
 ## Модуль «Склад»
 Листы Google Таблицы «Склад-приёмка» стали таблицами: Приемки → `warehouse_receipts`, Раскладки → `warehouse_receipt_plans`, Счётчики → `warehouse_box_counters` и `warehouse_pallet_pointers`, Сканы → `warehouse_scans`, Короба → `warehouse_boxes`, Хранение → `warehouse_storage_boxes`, Хранение — архив → `warehouse_storage_archive`, Секции → `warehouse_extra_sections`, Коды ЧЗ → `warehouse_marks`, Сводка → представление `warehouse_receipt_summary`. Условия, которые раньше защищал `LockService`, держит база: уникальность кода ЧЗ, одно место на короб, уникальное имя приёмки, номера коробов через функцию `warehouse_next_box_number()`, повтор отправки скана отсекается по id.
 

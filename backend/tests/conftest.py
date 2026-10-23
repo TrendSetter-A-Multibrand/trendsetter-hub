@@ -74,6 +74,9 @@ def clean(database):
             "trendsetter_hub.warehouse_receipts, trendsetter_hub.warehouse_box_counters, trendsetter_hub.warehouse_pallet_pointers "
             "RESTART IDENTITY CASCADE"
         )
+        # team_people/photos/submissions очищены каскадом от users; конструктор полей возвращается к стартовому набору (скрипт идемпотентен)
+        conn.execute("DELETE FROM trendsetter_hub.team_form_fields")
+        conn.execute((BACKEND.parent / "db" / "04_team.sql").read_text(encoding="utf-8"))
         conn.execute("DELETE FROM trendsetter_hub.departments WHERE code NOT IN ('purchasing','warehouse','wb','analytics','pricing','hr')")
 
 

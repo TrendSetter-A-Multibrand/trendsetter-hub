@@ -56,6 +56,7 @@ const strings = {
     departments: 'Отделы',
     adminLink: 'Пользователи и отделы',
     logout: 'Выйти',
+    moduleBadge: (n) => `Требует внимания: ${n}`,
   },
 
   hub: {

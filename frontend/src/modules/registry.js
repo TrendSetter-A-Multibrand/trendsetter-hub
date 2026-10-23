@@ -20,9 +20,9 @@ export const MODULES = [
   { id: 'wb', status: 'roadmap', strings: wbStrings, Component: null },
   { id: 'analytics', status: 'roadmap', strings: analyticsStrings, Component: null },
   { id: 'pricing', status: 'roadmap', strings: pricingStrings, Component: null },
-  { id: 'hr', status: 'roadmap', strings: hrStrings, Component: null },
+  { id: 'hr', status: 'mvp', wide: true, strings: hrStrings, Component: lazy(() => import('./hr/HrPage.jsx')) },
   // forAll: виден всем активным сотрудникам (просмотр), без привязки к отделу; анкета — в настройках профиля (позже)
-  { id: 'team', status: 'roadmap', forAll: true, strings: teamStrings, Component: null },
+  { id: 'team', status: 'mvp', forAll: true, wide: true, strings: teamStrings, Component: lazy(() => import('./team/TeamPage.jsx')) },
 ]
 
 export const getModule = (id) => MODULES.find((m) => m.id === id)

@@ -85,10 +85,16 @@ export default function HubPage() {
         <div className="cards">
           {visibleModules.map((m) => {
             const live = m.status === 'mvp'
+            const badge = me.module_badges?.[m.id] ?? 0
             return (
               <Link key={m.id} to={`/modules/${m.id}`} className={`card${live ? ' live' : ''}`}>
                 <div className="card-top">
                   <span className="card-idx mono">[{m.idx}]</span>
+                  {badge > 0 && (
+                    <span className="badge mono" aria-label={strings.layout.moduleBadge(badge)}>
+                      {badge}
+                    </span>
+                  )}
                   <span className={`tag mono${live ? ' mvp' : ''}`}>{strings.moduleStatuses[m.status]}</span>
                 </div>
                 <div className="card-dept mono">{m.strings.dept}</div>

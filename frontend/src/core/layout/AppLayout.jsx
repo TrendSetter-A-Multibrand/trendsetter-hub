@@ -72,6 +72,7 @@ export default function AppLayout() {
             {navModules.map((m) => {
               const path = `/modules/${m.id}`
               const active = location.pathname === path
+              const badge = me.module_badges?.[m.id] ?? 0
               return (
                 <Link key={m.id} to={path} className={`nav-item${m.Component && m.allowed ? ' live' : ''}${active ? ' active' : ''}`}>
                   <span className="nav-dot" />
@@ -79,6 +80,11 @@ export default function AppLayout() {
                     <span className="nav-title">{m.strings.tool}</span>
                     <span className="nav-dept mono">{m.strings.dept}</span>
                   </span>
+                  {badge > 0 && (
+                    <span className="nav-badge mono" aria-label={s.moduleBadge(badge)}>
+                      {badge}
+                    </span>
+                  )}
                   <span className="nav-idx mono">{m.idx}</span>
                 </Link>
               )
