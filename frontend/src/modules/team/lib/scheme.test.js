@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { buildIndex, isOpen } from './tree.js'
-import { H, W, layoutScheme } from './scheme.js'
+import { H, W, layoutScheme, zoomAt } from './scheme.js'
 
 const directions = [
   { id: 'leadership', label: 'РУКОВОДСТВО', shortName: 'Руководство', color: '#A22325', avatarInk: '#FFFFFF' },
@@ -146,4 +146,18 @@ test('60+ человек раскладываются без накладок к
   for (const a of layout.nodes) for (const b of layout.nodes) {
     if (a.id < b.id && a.y === b.y) assert.ok(Math.abs(a.x - b.x) >= W, `${a.id}/${b.id} пересекаются`)
   }
+})
+
+test('zoomAt: точка под курсором остаётся на месте', () => {
+  const r = zoomAt({ zoom: 0.8, delta: 0.1, scrollLeft: 100, scrollTop: 50, px: 200, py: 80 })
+  assert.equal(r.zoom, 0.9)
+  assert.ok(Math.abs((100 + 200) / 0.8 - (r.scrollLeft + 200) / 0.9) < 1e-9)
+  assert.ok(Math.abs((50 + 80) / 0.8 - (r.scrollTop + 80) / 0.9) < 1e-9)
+})
+
+test('zoomAt: границы 0.3 и 1.5 и неотрицательный scroll', () => {
+  assert.deepEqual(zoomAt({ zoom: 1.5, delta: 0.1, scrollLeft: 5, scrollTop: 6, px: 1, py: 1 }), { zoom: 1.5, scrollLeft: 5, scrollTop: 6 })
+  const r = zoomAt({ zoom: 0.4, delta: -0.1, scrollLeft: 0, scrollTop: 0, px: 0, py: 0 })
+  assert.equal(r.zoom, 0.3)
+  assert.equal(r.scrollLeft, 0)
 })

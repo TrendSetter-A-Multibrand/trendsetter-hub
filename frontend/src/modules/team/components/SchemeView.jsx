@@ -2,18 +2,23 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import Avatar from './Avatar.jsx'
 import strings from '../strings.js'
 import { cardState, isOpen } from '../lib/tree.js'
-import { layoutScheme } from '../lib/scheme.js'
+import { layoutScheme, zoomAt } from '../lib/scheme.js'
 
 const s = strings.scheme
 const pn = strings.panel
 const RED = '#A22325'
 const LINE = '#D3CCC9'
 const clampZoom = (z) => Math.min(1.5, Math.max(0.3, Math.round(z * 10) / 10))
+const canFullscreen = typeof document !== 'undefined' && !!document.documentElement.requestFullscreen
 
-export default function SchemeView({ idx, selectedId, matches, path, collapsed, forceOpen, dirFilter, onSelect, onToggle }) {
+export default function SchemeView({ idx, selectedId, matches, path, collapsed, forceOpen, dirFilter, onSelect, onToggle, children }) {
   const { by, ceoId, assistantIds, dirs } = idx
   const [zoom, setZoom] = useState(0.8)
   const scrollRef = useRef(null)
+  const wrapRef = useRef(null)
+  const zoomRef = useRef(zoom)
+  const pendingScroll = useRef(null)
+  const [isFull, setIsFull] = useState(false)
   const drag = useRef(null)
 
   // раскладка зависит только от данных/сворачивания/фильтра, не от выделения
@@ -38,10 +43,60 @@ export default function SchemeView({ idx, selectedId, matches, path, collapsed, 
     })
   }, [])
 
-  // авто-«Вписать» при входе в схему и при смене фильтра направления
+  useLayoutEffect(() => {
+    zoomRef.current = zoom
+    const el = scrollRef.current
+    const p = pendingScroll.current
+    if (el && p) {
+      el.scrollLeft = p.left
+      el.scrollTop = p.top
+    }
+    pendingScroll.current = null
+  }, [zoom])
+
+  // авто-подбор масштаба при входе в схему и при смене фильтра направления
   useLayoutEffect(() => {
     fit()
   }, [fit, dirFilter])
+
+  // полный экран: при входе и выходе пересчитываем масштаб под новую ширину контейнера
+  useEffect(() => {
+    const onChange = () => {
+      setIsFull(document.fullscreenElement === wrapRef.current)
+      requestAnimationFrame(fit)
+    }
+    document.addEventListener('fullscreenchange', onChange)
+    return () => document.removeEventListener('fullscreenchange', onChange)
+  }, [fit])
+
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) document.exitFullscreen?.()
+    else wrapRef.current?.requestFullscreen?.()
+  }
+
+  // Ctrl+колесо / pinch: масштаб схемы к курсору, масштаб страницы браузера не меняется
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return undefined
+    const onWheel = (e) => {
+      if (!e.ctrlKey) return
+      e.preventDefault()
+      const r = el.getBoundingClientRect()
+      const next = zoomAt({
+        zoom: zoomRef.current,
+        delta: e.deltaY < 0 ? 0.1 : -0.1,
+        scrollLeft: el.scrollLeft,
+        scrollTop: el.scrollTop,
+        px: e.clientX - r.left,
+        py: e.clientY - r.top,
+      })
+      if (next.zoom === zoomRef.current) return
+      pendingScroll.current = { left: next.scrollLeft, top: next.scrollTop }
+      setZoom(next.zoom)
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [])
 
   useEffect(() => {
     const move = (e) => {
@@ -86,7 +141,7 @@ export default function SchemeView({ idx, selectedId, matches, path, collapsed, 
   const { rawW, rawH } = layout
 
   return (
-    <div className="tm-scheme-wrap">
+    <div className="tm-scheme-wrap" ref={wrapRef}>
       <div
         className="tm-scheme"
         ref={scrollRef}
@@ -177,10 +232,13 @@ export default function SchemeView({ idx, selectedId, matches, path, collapsed, 
         <button type="button" className="tm-zoom-step" aria-label={s.zoomIn} onClick={() => setZoom((z) => clampZoom(z + 0.1))}>
           +
         </button>
-        <button type="button" className="tm-zoom-fit" onClick={fit}>
-          {s.fit}
-        </button>
+        {canFullscreen && (
+          <button type="button" className="tm-zoom-fit" onClick={toggleFullscreen}>
+            {isFull ? s.exitFullscreen : s.fullscreen}
+          </button>
+        )}
       </div>
+      {children}
     </div>
   )
 }

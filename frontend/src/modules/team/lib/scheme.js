@@ -127,3 +127,16 @@ export function layoutScheme({ by, ceoId, assistantIds, dirs, dirFilter, open })
   const rawH = Math.max(...zones.map((z) => z.y + z.h)) + M + 30
   return { zones, nodes, edges, assistants, rawW, rawH, ceoCx }
 }
+
+// Масштаб «к курсору»: точка контента под курсором (px, py — от левого верхнего угла окна прокрутки) остаётся на месте.
+// Возвращает новый zoom (шаг delta, 0.3–1.5, округление до 0.1 как у кнопок +/−) и scrollLeft/scrollTop.
+export function zoomAt({ zoom, delta, scrollLeft, scrollTop, px, py }) {
+  const next = Math.min(1.5, Math.max(0.3, Math.round((zoom + delta) * 10) / 10))
+  if (next === zoom) return { zoom, scrollLeft, scrollTop }
+  const k = next / zoom
+  return {
+    zoom: next,
+    scrollLeft: Math.max(0, (scrollLeft + px) * k - px),
+    scrollTop: Math.max(0, (scrollTop + py) * k - py),
+  }
+}

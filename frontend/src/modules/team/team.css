@@ -130,6 +130,8 @@
   height: calc(100vh - 112px); overflow: auto; cursor: grab; user-select: none;
   background-image: radial-gradient(#DCD5D2 1px, transparent 1px); background-size: 22px 22px;
 }
+.tm-scheme-wrap:fullscreen { background: var(--bg, #fff); }
+.tm-scheme-wrap:fullscreen .tm-scheme { height: 100vh; }
 .tm-scheme-size { position: relative; }
 .tm-scheme-layer { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
 .tm-zone { position: absolute; border-radius: 14px; }

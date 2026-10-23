@@ -53,6 +53,18 @@ function TeamMap({ map, access }) {
 
   if (idx.totalPeople === 0) return <Alert type="info" showIcon title={strings.state.empty} style={{ margin: 28 }} />
 
+  // в схеме drawer рендерится внутри контейнера схемы, чтобы был виден в полноэкранном режиме
+  const drawer = selected && (
+    <ProfileDrawer
+      person={selected}
+      by={idx.by}
+      limited={limited}
+      onSelect={(id) => update({ p: id })}
+      onClose={() => update({ p: null })}
+      onEditOwn={me && me.person?.id === selected.id ? () => setFormOpen(true) : undefined}
+    />
+  )
+
   return (
     <div className={`tm-main${selected ? ' has-drawer' : ''}`}>
       <TeamHeader
@@ -92,18 +104,11 @@ function TeamMap({ map, access }) {
           dirFilter={dirFilter}
           onSelect={(id) => update({ p: id })}
           onToggle={toggle}
-        />
+        >
+          {drawer}
+        </SchemeView>
       )}
-      {selected && (
-        <ProfileDrawer
-          person={selected}
-          by={idx.by}
-          limited={limited}
-          onSelect={(id) => update({ p: id })}
-          onClose={() => update({ p: null })}
-          onEditOwn={me && me.person?.id === selected.id ? () => setFormOpen(true) : undefined}
-        />
-      )}
+      {view === 'cards' && drawer}
       {formOpen && me && <MyProfileDrawer me={me} onClose={() => setFormOpen(false)} onChanged={reloadMe} />}
     </div>
   )
