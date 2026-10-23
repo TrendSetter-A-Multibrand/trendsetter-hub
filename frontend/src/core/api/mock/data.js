@@ -29,6 +29,7 @@ export const data = {
     { id: 5, email: 'viewer@example.com', full_name: 'Наблюдатель', access_level: 'viewer', department_ids: [], is_active: true },
     { id: 6, email: 'multi@example.com', full_name: 'Сотрудник закупок и аналитики', access_level: 'employee', department_ids: [1, 3], is_active: true },
     { id: 8, email: 'warehouse@example.com', full_name: 'Сотрудник склада', access_level: 'employee', department_ids: [5], is_active: true },
+    { id: 9, email: 'hr@example.com', full_name: 'Сотрудник HR', access_level: 'employee', department_ids: [6], is_active: true },
     { id: 7, email: 'former@example.com', full_name: 'Бывший сотрудник', access_level: 'employee', department_ids: [1], is_active: false },
   ],
 

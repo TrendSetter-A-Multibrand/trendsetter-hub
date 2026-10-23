@@ -12,6 +12,7 @@ import {
 import { MODULES, getModule } from '../../../modules/registry.js'
 import { ApiError } from '../client.js'
 import { data, DEMO_PASSWORD } from './data.js'
+import { createTeamHandlers } from './team.js'
 
 const err = strings.errors
 
@@ -78,6 +79,8 @@ function findUser(id) {
   return user
 }
 
+const team = createTeamHandlers({ userFromToken, accessTo })
+
 export const handlers = {
   'POST /auth/login': ({ body }) => {
     const email = (body?.email ?? '').trim().toLowerCase()
@@ -117,6 +120,7 @@ export const handlers = {
       module_responsible: Object.fromEntries(
         MODULES.map((m) => [m.id, isModuleResponsible(user, groupPermissionsOf(user, m.id))]),
       ),
+      module_badges: team.moduleBadges(user),
     }
   },
 
@@ -301,4 +305,6 @@ export const handlers = {
     if (body?.user_ids !== undefined) group.user_ids = [...new Set(body.user_ids)]
     return groupOut(group)
   },
+
+  ...team.handlers,
 }
