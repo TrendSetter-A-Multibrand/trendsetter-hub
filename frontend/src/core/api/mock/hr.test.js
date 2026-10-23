@@ -308,3 +308,49 @@ test('HR отменяет заявку: pending/approved, 409 для отмен�
   await rejects(hrCall(9, 'POST', `/leave/requests/${created.id}/cancel`), 409)
   await rejects(hrCall(9, 'POST', '/leave/requests/9999/cancel'), 404)
 })
+
+test('документы: только Resp, валидация, лимит 50, скачивание и удаление', async () => {
+  const { hrCall } = setup()
+  const b64 = (n) => Buffer.alloc(n, 65).toString('base64')
+  const valid = { category: 'contract', title: 'Договор', fileName: 'a.PDF', dataBase64: b64(10) }
+  // права: HR (run) и обычный сотрудник — 403
+  await rejects(hrCall(9, 'GET', '/people/11/documents'), 403)
+  await rejects(hrCall(9, 'POST', '/people/11/documents', valid), 403)
+  await rejects(hrCall(9, 'GET', '/documents/1'), 403)
+  await rejects(hrCall(9, 'POST', '/documents/1/delete', {}), 403)
+  await rejects(hrCall(3, 'GET', '/people/11/documents'), 403)
+  // демо-данные: у 11 два документа, у 14 нет; содержимое в списке не отдаётся
+  const demo = await hrCall(13, 'GET', '/people/11/documents')
+  assert.equal(demo.length, 2)
+  assert.equal(demo[0].dataBase64, undefined)
+  assert.ok(demo[0].sizeBytes > 0 && demo[0].mime && demo[0].uploadedBy)
+  assert.deepEqual(await hrCall(13, 'GET', '/people/14/documents'), [])
+  await rejects(hrCall(13, 'GET', '/people/999/documents'), 404)
+  await rejects(hrCall(13, 'POST', '/people/999/documents', valid), 404)
+  // валидация
+  const post = (patch) => hrCall(13, 'POST', '/people/14/documents', { ...valid, ...patch })
+  await rejects(post({ category: 'xxx' }), 422)
+  await rejects(post({ title: '  ' }), 422)
+  await rejects(post({ title: 'x'.repeat(201) }), 422)
+  await rejects(post({ fileName: 'virus.exe' }), 422)
+  await rejects(post({ fileName: 'noext' }), 422)
+  await rejects(post({ dataBase64: '!!!' }), 422)
+  await rejects(post({ dataBase64: '' }), 422)
+  await rejects(post({ dataBase64: b64(8 * 1024 * 1024 + 1) }), 422)
+  const doc = await post({ dataBase64: b64(8 * 1024 * 1024) })
+  assert.equal(doc.sizeBytes, 8 * 1024 * 1024)
+  assert.equal(doc.mime, 'application/pdf')
+  assert.equal(doc.uploadedBy, 'Назаров Тимур')
+  // скачивание и удаление
+  const file = await hrCall(13, 'GET', `/documents/${doc.id}`)
+  assert.equal(file.fileName, 'a.PDF')
+  assert.equal(file.dataBase64.length, b64(8 * 1024 * 1024).length)
+  await rejects(hrCall(13, 'GET', '/documents/9999'), 404)
+  assert.deepEqual(await hrCall(13, 'POST', `/documents/${doc.id}/delete`, {}), { ok: true })
+  await rejects(hrCall(13, 'GET', `/documents/${doc.id}`), 404)
+  await rejects(hrCall(13, 'POST', `/documents/${doc.id}/delete`, {}), 404)
+  // лимит 50 на человека
+  for (let i = 0; i < 50; i += 1) await post({ title: `Док ${i}` })
+  await rejects(post({ title: 'лишний' }), 409)
+  await hrCall(13, 'POST', '/people/15/documents', valid) // у другого человека лимит свой
+})

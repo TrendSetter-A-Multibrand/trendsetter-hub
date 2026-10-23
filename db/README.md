@@ -77,6 +77,16 @@ docker exec -u root trendsetter-hub-api rm -rf /tmp/team-import                 
 
 **Откат** (`alembic downgrade 0004`): удаляются только таблицы `user_module_permissions`, `notifications`, `hr_*` и строка `video_link`.
 
+## HR: документы сотрудника (ревизия 0006)
+`06_hr_documents.sql`: `hr_documents` (метаданные: категория, название, имя файла, mime, размер, кто и когда загрузил; каскад от `team_people`) и `hr_document_files` (содержимое `bytea` отдельно, чтобы список не читал файлы). Файлы хранятся в БД, S3 нет; все операции — только право `responsible` на `hr`. В журнал пишутся id документа/человека и категория, без имён файлов и содержимого. Размер файла ограничен 8 МБ на уровне приложения (следить за ростом БД).
+
+**Выкат 0006** (как у `0005`; `deploy.sh` миграции не выполняет):
+1. Под doadmin в `defaultdb` выполнить `db/06_hr_documents.sql` (после `05_hr_dossier.sql`).
+2. Под doadmin выполнить `deploy/stamp_alembic_0006.sql` (версия миграции `0005` → `0006`).
+3. Только после этого — merge в `main`. Иначе деплой будет «зелёным», а документы сотрудника начнут отвечать 500.
+
+**Откат** (`alembic downgrade 0005`): удаляются только таблицы `hr_document_files` и `hr_documents`.
+
 ## Модуль «Склад»
 Листы Google Таблицы «Склад-приёмка» стали таблицами: Приемки → `warehouse_receipts`, Раскладки → `warehouse_receipt_plans`, Счётчики → `warehouse_box_counters` и `warehouse_pallet_pointers`, Сканы → `warehouse_scans`, Короба → `warehouse_boxes`, Хранение → `warehouse_storage_boxes`, Хранение — архив → `warehouse_storage_archive`, Секции → `warehouse_extra_sections`, Коды ЧЗ → `warehouse_marks`, Сводка → представление `warehouse_receipt_summary`. Условия, которые раньше защищал `LockService`, держит база: уникальность кода ЧЗ, одно место на короб, уникальное имя приёмки, номера коробов через функцию `warehouse_next_box_number()`, повтор отправки скана отсекается по id.
 

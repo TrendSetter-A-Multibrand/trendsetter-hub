@@ -5,6 +5,8 @@ import { ApiError } from '../client.js'
 import strings from '../../../modules/hr/strings.js'
 import { addDays, addMonths, countDays, formatDate, fullMonths, isIsoDate, todayIso } from '../../dates.js'
 import { data as hub } from './data.js'
+import { base64Bytes, extensionOf } from '../../lib/files.js'
+import { DOC_CATEGORIES, DOC_MAX_BYTES, DOC_MAX_COUNT, DOC_MIME, DOC_TITLE_LIMIT } from '../../../modules/hr/lib/documents.js'
 
 const err = strings.errors
 const nf = strings.notify
@@ -84,7 +86,22 @@ function seed() {
     req(4, 13, 'unpaid', 25, 29, 'pending', { approverUserId: 10, message: 'Семейные обстоятельства' }),
   ]
   const adjustments = [{ id: 1, personId: 11, deltaDays: 7, reason: 'Начальный остаток на дату внедрения', createdBy: null, createdAt: stamp(-200) }]
-  return { policies, files, sensitive: {}, requests, adjustments, nextId: { request: 5, adjustment: 2 } }
+  // демо-документы: крошечные валидные файлы (txt и png 1x1), без реального содержимого
+  const b64 = (text) => btoa(text)
+  const PNG_1X1 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
+  const doc = (id, personId, category, title, fileName, dataBase64, uploadOff) => {
+    const ext = extensionOf(fileName)
+    return {
+      id, personId, category, title, fileName, mime: DOC_MIME[ext], dataBase64, sizeBytes: base64Bytes(dataBase64),
+      uploadedBy: hub.users.find((u) => u.id === 13)?.full_name ?? null, uploadedAt: stamp(uploadOff),
+    }
+  }
+  const documents = [
+    doc(1, 11, 'contract', 'Трудовой договор', 'contract-demo.txt', b64('Demo file. No real content.'), -60),
+    doc(2, 11, 'id_doc', 'Скан паспорта', 'passport-demo.png', PNG_1X1, -45),
+    doc(3, 12, 'order', 'Приказ о приёме', 'order-demo.txt', b64('Demo file. No real content.'), -20),
+  ]
+  return { policies, files, sensitive: {}, requests, adjustments, documents, nextId: { request: 5, adjustment: 2, document: 4 } }
 }
 
 // deps: userFromToken, accessTo(user, moduleId), isResponsible(user) — responsible на hr,
@@ -113,6 +130,14 @@ export function createHrHandlers({ userFromToken, accessTo, isResponsible, team,
     const p = team.byId(id)
     if (!p) throw deny(404, err.personNotFound)
     return p
+  }
+  const docOut = ({ id, category, title, fileName, mime, sizeBytes, uploadedBy, uploadedAt }) => ({
+    id, category, title, fileName, mime, sizeBytes, uploadedBy, uploadedAt,
+  })
+  const findDoc = (id) => {
+    const doc = db.documents.find((d) => d.id === Number(id))
+    if (!doc) throw deny(404, err.docNotFound)
+    return doc
   }
   const fileOf = (personId) => db.files[personId] ?? emptyFile(personId)
   const policyOf = (personId) => db.policies[fileOf(personId).country ?? 'RU']
@@ -416,6 +441,48 @@ export function createHrHandlers({ userFromToken, accessTo, isResponsible, team,
       next.updatedAt = new Date().toISOString()
       db.sensitive[person.id] = next
       return next
+    },
+
+    // ---- документы сотрудника (только Resp) ----
+    [`GET ${BASE}/people/:id/documents`]: ({ token, params }) => {
+      ctxResp(token)
+      const person = findPerson(params.id)
+      return db.documents.filter((d) => d.personId === person.id).map(docOut)
+    },
+
+    [`POST ${BASE}/people/:id/documents`]: ({ token, params, body }) => {
+      const user = ctxResp(token)
+      const person = findPerson(params.id)
+      const b = isObject(body) ? body : {}
+      if (!DOC_CATEGORIES.includes(b.category)) throw deny(422, err.docCategory)
+      const title = strOrNull(b.title)
+      if (!title || title.length > DOC_TITLE_LIMIT) throw deny(422, err.docTitle)
+      const fileName = strOrNull(b.fileName)
+      const ext = fileName ? extensionOf(fileName) : ''
+      if (!fileName || fileName.length > 255 || !DOC_MIME[ext]) throw deny(422, err.docExt)
+      const size = base64Bytes(b.dataBase64)
+      if (size === null || size === 0) throw deny(422, err.docData)
+      if (size > DOC_MAX_BYTES) throw deny(422, err.docSize)
+      if (db.documents.filter((d) => d.personId === person.id).length >= DOC_MAX_COUNT) throw deny(409, err.docLimit)
+      const doc = {
+        id: db.nextId.document++, personId: person.id, category: b.category, title, fileName, mime: DOC_MIME[ext],
+        dataBase64: b.dataBase64, sizeBytes: size, uploadedBy: user.full_name, uploadedAt: new Date().toISOString(),
+      }
+      db.documents.push(doc)
+      return docOut(doc)
+    },
+
+    [`GET ${BASE}/documents/:id`]: ({ token, params }) => {
+      ctxResp(token)
+      const doc = findDoc(params.id)
+      return { fileName: doc.fileName, mime: doc.mime, sizeBytes: doc.sizeBytes, dataBase64: doc.dataBase64 }
+    },
+
+    [`POST ${BASE}/documents/:id/delete`]: ({ token, params }) => {
+      ctxResp(token)
+      const doc = findDoc(params.id)
+      db.documents = db.documents.filter((d) => d !== doc)
+      return { ok: true }
     },
 
     [`POST ${BASE}/people/:id/leave/requests`]: ({ token, params, body }) => {

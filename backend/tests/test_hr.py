@@ -505,3 +505,144 @@ def test_policies_defaults_and_update(client, db, hr, resp):
     assert client.patch(f"{BASE}/leave/policies/AM", json={"firstLeaveAfterMonths": 1.5}, headers=resp).status_code == 422
     assert client.patch(f"{BASE}/leave/policies/US", json={"daysPerYear": 1}, headers=resp).status_code == 404
     assert audit(db, "hr.policy_update")[0] == {"country": "AM", "fields": ["accruePerMonth", "daysPerYear", "firstLeaveAfterMonths"]}
+
+
+# ---------- документы сотрудника ----------
+
+PDF = b"%PDF-1.4\n" + bytes(range(256)) * 4
+SECRET_FILE_NAME = "Секретный паспорт Иванова.pdf"
+
+
+def b64(data: bytes) -> str:
+    import base64
+
+    return base64.b64encode(data).decode()
+
+
+def doc_body(**kw):
+    return {"category": "contract", "title": "Трудовой договор", "fileName": "contract.pdf", "dataBase64": b64(PDF), **kw}
+
+
+def upload(client, headers, person, **kw):
+    return client.post(f"{BASE}/people/{person}/documents", json=doc_body(**kw), headers=headers)
+
+
+def test_documents_require_responsible(client, db, hr, admin, resp, person):
+    doc = upload(client, resp, person).json()["id"]
+    for h in (hr, admin):
+        assert client.get(f"{BASE}/people/{person}/documents", headers=h).status_code == 403
+        assert upload(client, h, person).status_code == 403
+        assert client.get(f"{BASE}/documents/{doc}", headers=h).status_code == 403
+        assert client.post(f"{BASE}/documents/{doc}/delete", headers=h).status_code == 403
+    assert client.get(f"{BASE}/people/{person}/documents", headers=resp).status_code == 200
+    assert client.get(f"{BASE}/documents/{doc}", headers=resp).status_code == 200
+
+
+def test_document_roundtrip_same_bytes(client, db, resp, person):
+    import base64
+
+    r = upload(client, resp, person, title="  Договор  ", fileName="C:\\fake\\dir/../my\x00 file\n.PDF")
+    assert r.status_code == 200, r.text
+    d = r.json()
+    assert d["title"] == "Договор" and d["fileName"] == "my file.PDF" and d["mime"] == "application/pdf"
+    assert d["sizeBytes"] == len(PDF) and d["uploadedBy"] == "Ответ Ственный" and d["category"] == "contract" and d["uploadedAt"]
+    assert set(d) == {"id", "category", "title", "fileName", "mime", "sizeBytes", "uploadedBy", "uploadedAt"}
+    assert client.get(f"{BASE}/people/{person}/documents", headers=resp).json() == [d]
+    got = client.get(f"{BASE}/documents/{d['id']}", headers=resp).json()
+    assert got["fileName"] == "my file.PDF" and got["mime"] == "application/pdf" and got["sizeBytes"] == len(PDF)
+    assert base64.b64decode(got["dataBase64"]) == PDF
+
+
+def test_document_mime_set_by_server(client, resp, person):
+    assert upload(client, resp, person, fileName="a.txt", dataBase64=b64("текст".encode())).json()["mime"] == "text/plain"
+    assert upload(client, resp, person, fileName="x.jpeg", dataBase64=b64(b"\xff\xd8\xff\xe0" + b"1" * 10)).json()["mime"] == "image/jpeg"
+    assert upload(client, resp, person, fileName="x.png", dataBase64=b64(b"\x89PNG\r\n" + b"1")).json()["mime"] == "image/png"
+    assert upload(client, resp, person, fileName="x.docx", dataBase64=b64(b"PK\x03\x04" + b"1")).status_code == 200
+    assert upload(client, resp, person, fileName="x.xls", dataBase64=b64(b"\xd0\xcf\x11\xe0" + b"1")).status_code == 200
+
+
+def test_document_validation(client, resp, person):
+    assert upload(client, resp, person, dataBase64=b64(b"%PDF" + b"0" * (8 * 1024 * 1024))).status_code == 413
+    assert upload(client, resp, person, dataBase64=b64(b"%PDF" + b"0" * (8 * 1024 * 1024 - 4))).status_code == 200  # ровно 8 МБ
+    for name in ("virus.exe", "noext", "a.pdf.html", "a.", ".pdf.svg", ""):
+        assert upload(client, resp, person, fileName=name).status_code == 422, name
+    # расширение не совпадает с содержимым
+    assert upload(client, resp, person, fileName="a.png").status_code == 422
+    assert upload(client, resp, person, fileName="a.pdf", dataBase64=b64(b"MZ\x90\x00" + b"1" * 10)).status_code == 422
+    assert upload(client, resp, person, fileName="a.docx", dataBase64=b64(b"%PDF-1")).status_code == 422
+    assert upload(client, resp, person, fileName="a.txt", dataBase64=b64(b"abc\x00def")).status_code == 422
+    assert upload(client, resp, person, fileName="a.txt", dataBase64=b64(b"\xff\xfe\xfa")).status_code == 422
+    # битый base64, пусто
+    assert upload(client, resp, person, dataBase64="не base64!!").status_code == 422
+    assert upload(client, resp, person, dataBase64="abc").status_code == 422
+    assert upload(client, resp, person, dataBase64="").status_code == 422
+    # категория и название
+    assert upload(client, resp, person, category="secret").status_code == 422
+    assert upload(client, resp, person, title="   ").status_code == 422
+    assert upload(client, resp, person, title="я" * 121).status_code == 422
+    assert upload(client, resp, person, title="я" * 120).status_code == 200
+    assert client.post(f"{BASE}/people/{person}/documents", json={"category": "other"}, headers=resp).status_code == 422
+
+
+def test_document_long_file_name_keeps_extension(client, resp, person):
+    d = upload(client, resp, person, fileName="а" * 300 + ".pdf").json()
+    assert len(d["fileName"]) == 120 and d["fileName"].endswith(".pdf")
+
+
+def test_document_limit_50(client, db, resp, person):
+    for i in range(50):
+        assert upload(client, resp, person, title=f"d{i}").status_code == 200
+    r = upload(client, resp, person)
+    assert r.status_code == 409 and "50" in r.json()["detail"]
+    other = add_person(db, "Борис", "Бета")
+    assert upload(client, resp, other).status_code == 200  # лимит на человека, а не общий
+    first = client.get(f"{BASE}/people/{person}/documents", headers=resp).json()[0]["id"]
+    assert client.post(f"{BASE}/documents/{first}/delete", headers=resp).status_code == 200
+    assert upload(client, resp, person).status_code == 200
+
+
+def test_document_delete_cascades_file(client, db, resp, person):
+    doc = upload(client, resp, person).json()["id"]
+    q = text("SELECT count(*) FROM trendsetter_hub.hr_document_files WHERE document_id = :i")
+    assert db.execute(q, {"i": doc}).scalar_one() == 1
+    assert client.post(f"{BASE}/documents/{doc}/delete", headers=resp).json() == {"ok": True}
+    db.rollback()
+    assert db.execute(q, {"i": doc}).scalar_one() == 0
+    assert client.get(f"{BASE}/documents/{doc}", headers=resp).status_code == 404
+    assert client.post(f"{BASE}/documents/{doc}/delete", headers=resp).status_code == 404
+    assert client.get(f"{BASE}/people/{person}/documents", headers=resp).json() == []
+
+
+def test_deleting_person_removes_documents(client, db, resp, person):
+    doc = upload(client, resp, person).json()["id"]
+    db.execute(text("DELETE FROM trendsetter_hub.team_people WHERE id = :p"), {"p": person})
+    db.commit()
+    for t, col in (("hr_documents", "id"), ("hr_document_files", "document_id")):
+        assert db.execute(text(f"SELECT count(*) FROM trendsetter_hub.{t} WHERE {col} = :i"), {"i": doc}).scalar_one() == 0
+
+
+def test_document_unknown_person_or_doc_is_404(client, resp, person):
+    assert client.get(f"{BASE}/people/999999/documents", headers=resp).status_code == 404
+    assert upload(client, resp, 999999).status_code == 404
+    assert client.get(f"{BASE}/documents/999999", headers=resp).status_code == 404
+    assert client.post(f"{BASE}/documents/999999/delete", headers=resp).status_code == 404
+
+
+def test_document_audit_has_no_personal_data(client, db, resp, person):
+    doc = upload(client, resp, person, title="Паспорт Иванова", fileName=SECRET_FILE_NAME, category="id_doc").json()["id"]
+    client.get(f"{BASE}/documents/{doc}", headers=resp)
+    client.post(f"{BASE}/documents/{doc}/delete", headers=resp)
+    for action in ("hr.document_upload", "hr.document_download", "hr.document_delete"):
+        rows = audit(db, action)
+        assert rows == [{"document_id": doc, "person_id": person, "category": "id_doc"}], action
+        dump = json.dumps(rows, ensure_ascii=False)
+        assert "Иванов" not in dump and "pdf" not in dump.lower() and "Секретный" not in dump
+
+
+def test_documents_not_leaked_to_other_endpoints(client, db, resp, hr, person):
+    upload(client, resp, person, title="Уникальныйзаголовок", fileName="uniqfilename.pdf")
+    urls = [f"{BASE}/people/{person}/file", f"{BASE}/people/{person}/sensitive", "/modules/team/map", "/modules/team/hr/people", f"{BASE}/me/file", f"{BASE}/me/leave"]
+    for h in (resp, hr):
+        for url in urls:
+            body = client.get(url, headers=h).text
+            assert "Уникальный" not in body and "uniqfilename" not in body, url

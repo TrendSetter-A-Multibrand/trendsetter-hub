@@ -5,6 +5,7 @@ import strings from '../strings.js'
 import { useLoad } from '../lib/useLoad.js'
 import { MONEY_FIELDS, buildDraft, buildPatch } from '../lib/dossier.js'
 import FieldGrid from './FieldGrid.jsx'
+import DocumentsSection from './DocumentsSection.jsx'
 
 function MoneyForm({ person, sensitive, reload }) {
   const { message } = App.useApp()
@@ -41,5 +42,10 @@ export default function MoneyTab({ person }) {
   const { data, error, reload } = useLoad(`/modules/hr/people/${person.id}/sensitive`)
   if (error && !data) return <Alert type="error" showIcon title={strings.person.loadFailed} description={error} />
   if (!data) return <Spin />
-  return <MoneyForm person={person} sensitive={data} reload={reload} />
+  return (
+    <>
+      <MoneyForm person={person} sensitive={data} reload={reload} />
+      <DocumentsSection person={person} />
+    </>
+  )
 }

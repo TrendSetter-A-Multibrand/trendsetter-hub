@@ -52,10 +52,6 @@ const strings = {
     departmentsLabel: 'Отделы',
     loginAs: 'Войти как',
     loginAsPlaceholder: 'Выберите пользователя',
-    userMenu: 'Меню пользователя',
-    departments: 'Отделы',
-    adminLink: 'Пользователи и отделы',
-    profileLink: 'Профиль',
     openProfile: 'Открыть профиль',
     moreActions: 'Ещё',
     logout: 'Выйти',
@@ -76,6 +72,16 @@ const strings = {
     title: 'Профиль',
     loadFailed: 'Не удалось загрузить профиль',
     noSections: 'Для вашего уровня доступа в профиле пока нет разделов.',
+    settings: {
+      label: 'Настройки',
+      account: 'Аккаунт',
+      fullName: 'ФИО',
+      email: 'Почта',
+      level: 'Уровень доступа',
+      departments: 'Отделы',
+      passwordHint: 'Пароль сбрасывает администратор.',
+      adminLink: 'Пользователи и отделы',
+    },
   },
 
   hub: {

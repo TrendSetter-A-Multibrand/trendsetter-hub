@@ -22,6 +22,7 @@ const strings = {
     viewCards: 'Направления',
     viewScheme: 'Схема',
     viewLeave: 'Отпуска',
+    viewLeaveTitle: 'Календарь отпусков',
     viewsLabel: 'Вид карты',
     all: 'Все',
     myProfile: 'Моя анкета',

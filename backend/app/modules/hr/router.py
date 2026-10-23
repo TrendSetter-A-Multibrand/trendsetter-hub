@@ -89,6 +89,13 @@ class SensitivePatchBody(BaseModel):
     bankDetails: str | None = None
 
 
+class DocumentBody(BaseModel):
+    category: str
+    title: str
+    fileName: str
+    dataBase64: str
+
+
 class PolicyPatchBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
     daysPerYear: Decimal | None = None
@@ -169,6 +176,26 @@ def get_sensitive(person_id: int, _: User = Resp, session: Session = Db) -> dict
 @router.patch("/people/{person_id}/sensitive")
 def patch_sensitive(person_id: int, body: SensitivePatchBody, user: User = Resp, session: Session = Db) -> dict:
     return service.update_sensitive(session, user, person_id, _dump(body))
+
+
+@router.get("/people/{person_id}/documents")
+def list_documents(person_id: int, _: User = Resp, session: Session = Db) -> list[dict]:
+    return service.list_documents(session, person_id)
+
+
+@router.post("/people/{person_id}/documents")
+def upload_document(person_id: int, body: DocumentBody, user: User = Resp, session: Session = Db) -> dict:
+    return service.upload_document(session, user, person_id, _dump(body))
+
+
+@router.get("/documents/{doc_id}")
+def download_document(doc_id: int, user: User = Resp, session: Session = Db) -> dict:
+    return service.download_document(session, user, doc_id)
+
+
+@router.post("/documents/{doc_id}/delete")
+def delete_document(doc_id: int, user: User = Resp, session: Session = Db) -> dict:
+    return service.delete_document(session, user, doc_id)
 
 
 @router.post("/people/{person_id}/leave/requests")

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Alert, App, Avatar, Button, Collapse, Input, Modal, Popconfirm, Segmented, Select, Space, Spin, Switch, Table, Tag, Typography } from 'antd'
+import { Alert, App, Avatar, Button, Collapse, Dropdown, Input, Modal,Segmented, Select, Space, Spin, Switch, Table, Tag, Typography } from 'antd'
 import { api } from '../../../core/api/index.js'
 import coreStrings from '../../../core/strings.js'
 import strings from '../strings.js'
@@ -133,7 +133,7 @@ function ReassignModal({ person, people, onClose, onDone }) {
 }
 
 function PeopleTable({ people, directions, reload }) {
-  const { message } = App.useApp()
+  const { message, modal: confirmModal } = App.useApp()
   const { data: fields } = useLoad(`${BASE}/fields`)
   const { data: users } = useLoad(`${BASE}/users`)
   const [query, setQuery] = useState('')
@@ -192,30 +192,34 @@ function PeopleTable({ people, directions, reload }) {
     />
   )
 
-  // short — подпись «Уволен» вместо «Отметить уволенным» (карточки и группы)
+  const confirmArchive = (p) =>
+    confirmModal.confirm({
+      title: s.archiveConfirm(p.name),
+      okText: s.archive,
+      okButtonProps: { danger: true },
+      cancelText: coreStrings.cancel,
+      onOk: () => patch(p, { isArchived: true }, s.archived),
+    })
+
+  // опасное действие спрятано в меню «⋯», чтобы не нажать случайно
   const actionButtons = (p, short) => (
     <Space size={4} wrap>
       {p.isArchived && !short && <Tag>{s.archivedTag}</Tag>}
       <Button size="small" onClick={() => setModal({ person: p })}>
         {s.edit}
       </Button>
-      {p.isArchived ? (
-        <Button size="small" onClick={() => patch(p, { isArchived: false }, s.restored)}>
-          {s.restore}
+      <Dropdown
+        trigger={['click']}
+        menu={{
+          items: p.isArchived
+            ? [{ key: 'restore', label: s.restore, onClick: () => patch(p, { isArchived: false }, s.restored) }]
+            : [{ key: 'archive', label: p.isCeo ? s.ceoLocked : s.archive, danger: true, disabled: p.isCeo, onClick: () => confirmArchive(p) }],
+        }}
+      >
+        <Button size="small" aria-label={s.moreActions} title={s.moreActions}>
+          ⋯
         </Button>
-      ) : (
-        <Popconfirm
-          title={s.archiveConfirm(p.name)}
-          okText={s.archive}
-          cancelText={coreStrings.cancel}
-          disabled={p.isCeo}
-          onConfirm={() => patch(p, { isArchived: true }, s.archived)}
-        >
-          <Button size="small" danger disabled={p.isCeo} title={p.isCeo ? s.ceoLocked : undefined}>
-            {short ? s.archiveShort : s.archive}
-          </Button>
-        </Popconfirm>
-      )}
+      </Dropdown>
     </Space>
   )
 
