@@ -6,6 +6,8 @@ import strings from '../strings.js'
 import { useLoad } from '../lib/useLoad.js'
 import { managerOptions, personName } from '../lib/options.js'
 import { completeness, levelOf } from '../lib/completeness.js'
+import { useAutoChecklist } from '../lib/useAutoChecklist.js'
+import AutoChecklistOption from './AutoChecklistOption.jsx'
 import PersonModal from './PersonModal.jsx'
 import ExportButton from './ExportButton.jsx'
 
@@ -91,8 +93,45 @@ function FillModal({ person, fill, onClose, onEdit }) {
   )
 }
 
-function ReassignModal({ person, people, onClose, onDone }) {
+// Подтверждение «Отметить уволенным». Если у человека есть подчинённые, backend отвечает 409 — переходим к переназначению (выбор автозапуска переносится).
+function ArchiveModal({ person, onClose, onDone, onNeedReassign }) {
   const { message } = App.useApp()
+  const auto = useAutoChecklist('offboarding')
+  const [saving, setSaving] = useState(false)
+
+  const submit = async () => {
+    setSaving(true)
+    try {
+      await api.patch(`${BASE}/people/${person.id}`, { isArchived: true })
+      message.success(s.archived)
+      await onDone(await auto.run(person.id))
+    } catch (e) {
+      if (e.status === 409 && person.directReports > 0) onNeedReassign({ enabled: auto.enabled, templateId: auto.templateId })
+      else message.error(e.message)
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Modal
+      open
+      title={s.archive}
+      okText={s.archive}
+      okButtonProps={{ danger: true }}
+      cancelText={coreStrings.cancel}
+      confirmLoading={saving}
+      onCancel={onClose}
+      onOk={submit}
+    >
+      <Typography.Paragraph>{s.archiveConfirm(person.name)}</Typography.Paragraph>
+      <AutoChecklistOption auto={auto} />
+    </Modal>
+  )
+}
+
+function ReassignModal({ person, people, initialAuto, onClose, onDone }) {
+  const { message } = App.useApp()
+  const auto = useAutoChecklist('offboarding', { initialEnabled: initialAuto.enabled, initialTemplateId: initialAuto.templateId })
   const [target, setTarget] = useState(null)
   const [saving, setSaving] = useState(false)
 
@@ -102,7 +141,7 @@ function ReassignModal({ person, people, onClose, onDone }) {
     try {
       await api.patch(`${BASE}/people/${person.id}`, { isArchived: true, reassignTo: target })
       message.success(s.archived)
-      await onDone()
+      await onDone(await auto.run(person.id))
     } catch (e) {
       message.error(e.message)
       setSaving(false)
@@ -124,17 +163,18 @@ function ReassignModal({ person, people, onClose, onDone }) {
       <Select
         showSearch
         optionFilterProp="label"
-        style={{ width: '100%', marginTop: 4 }}
+        style={{ width: '100%', marginTop: 4, marginBottom: 14 }}
         value={target}
         onChange={setTarget}
         options={managerOptions(people, [person.id])}
       />
+      <AutoChecklistOption auto={auto} />
     </Modal>
   )
 }
 
 function PeopleTable({ people, directions, reload }) {
-  const { message, modal: confirmModal } = App.useApp()
+  const { message } = App.useApp()
   const { data: fields } = useLoad(`${BASE}/fields`)
   const { data: users } = useLoad(`${BASE}/users`)
   const [query, setQuery] = useState('')
@@ -143,7 +183,8 @@ function PeopleTable({ people, directions, reload }) {
   const [mode, setModeState] = useState(loadMode)
   const [shown, setShown] = useState(CARDS_STEP)
   const [modal, setModal] = useState(null) // { person?, fromUser?, initialTab? }
-  const [reassign, setReassign] = useState(null)
+  const [archiving, setArchiving] = useState(null) // person
+  const [reassign, setReassign] = useState(null) // { person, initialAuto }
   const [fillOf, setFillOf] = useState(null) // person
 
   const setMode = (v) => {
@@ -173,26 +214,42 @@ function PeopleTable({ people, directions, reload }) {
     return out.filter((g) => g.items.length)
   }, [rows, directions, dirById])
 
-  // после «Отметить уволенным» предлагаем оффбординг: кнопка открывает вкладку «Чек-листы» сотрудника (ничего не запускается само)
-  const offerOffboarding = (person) =>
-    confirmModal.confirm({
-      title: s.offboardingTitle(person.name),
-      content: s.offboardingText,
-      okText: s.offboardingOk,
-      cancelText: s.offboardingLater,
-      onOk: () => setModal({ person, initialTab: 'checklists' }),
-    })
-
   const patch = async (person, body, okText) => {
     try {
       await api.patch(`${BASE}/people/${person.id}`, body)
       message.success(okText)
       await reload()
-      if (body.isArchived === true) offerOffboarding(person)
     } catch (e) {
-      if (e.status === 409 && body.isArchived && person.directReports > 0) setReassign(person)
-      else message.error(e.message)
+      message.error(e.message)
     }
+  }
+
+  // после увольнения: если оффбординг запущен — сообщение со ссылкой на чек-листы сотрудника
+  const afterArchive = async (person, result) => {
+    setArchiving(null)
+    setReassign(null)
+    await reload()
+    if (result.status !== 'started') return
+    const key = `offboarding-${person.id}`
+    message.success({
+      key,
+      duration: 8,
+      content: (
+        <span>
+          {strings.autoChecklist.offboardingStarted}{' '}
+          <Button
+            type="link"
+            size="small"
+            onClick={() => {
+              message.destroy(key)
+              setModal({ person, initialTab: 'checklists' })
+            }}
+          >
+            {strings.autoChecklist.openChecklists}
+          </Button>
+        </span>
+      ),
+    })
   }
 
   const mapSwitch = (p) => (
@@ -203,15 +260,6 @@ function PeopleTable({ people, directions, reload }) {
       onChange={(v) => patch(p, { showInMap: v }, v ? s.shownInMap : s.hiddenInMap)}
     />
   )
-
-  const confirmArchive = (p) =>
-    confirmModal.confirm({
-      title: s.archiveConfirm(p.name),
-      okText: s.archive,
-      okButtonProps: { danger: true },
-      cancelText: coreStrings.cancel,
-      onOk: () => patch(p, { isArchived: true }, s.archived),
-    })
 
   // опасное действие спрятано в меню «⋯», чтобы не нажать случайно
   const actionButtons = (p, short) => (
@@ -225,7 +273,7 @@ function PeopleTable({ people, directions, reload }) {
         menu={{
           items: p.isArchived
             ? [{ key: 'restore', label: s.restore, onClick: () => patch(p, { isArchived: false }, s.restored) }]
-            : [{ key: 'archive', label: p.isCeo ? s.ceoLocked : s.archive, danger: true, disabled: p.isCeo, onClick: () => confirmArchive(p) }],
+            : [{ key: 'archive', label: p.isCeo ? s.ceoLocked : s.archive, danger: true, disabled: p.isCeo, onClick: () => setArchiving(p) }],
         }}
       >
         <Button size="small" aria-label={s.moreActions} title={s.moreActions}>
@@ -413,17 +461,24 @@ function PeopleTable({ people, directions, reload }) {
           }}
         />
       )}
+      {archiving && (
+        <ArchiveModal
+          person={archiving}
+          onClose={() => setArchiving(null)}
+          onDone={(result) => afterArchive(archiving, result)}
+          onNeedReassign={(initialAuto) => {
+            setReassign({ person: archiving, initialAuto })
+            setArchiving(null)
+          }}
+        />
+      )}
       {reassign && (
         <ReassignModal
-          person={reassign}
+          person={reassign.person}
           people={people}
+          initialAuto={reassign.initialAuto}
           onClose={() => setReassign(null)}
-          onDone={async () => {
-            const archived = reassign
-            setReassign(null)
-            await reload()
-            offerOffboarding(archived)
-          }}
+          onDone={(result) => afterArchive(reassign.person, result)}
         />
       )}
     </>

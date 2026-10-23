@@ -5,7 +5,7 @@ import { formatDate } from '../../../core/dates.js'
 import strings from '../strings.js'
 import { useLoad } from '../lib/useLoad.js'
 import PersonModal from './PersonModal.jsx'
-import { CHECKLIST_KINDS, DAYS_OFFSET_MAX, ITEM_TITLE_LIMIT, TEMPLATE_TITLE_LIMIT, copyTemplateItems, defaultBaseTemplate, itemsEdited } from '../lib/ops.js'
+import { CHECKLIST_KINDS, DAYS_OFFSET_MAX, ITEM_TITLE_LIMIT, TEMPLATE_TITLE_LIMIT, copyTemplateItems, itemsEdited } from '../lib/ops.js'
 
 const s = strings.templates
 const BASE = '/modules/hr/checklist-templates'
@@ -20,7 +20,7 @@ function TemplateModal({ template, templates, onClose, onDone }) {
   const isEdit = Boolean(template)
   const [kind, setKind] = useState(template?.kind ?? 'onboarding')
   const [title, setTitle] = useState(template?.title ?? '')
-  const [initialBase] = useState(() => (isEdit ? null : defaultBaseTemplate(templates, 'onboarding')))
+  const [initialBase] = useState(null) // новый шаблон открывается пустым; образец — по желанию через «Взять за основу»
   const [baseId, setBaseId] = useState(initialBase?.id ?? null)
   const [seed, setSeed] = useState(() => (isEdit ? [] : copyTemplateItems(initialBase))) // чем пункты были заполнены последний раз
   const [items, setItems] = useState(() => (template ? template.items : seed).map((i) => row(i.title, i.daysOffset)))
@@ -38,7 +38,7 @@ function TemplateModal({ template, templates, onClose, onDone }) {
     if (!itemsEdited(items, seed)) return apply()
     modal.confirm({ title: s.baseConfirmTitle, content: s.baseConfirmText, okText: s.baseConfirmOk, cancelText: strings.documents.removeCancel, onOk: apply })
   }
-  const changeKind = (nextKind) => applyBase(nextKind, defaultBaseTemplate(templates, nextKind)?.id ?? null)
+  const changeKind = (nextKind) => applyBase(nextKind, null)
   const baseOptions = [
     { value: EMPTY_BASE, label: s.baseEmpty },
     ...templates.filter((t) => t.kind === kind).map((t) => ({ value: t.id, label: t.title })),

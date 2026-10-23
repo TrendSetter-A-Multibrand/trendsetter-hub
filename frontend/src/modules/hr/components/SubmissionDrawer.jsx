@@ -6,6 +6,8 @@ import coreStrings from '../../../core/strings.js'
 import strings from '../strings.js'
 import { formatValue } from '../lib/values.js'
 import { directionOptions, managerOptions } from '../lib/options.js'
+import { useAutoChecklist } from '../lib/useAutoChecklist.js'
+import AutoChecklistOption from './AutoChecklistOption.jsx'
 
 const s = strings.submissions
 const BASE = '/modules/team/hr'
@@ -38,6 +40,9 @@ function ApproveModal({ sub, people, directions, onClose, onDone }) {
   const chosenId = Form.useWatch('personId', form)
   const linkedId = sub.personId ?? chosenId ?? null
   const existing = sub.personId === null ? null : (people.find((p) => p.id === sub.personId) ?? null)
+  // новая карточка создаётся, только если заявка не привязана ни к какой существующей
+  const createsCard = (chosen) => sub.personId === null && !chosen
+  const auto = useAutoChecklist('onboarding', { active: sub.personId === null })
 
   const fill = (p) =>
     form.setFieldsValue({
@@ -54,8 +59,9 @@ function ApproveModal({ sub, people, directions, onClose, onDone }) {
     if (v.managerId !== undefined && v.managerId !== null) body.managerId = v.managerId
     setSaving(true)
     try {
-      await api.post(`${BASE}/submissions/${sub.id}/approve`, body)
+      const person = await api.post(`${BASE}/submissions/${sub.id}/approve`, body)
       message.success(s.approved)
+      if (createsCard(v.personId)) await auto.run(person?.id) // заявка уже одобрена: сбой запуска её не откатывает
       await onDone()
     } catch (e) {
       message.error(e.message)
@@ -116,6 +122,7 @@ function ApproveModal({ sub, people, directions, onClose, onDone }) {
         <Form.Item name="showInMap" label={s.showInMap} valuePropName="checked">
           <Switch />
         </Form.Item>
+        {createsCard(chosenId) && <AutoChecklistOption auto={auto} />}
       </Form>
     </Modal>
   )
