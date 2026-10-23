@@ -13,6 +13,7 @@ const { createHrOpsHandlers } = await import('./hrOps.js')
 const { createMockTransport } = await import('./transport.js')
 const { addDays, formatDate, todayIso } = await import('../../dates.js')
 const { ApiError } = await import('../client.js')
+const { activeTemplates, pickTemplateId, startAutoChecklist } = await import('../../../modules/hr/lib/autoChecklist.js')
 const XLSX = await import('xlsx').then((m) => m.default ?? m)
 
 // token = id пользователя: 1 admin, 3 Ани (карточка 11), 9 HR (run, карточка 14), 10 Кравцов (карточка 10, руководитель),
@@ -356,4 +357,34 @@ test('обзор чек-листов: Hr, фильтр статуса, прог�
   assert.deepEqual((await hrCall(9, 'GET', '/checklists?status=cancelled')).map((c) => c.id), [fresh.id])
   assert.equal((await hrCall(9, 'GET', '/checklists?status=all')).length, 2)
   assert.equal((await hrCall(9, 'GET', '/checklists?status=done')).length, 0)
+})
+
+test('автозапуск онбординга: созданному человеку копируются пункты шаблона; без активного шаблона карточка есть, чек-листа нет', async () => {
+  const { call, hrCall } = setup()
+  const api = { get: (path) => call(9, 'GET', path), post: (path, body) => call(9, 'POST', path, body) }
+  const person = { firstName: 'Тест', lastName: 'Новичков', title: 'Стажёр', directionId: 'ops', managerId: 10 }
+
+  const templates = await hrCall(9, 'GET', '/checklist-templates')
+  const template = activeTemplates(templates, 'onboarding')[0]
+  const created = await call(9, 'POST', '/modules/team/hr/people', person)
+  const started = await startAutoChecklist(api, { personId: created.id, templateId: pickTemplateId(activeTemplates(templates, 'onboarding'), null), kind: 'onboarding' })
+  assert.equal(started.status, 'started')
+  const list = await hrCall(9, 'GET', `/people/${created.id}/checklists`)
+  assert.equal(list.length, 1)
+  assert.equal(list[0].kind, 'onboarding')
+  assert.deepEqual(list[0].items.map((i) => i.title), template.items.map((i) => i.title))
+
+  // оффбординг: активный чек-лист уже есть — повторно не запускается
+  const first = await startAutoChecklist(api, { personId: created.id, templateId: 2, kind: 'offboarding', skipIfActive: true })
+  const again = await startAutoChecklist(api, { personId: created.id, templateId: 2, kind: 'offboarding', skipIfActive: true })
+  assert.equal(first.status, 'started')
+  assert.equal(again.status, 'exists')
+  assert.equal((await hrCall(9, 'GET', `/people/${created.id}/checklists`)).length, 2)
+
+  // нет активного шаблона онбординга: опция не предлагается, карточка создаётся, чек-листа нет
+  for (const t of templates.filter((x) => x.kind === 'onboarding')) await hrCall(9, 'PATCH', `/checklist-templates/${t.id}`, { active: false })
+  const left = activeTemplates(await hrCall(9, 'GET', '/checklist-templates'), 'onboarding')
+  assert.equal(pickTemplateId(left, null), null)
+  const bare = await call(9, 'POST', '/modules/team/hr/people', { ...person, lastName: 'Безшаблонов' })
+  assert.deepEqual(await hrCall(9, 'GET', `/people/${bare.id}/checklists`), [])
 })

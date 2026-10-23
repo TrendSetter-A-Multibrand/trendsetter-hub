@@ -6,7 +6,9 @@ import strings from '../strings.js'
 import { splitValues, valuesOfPerson } from '../lib/values.js'
 import { directionOptions, managerOptions, splitFullName } from '../lib/options.js'
 import ProfileForm from '../../team/components/ProfileForm.jsx'
+import { useAutoChecklist } from '../lib/useAutoChecklist.js'
 import PersonTabs from './PersonTabs.jsx'
+import AutoChecklistOption from './AutoChecklistOption.jsx'
 
 const s = strings.people
 // manager_claim — подсказка для HR, в форме HR не показывается
@@ -38,6 +40,7 @@ export default function PersonModal({ person, fromUser, initialTab, fields, peop
   const [photo, setPhoto] = useState(null)
   const [saving, setSaving] = useState(false)
   const [tab, setTab] = useState(initialTab ?? 'card')
+  const auto = useAutoChecklist('onboarding', { active: !isEdit })
 
   const freeUsers = users.filter((u) => u.personId === null)
   const setValue = (key, v) => setValues((cur) => ({ ...cur, [key]: v }))
@@ -71,8 +74,9 @@ export default function PersonModal({ person, fromUser, initialTab, fields, peop
         message.success(s.updated)
       } else {
         if (userId) payload.userId = userId
-        await api.post('/modules/team/hr/people', payload)
+        const created = await api.post('/modules/team/hr/people', payload)
         message.success(s.created)
+        await auto.run(created?.id) // карточка уже создана: сбой запуска её не откатывает
       }
       await onSaved()
     } catch (e) {
@@ -97,6 +101,7 @@ export default function PersonModal({ person, fromUser, initialTab, fields, peop
           />
         </Labeled>
       )}
+      {!isEdit && <AutoChecklistOption auto={auto} />}
       <Divider titlePlacement="start" plain>
         {s.cardSection}
       </Divider>

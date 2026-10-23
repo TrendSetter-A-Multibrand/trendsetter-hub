@@ -79,8 +79,7 @@ const strings = {
       email: 'Почта',
       level: 'Уровень доступа',
       departments: 'Отделы',
-      passwordHint: 'Пароль сбрасывает администратор.',
-      adminLink: 'Пользователи и отделы',
+      passwordHint: 'Пароль сбрасывает администратор.',
     },
   },
 

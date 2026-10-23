@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom'
 import { Descriptions } from 'antd'
 import strings from '../strings.js'
 
@@ -21,7 +20,6 @@ export default function SettingsSection({ me }) {
         ]}
       />
       <p style={{ color: 'var(--muted)', marginTop: 16 }}>{s.passwordHint}</p>
-      {me.can_manage_users && <Link to="/profile?section=admin">{s.adminLink}</Link>}
     </div>
   )
 }
