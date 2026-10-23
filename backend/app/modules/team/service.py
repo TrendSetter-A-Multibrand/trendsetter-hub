@@ -28,6 +28,7 @@ JPEG_PREFIX = "data:image/jpeg;base64,"
 JPEG_MAGIC = b"\xff\xd8\xff"
 FULL_LIMIT = 300 * 1024
 THUMB_LIMIT = 30 * 1024
+CHIP_LIMIT = 400  # длина одного чипа (увлечения/таланты); из старой Google-формы приходят длинные фразы
 
 COLUMN_KEYS = ("first_name", "last_name", "title", "email")  # значения этих полей пишутся в колонки карточки, остальные — в answers
 KINDS = ("text", "textarea", "select", "chips", "links", "photo")
@@ -223,7 +224,7 @@ def _clean_value(f, raw):
             _bad(label)
         out = []
         for x in raw:
-            if not isinstance(x, str) or len(x.strip()) > 60:
+            if not isinstance(x, str) or len(x.strip()) > CHIP_LIMIT:
                 _bad(label)
             if x.strip():
                 out.append(x.strip())
