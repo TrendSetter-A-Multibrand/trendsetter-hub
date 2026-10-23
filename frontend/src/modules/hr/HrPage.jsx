@@ -11,8 +11,8 @@ import FieldsTab from './components/FieldsTab.jsx'
 // Вкладки модуля. Новая вкладка (отпуска, зарплаты…) = одна запись здесь. Component получает { pending, onChanged }.
 // badge: 'pending' — показать число заявок на проверке рядом с названием.
 const TABS = [
-  { key: 'submissions', label: strings.tabs.submissions, badge: 'pending', Component: SubmissionsTab },
   { key: 'people', label: strings.tabs.people, Component: PeopleTab },
+  { key: 'submissions', label: strings.tabs.submissions, badge: 'pending', Component: SubmissionsTab },
   { key: 'fields', label: strings.tabs.fields, Component: FieldsTab },
 ]
 
