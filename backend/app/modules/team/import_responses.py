@@ -4,9 +4,13 @@
 
   python -m app.modules.team.import_responses DIR [--aliases aliases.json]            # сухой прогон (по умолчанию)
   python -m app.modules.team.import_responses DIR [--aliases aliases.json] --apply    # запись
+  ... [--dismissed dismissed.json]   # создать карточки уволенных (см. ниже)
 
 DIR: responses.xlsx (лист «Ответы на форму»), emails.xlsx (лист Sheet1: «Имя» латиницей, «Почта»), каталог photos/ с файлами
 <driveId>.full.jpg и <driveId>.thumb.jpg. aliases.json: {"Фамилия Имя из ответа": "Фамилия Имя карточки"}.
+dismissed.json: {"Фамилия Имя из ответа": "id направления"} — для каждого ключа без карточки (среди неархивных и архивных) создаётся архивная
+карточка (имя/фамилия/должность из ответа формы, без руководителя, не на карте); дальше она заполняется как обычная. Архивные карточки
+из dismissed.json (и только они) участвуют в сопоставлении ответов и почт. Неизвестное направление — ошибка входа (код 1).
 Пишется только пустое: имя/фамилия/должность, руководитель, направление, тег, команда, show_in_map, user_id не меняются.
 Всё — одна транзакция, сухой прогон делает ROLLBACK; повторный запуск безопасен.
 Коды выхода: 0 — успех / чистый сухой прогон; 1 — ошибки входных файлов; 2 — конфликт с БД.
@@ -47,6 +51,7 @@ RESPONSE_COLS = {
     "hobbies": "какие еще у тебя есть таланты", "photo": "закинь сюда свою фотку", "email": "напиши свою корпоративную почту",
 }
 EMAIL_COLS = {"name": "имя", "email": "почта"}
+TITLE_COL = {"title": "твоя должность"}  # нужен только при --dismissed
 TG_PREFIX = re.compile(r"^(?:https?://)?(?:www\.)?(?:t\.me|telegram\.me)/", re.I)
 TG_RE = re.compile(r"^[A-Za-z0-9_]{3,64}$")
 DRIVE_ID = re.compile(r"[?&]id=([A-Za-z0-9_-]+)")
@@ -133,6 +138,22 @@ def read_aliases(path: Path | None) -> dict:
     if not isinstance(raw, dict) or not all(isinstance(k, str) and isinstance(v, str) for k, v in raw.items()):
         raise InputError("aliases: ожидается объект {\"Фамилия Имя\": \"Фамилия Имя\"}")
     return {service._name_words(k): service._name_words(v) for k, v in raw.items()}
+
+
+def read_dismissed(path: Path | None) -> dict:
+    """{множество слов «Фамилия Имя»: id направления}."""
+    if path is None:
+        return {}
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8-sig"))
+    except Exception as e:  # noqa: BLE001
+        raise InputError(f"dismissed: не удалось прочитать JSON ({type(e).__name__})") from None
+    if not isinstance(raw, dict) or not all(isinstance(k, str) and isinstance(v, str) for k, v in raw.items()):
+        raise InputError("dismissed: ожидается объект {\"Фамилия Имя\": \"id направления\"}")
+    out = {service._name_words(k): v.strip() for k, v in raw.items()}
+    if frozenset() in out:
+        raise InputError("dismissed: пустое имя в ключе")
+    return out
 
 
 # ---------- нормализация значений ----------
@@ -309,13 +330,14 @@ def answers_from_row(row, idx, issues: list) -> dict:
     return out
 
 
-def run_import(session: Session, folder: str | Path, aliases_path: str | Path | None, *, apply: bool) -> Report:
+def run_import(session: Session, folder: str | Path, aliases_path: str | Path | None, *, apply: bool, dismissed_path: str | Path | None = None) -> Report:
     head = f"Перенос ответов Google-формы в «Карту команды»: {'ЗАПИСЬ' if apply else 'СУХОЙ ПРОГОН (ничего не записано)'}"
     folder = Path(folder)
     try:
         if not folder.is_dir():
             raise InputError("папка не найдена")
-        responses, ridx = read_sheet(folder / "responses.xlsx", "ответы на форму", RESPONSE_COLS)
+        dismissed = read_dismissed(Path(dismissed_path) if dismissed_path else None)
+        responses, ridx = read_sheet(folder / "responses.xlsx", "ответы на форму", {**RESPONSE_COLS, **(TITLE_COL if dismissed else {})})
         emails, eidx = read_sheet(folder / "emails.xlsx", "sheet1", EMAIL_COLS)
         aliases = read_aliases(Path(aliases_path) if aliases_path else None)
         if not (folder / "photos").is_dir():
@@ -323,7 +345,7 @@ def run_import(session: Session, folder: str | Path, aliases_path: str | Path | 
     except InputError as e:
         return Report(1, [head, f"Ошибка входных данных: {e}", "Итог: 1 — ничего не записано"])
     try:
-        return _run(session, folder / "photos", responses, ridx, emails, eidx, aliases, apply, head)
+        return _run(session, folder / "photos", responses, ridx, emails, eidx, aliases, dismissed, apply, head)
     except DBAPIError as e:
         session.rollback()
         diag = getattr(getattr(e, "orig", None), "diag", None)  # сообщения psycopg содержат значения строк (ПДн)
@@ -334,26 +356,40 @@ def run_import(session: Session, folder: str | Path, aliases_path: str | Path | 
         raise
 
 
-def _run(session, photos: Path, responses, ridx, emails, eidx, aliases, apply: bool, head: str) -> Report:
+def _run(session, photos: Path, responses, ridx, emails, eidx, aliases, dismissed, apply: bool, head: str) -> Report:
     session.execute(text("SELECT pg_advisory_xact_lock(:k)"), {"k": LOCK_TEAM})
-    rows = session.execute(
-        text(f"""SELECT p.id, p.first_name, p.last_name, p.email, p.answers, ph.person_id IS NOT NULL AS has_photo
-                 FROM {S}people p LEFT JOIN {S}photos ph ON ph.person_id = p.id WHERE NOT p.is_archived ORDER BY p.id""")
+    if dismissed:
+        known = set(session.execute(text(f"SELECT id FROM {S}directions")).scalars())
+        if not set(dismissed.values()) <= known:
+            session.rollback()
+            return Report(1, [head, "Ошибка входных данных: dismissed: неизвестное направление", "Итог: 1 — ничего не записано"])
+    all_rows = session.execute(
+        text(f"""SELECT p.id, p.first_name, p.last_name, p.email, p.answers, p.is_archived, ph.person_id IS NOT NULL AS has_photo
+                 FROM {S}people p LEFT JOIN {S}photos ph ON ph.person_id = p.id ORDER BY p.id""")
     ).mappings().all()
+    active_words = {service._name_words(r["last_name"], r["first_name"]) for r in all_rows if not r["is_archived"]}
+    # архивные участвуют в сопоставлении только если они перечислены в dismissed.json и нет неархивного тёзки
+    rows = [
+        r for r in all_rows
+        if not r["is_archived"] or ((w := service._name_words(r["last_name"], r["first_name"])) in dismissed and w not in active_words)
+    ]
+    existing_words = {service._name_words(r["last_name"], r["first_name"]) for r in all_rows}
     used_emails = {e.lower() for e in session.execute(text(f"SELECT email FROM {S}people WHERE email IS NOT NULL")).scalars()}
     cards, by_words = {}, {}
-    for r in rows:
-        words = service._name_words(r["last_name"], r["first_name"])
+    def add_card(r) -> None:
         card = {
             "id": r["id"], "email": r["email"] or None, "old_answers": dict(r["answers"] or {}), "answers": dict(r["answers"] or {}), "new_answers": {},
             "new_email": None, "has_photo": r["has_photo"], "photo": None,
             "folded": [fold_cyr(w) for w in re.findall(r"\w+", f"{r['last_name']} {r['first_name']}".lower())],
         }
         cards[r["id"]] = card
-        by_words.setdefault(words, []).append(card)
+        by_words.setdefault(service._name_words(r["last_name"], r["first_name"]), []).append(card)
+
+    for r in rows:
+        add_card(r)
 
     bad: dict[str, list[int]] = {k: [] for k in {**REASONS, **EMAIL_REASONS}}
-    n = {"matched": 0, "repeat": 0, "fields": 0, "photos": 0, "emails_resp": 0, "emails_xlsx": 0, "emails_has": 0}
+    n = {"created": 0, "dismissed_no_response": 0, "matched": 0, "repeat": 0, "fields": 0, "photos": 0, "emails_resp": 0, "emails_xlsx": 0, "emails_has": 0}
     touched: set[int] = set()
 
     def find(words):
@@ -375,6 +411,24 @@ def _run(session, photos: Path, responses, ridx, emails, eidx, aliases, apply: b
         touched.add(card["id"])
         n[counter] += 1
         return True
+
+    for words, direction in dismissed.items():
+        if words in existing_words:
+            continue
+        src = next((row for _, row in reversed(responses) if service._name_words(_cell(row, ridx["last"]), _cell(row, ridx["first"])) == words), None)
+        if src is None:  # последний по времени ответ этого человека
+            n["dismissed_no_response"] += 1
+            continue
+        first, last = _cell(src, ridx["first"]), _cell(src, ridx["last"])
+        new_id = session.execute(
+            text(
+                f"""INSERT INTO {S}people (first_name, last_name, title, direction_id, manager_id, is_archived, show_in_map, is_ceo, is_assistant, answers, sort)
+                    VALUES (:f, :l, :t, :d, NULL, true, false, false, false, '{{}}'::jsonb, (SELECT COALESCE(max(sort), 0) + 1 FROM {S}people)) RETURNING id"""
+            ),
+            {"f": first, "l": last, "t": _cell(src, ridx["title"]), "d": direction},
+        ).scalar_one()
+        add_card({"id": new_id, "first_name": first, "last_name": last, "email": None, "answers": {}, "has_photo": False})
+        n["created"] += 1
 
     seen_cards: set[int] = set()
     for rownum, row in reversed(responses):  # новые ответы раньше: при повторной анкете побеждает последняя
@@ -446,6 +500,7 @@ def _run(session, photos: Path, responses, ridx, emails, eidx, aliases, apply: b
 
     lines = [
         head,
+        *([f"Создано уволенных: {n['created']}" + (f", без ответа в форме (не созданы): {n['dismissed_no_response']}" if n["dismissed_no_response"] else "")] if dismissed else []),
         f"Ответов в responses.xlsx: {len(responses)}, сопоставлено с карточками: {n['matched']} (повторных ответов на ту же карточку: {n['repeat']})",
         f"Строк в emails.xlsx: {len(emails)}, карточка уже с почтой: {n['emails_has']}",
         f"Карточек обновлено: {len(touched)}, полей анкеты записано: {n['fields']}, фото: {n['photos']}, "
@@ -470,13 +525,14 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="python -m app.modules.team.import_responses", description="Перенос ответов Google-формы в карточки «Карты команды»")
     ap.add_argument("folder", help="папка с responses.xlsx, emails.xlsx и photos/")
     ap.add_argument("--aliases", help="aliases.json: {\"Фамилия Имя из ответа\": \"Фамилия Имя карточки\"}")
+    ap.add_argument("--dismissed", help="dismissed.json: {\"Фамилия Имя из ответа\": \"id направления\"} — создать карточки уволенных")
     ap.add_argument("--apply", action="store_true", help="записать (по умолчанию сухой прогон)")
     args = ap.parse_args(argv)
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
     try:
         with Session(get_engine()) as session:
-            report = run_import(session, args.folder, args.aliases, apply=args.apply)
+            report = run_import(session, args.folder, args.aliases, apply=args.apply, dismissed_path=args.dismissed)
     except Exception as e:  # noqa: BLE001 — текст исключения может содержать ПДн, печатаем только тип
         print(f"Непредвиденная ошибка: {type(e).__name__}", file=sys.stderr)
         return 1

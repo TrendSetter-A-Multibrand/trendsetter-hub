@@ -65,8 +65,8 @@ def has_photo(db, pid):
     return db.execute(text("SELECT count(*) FROM trendsetter_hub.team_photos WHERE person_id = :i"), {"i": pid}).scalar_one() == 1
 
 
-def run(db, folder, apply=True, aliases=None):
-    return ir.run_import(db, folder, aliases, apply=apply)
+def run(db, folder, apply=True, aliases=None, dismissed=None):
+    return ir.run_import(db, folder, aliases, apply=apply, dismissed_path=dismissed)
 
 
 # ---------- сопоставление ----------
@@ -331,3 +331,95 @@ def test_aliases_apply_to_emails_xlsx(db, tmp_path):
     r = run(db, folder, aliases=tmp_path / "aliases.json")
     assert person(db, a)["email"] == "sonya@example.com"
     assert "алиас — карточка не найдена или неоднозначна: 1; строки Excel: 3" in r.text()
+
+
+# ---------- уволенные (--dismissed) ----------
+
+
+def write_dismissed(tmp_path, data):
+    p = tmp_path / "dismissed.json"
+    p.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    return p
+
+
+def by_name(db, last, first):
+    db.rollback()
+    return db.execute(text("SELECT * FROM trendsetter_hub.team_people WHERE last_name = :l AND first_name = :f"), {"l": last, "f": first}).mappings().all()
+
+
+def test_dismissed_created_with_photo_and_email(db, tmp_path):
+    add_person(db, "Живой", "Человек")
+    db.commit()
+    link = "https://drive.google.com/open?id=D1"
+    folder = make_folder(
+        tmp_path, [resp_row("Гоар", "Вардересян", loc="Ереван", photo=link), resp_row("Юля", "Молева", loc="Москва")],
+        emails=[("Goar Vardaresyan", "goar@example.com")], photos={"D1": (JPEG, JPEG)},
+    )
+    d = write_dismissed(tmp_path, {"Вардересян Гоар": "ops", "Молева Юля": "ops"})
+    r = run(db, folder, dismissed=d)
+    assert r.exit_code == 0, r.text()
+    (g,) = by_name(db, "Вардересян", "Гоар")
+    assert g["is_archived"] is True and g["show_in_map"] is False and g["is_ceo"] is False and g["is_assistant"] is False and g["manager_id"] is None
+    assert g["direction_id"] == "ops" and g["title"] == "Должность из формы" and g["answers"] == {"location": "Ереван"}
+    assert g["email"] == "goar@example.com" and has_photo(db, g["id"])
+    assert g["sort"] > max(p["sort"] for p in by_name(db, "Человек", "Живой"))
+    assert len(by_name(db, "Молева", "Юля")) == 1
+    assert "Создано уволенных: 2" in r.text()
+
+
+def test_dismissed_idempotent_and_fills_empty_only(db, tmp_path):
+    folder = make_folder(tmp_path, [resp_row("Гоар", "Вардересян", loc="Ереван", hob="чай")])
+    d = write_dismissed(tmp_path, {"Вардересян Гоар": "ops"})
+    assert "Создано уволенных: 1" in run(db, folder, dismissed=d).text()
+    (g,) = by_name(db, "Вардересян", "Гоар")
+    db.execute(text("UPDATE trendsetter_hub.team_people SET answers = CAST(:a AS jsonb) WHERE id = :i"), {"a": json.dumps({"location": "Рим"}), "i": g["id"]})
+    db.commit()
+    again = run(db, folder, dismissed=d)
+    assert "Создано уволенных: 0" in again.text()
+    assert len(by_name(db, "Вардересян", "Гоар")) == 1
+    assert by_name(db, "Вардересян", "Гоар")[0]["answers"] == {"location": "Рим", "hobbies": ["чай"]}
+
+
+def test_dismissed_not_created_if_active_or_archived_exists_and_other_archived_untouched(db, tmp_path):
+    add_person(db, "Гоар", "Вардересян")
+    add_person(db, "Юля", "Молева", archived=True)
+    other = add_person(db, "Анна", "Архивова", archived=True)
+    db.commit()
+    folder = make_folder(tmp_path, [resp_row("Гоар", "Вардересян"), resp_row("Юля", "Молева", loc="Москва"), resp_row("Анна", "Архивова", loc="Минск")])
+    d = write_dismissed(tmp_path, {"Вардересян Гоар": "ops", "Молева Юля": "ops"})
+    r = run(db, folder, dismissed=d)
+    assert "Создано уволенных: 0" in r.text()
+    assert len(by_name(db, "Вардересян", "Гоар")) == 1 and len(by_name(db, "Молева", "Юля")) == 1
+    assert by_name(db, "Молева", "Юля")[0]["answers"] == {"location": "Москва"}  # дозаполнена архивная из dismissed.json
+    assert person(db, other)["answers"] == {}
+
+
+def test_dismissed_unknown_direction_exit_1(db, tmp_path):
+    folder = make_folder(tmp_path, [resp_row("Гоар", "Вардересян")])
+    r = run(db, folder, dismissed=write_dismissed(tmp_path, {"Вардересян Гоар": "no_such_dir"}))
+    assert r.exit_code == 1 and "Вардересян" not in r.text() and "no_such_dir" not in r.text()
+    assert by_name(db, "Вардересян", "Гоар") == []
+    (tmp_path / "bad.json").write_text("[1]", encoding="utf-8")
+    assert run(db, folder, dismissed=tmp_path / "bad.json").exit_code == 1
+
+
+def test_dismissed_without_response_not_created(db, tmp_path):
+    folder = make_folder(tmp_path, [resp_row("Кто-то", "Другой")])
+    r = run(db, folder, dismissed=write_dismissed(tmp_path, {"Вардересян Гоар": "ops"}))
+    assert r.exit_code == 0 and "Создано уволенных: 0, без ответа в форме (не созданы): 1" in r.text()
+    assert by_name(db, "Вардересян", "Гоар") == []
+
+
+def test_dismissed_dry_run_writes_nothing_and_no_pd(db, tmp_path):
+    folder = make_folder(
+        tmp_path, [resp_row("Гоар", "Вардересян", loc="Тайгород", tg="secret_tg", email="goar@example.com")], emails=[("Goar Vardaresyan", "g2@example.com")]
+    )
+    d = write_dismissed(tmp_path, {"Вардересян Гоар": "ops"})
+    for apply in (False, True):
+        out = run(db, folder, apply=apply, dismissed=d).text()
+        for secret in ("Вардересян", "Гоар", "Тайгород", "secret_tg", "goar@example.com", "g2@example.com", "Должность из формы"):
+            assert secret not in out
+        if not apply:
+            assert by_name(db, "Вардересян", "Гоар") == []
+    audit = db.execute(text("SELECT details::text FROM trendsetter_hub.audit_log WHERE action = 'team.import_responses'")).scalar_one()
+    assert "Вардересян" not in audit and "goar@example.com" not in audit and '"created": 1' in audit
