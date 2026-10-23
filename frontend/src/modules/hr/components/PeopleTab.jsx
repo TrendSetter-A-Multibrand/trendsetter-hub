@@ -7,6 +7,7 @@ import { useLoad } from '../lib/useLoad.js'
 import { managerOptions, personName } from '../lib/options.js'
 import { completeness, levelOf } from '../lib/completeness.js'
 import PersonModal from './PersonModal.jsx'
+import ExportButton from './ExportButton.jsx'
 
 const s = strings.people
 const BASE = '/modules/team/hr'
@@ -141,7 +142,7 @@ function PeopleTable({ people, directions, reload }) {
   const [view, setView] = useState('active')
   const [mode, setModeState] = useState(loadMode)
   const [shown, setShown] = useState(CARDS_STEP)
-  const [modal, setModal] = useState(null) // { person?, fromUser? }
+  const [modal, setModal] = useState(null) // { person?, fromUser?, initialTab? }
   const [reassign, setReassign] = useState(null)
   const [fillOf, setFillOf] = useState(null) // person
 
@@ -172,11 +173,22 @@ function PeopleTable({ people, directions, reload }) {
     return out.filter((g) => g.items.length)
   }, [rows, directions, dirById])
 
+  // после «Отметить уволенным» предлагаем оффбординг: кнопка открывает вкладку «Чек-листы» сотрудника (ничего не запускается само)
+  const offerOffboarding = (person) =>
+    confirmModal.confirm({
+      title: s.offboardingTitle(person.name),
+      content: s.offboardingText,
+      okText: s.offboardingOk,
+      cancelText: s.offboardingLater,
+      onOk: () => setModal({ person, initialTab: 'checklists' }),
+    })
+
   const patch = async (person, body, okText) => {
     try {
       await api.patch(`${BASE}/people/${person.id}`, body)
       message.success(okText)
       await reload()
+      if (body.isArchived === true) offerOffboarding(person)
     } catch (e) {
       if (e.status === 409 && body.isArchived && person.directReports > 0) setReassign(person)
       else message.error(e.message)
@@ -360,6 +372,7 @@ function PeopleTable({ people, directions, reload }) {
         <Button disabled={!ready} onClick={() => setModal({ fromUser: true })}>
           {s.addFromUser}
         </Button>
+        <ExportButton path="/modules/hr/export/people" />
       </Space>
       {mode === 'table' && (
         <Table
@@ -388,6 +401,7 @@ function PeopleTable({ people, directions, reload }) {
           key={modal.person?.id ?? 'new'}
           person={modal.person ?? null}
           fromUser={modal.fromUser}
+          initialTab={modal.initialTab}
           fields={fields}
           people={people}
           directions={directions}
@@ -405,8 +419,10 @@ function PeopleTable({ people, directions, reload }) {
           people={people}
           onClose={() => setReassign(null)}
           onDone={async () => {
+            const archived = reassign
             setReassign(null)
             await reload()
+            offerOffboarding(archived)
           }}
         />
       )}

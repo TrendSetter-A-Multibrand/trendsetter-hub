@@ -180,6 +180,7 @@ export function createTeamHandlers({ userFromToken, accessTo }) {
   const users = () => hub.users
 
   const byId = (id) => db.people.find((p) => p.id === Number(id)) ?? null
+  const patchListeners = []
   const personOf = (user) =>
     db.people.find((p) => p.userId === user.id) ??
     db.people.find((p) => p.email && p.email.toLowerCase() === user.email.toLowerCase()) ??
@@ -597,11 +598,12 @@ export function createTeamHandlers({ userFromToken, accessTo }) {
     },
 
     'PATCH /modules/team/hr/people/:id': ({ token, params, body }) => {
-      ctxHr(token)
+      const actor = ctxHr(token)
       const p = byId(params.id)
       if (!p) throw deny(404, err.personNotFound)
       const b = body ?? {}
-      return atomic(() => {
+      const before = { title: p.title, managerId: p.managerId, directionId: p.directionId, isArchived: p.isArchived }
+      const result = atomic(() => {
         if (p.isCeo && ((has(b, 'managerId') && b.managerId !== null) || b.isArchived === true)) throw deny(422, err.ceoLocked)
         if (has(b, 'managerId')) setManager(p, b.managerId)
         applyCardFields(p, b, p.id)
@@ -619,6 +621,9 @@ export function createTeamHandlers({ userFromToken, accessTo }) {
         } else if (b.isArchived === false) p.isArchived = false
         return hrOf(p)
       })
+      // наблюдатели (автозапись истории в hrOps.js) вызываются только после успешного атомарного обновления
+      patchListeners.forEach((fn) => fn({ person: p, before, actor }))
+      return result
     },
 
     'GET /modules/team/hr/people/:id/photo': ({ token, params }) => {
@@ -695,5 +700,9 @@ export function createTeamHandlers({ userFromToken, accessTo }) {
   }
 
   // people/personOf/byId — для mock-слоя HR (hr.js): отпуска привязаны к карточкам и иерархии
-  return { handlers, moduleBadges, people: () => db.people, personOf, byId, directions: () => db.directions }
+  // onPersonPatched(fn) — fn({ person, before, actor }) после успешного PATCH карточки HR (для автозаписи истории)
+  return {
+    handlers, moduleBadges, people: () => db.people, personOf, byId, directions: () => db.directions,
+    onPersonPatched: (fn) => patchListeners.push(fn),
+  }
 }

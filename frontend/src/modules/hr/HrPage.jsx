@@ -9,6 +9,8 @@ import PeopleTab from './components/PeopleTab.jsx'
 import FieldsTab from './components/FieldsTab.jsx'
 import LeavesTab from './components/LeavesTab.jsx'
 import PoliciesTab from './components/PoliciesTab.jsx'
+import ChecklistTemplatesTab from './components/ChecklistTemplatesTab.jsx'
+import PlanTab from './plan/PlanTab.jsx'
 
 // Вкладки модуля. Новая вкладка (зарплаты…) = одна запись здесь. Component получает { pending, onChanged }.
 // badge: 'pending' — число анкет на проверке, 'leavePending' — число заявок на отпуск, ждущих решения, рядом с названием.
@@ -17,7 +19,9 @@ const TABS = [
   { key: 'people', group: 'team', label: strings.tabs.people, Component: PeopleTab },
   { key: 'submissions', group: 'team', label: strings.tabs.submissions, badge: 'pending', Component: SubmissionsTab },
   { key: 'fields', group: 'team', label: strings.tabs.fields, Component: FieldsTab },
+  { key: 'checklists', group: 'team', label: strings.tabs.checklists, Component: ChecklistTemplatesTab },
   { key: 'leave', group: 'leave', label: strings.tabs.leave, badge: 'leavePending', Component: LeavesTab },
+  { key: 'plan', group: 'leave', label: strings.tabs.plan, Component: PlanTab },
   { key: 'policies', group: 'leave', label: strings.tabs.policies, Component: PoliciesTab },
 ]
 

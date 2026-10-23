@@ -87,6 +87,16 @@ docker exec -u root trendsetter-hub-api rm -rf /tmp/team-import                 
 
 **Откат** (`alembic downgrade 0005`): удаляются только таблицы `hr_document_files` и `hr_documents`.
 
+## HR: напоминания, история, оборудование, чек-листы, график отпусков (ревизия 0007)
+`07_hr_people_ops.sql`: столбцы `hr_employee_files.birthday_hidden` и `hr_documents.visible_to_employee`; таблицы `hr_reminder_log` (отметки «напоминание создано», PK `day, kind, person_id`, для событий без человека `person_id = 0`), `hr_employee_history`, `hr_equipment`, `hr_checklist_templates` и `hr_checklist_template_items` (сид: «Онбординг: новый сотрудник» и «Оффбординг: увольнение»; повторный запуск шаблоны не дублирует), `hr_checklists` и `hr_checklist_items`, `hr_leave_plans`. Напоминания создаются без cron: при обращении к `/core/me` (не чаще раза в сутки). В журнал пишутся только id и категории. «Мои документы» работают только для карточки, привязанной к аккаунту (`team_people.user_id`): HR привязывает аккаунт в карточке, либо сотрудник отправляет анкету.
+
+**Выкат 0007** (как у `0006`; `deploy.sh` миграции не выполняет):
+1. Под doadmin в `defaultdb` выполнить `db/07_hr_people_ops.sql` (после `06_hr_documents.sql`).
+2. Под doadmin выполнить `deploy/stamp_alembic_0007.sql` (версия миграции `0006` → `0007`).
+3. Только после этого — merge в `main`. Иначе деплой будет «зелёным», а `/core/me` и модуль `hr` начнут отвечать 500 (напоминания) или новые разделы HR будут недоступны.
+
+**Откат** (`alembic downgrade 0006`): удаляются только новые таблицы `hr_leave_plans`, `hr_checklist_*`, `hr_equipment`, `hr_employee_history`, `hr_reminder_log` и два новых столбца.
+
 ## Модуль «Склад»
 Листы Google Таблицы «Склад-приёмка» стали таблицами: Приемки → `warehouse_receipts`, Раскладки → `warehouse_receipt_plans`, Счётчики → `warehouse_box_counters` и `warehouse_pallet_pointers`, Сканы → `warehouse_scans`, Короба → `warehouse_boxes`, Хранение → `warehouse_storage_boxes`, Хранение — архив → `warehouse_storage_archive`, Секции → `warehouse_extra_sections`, Коды ЧЗ → `warehouse_marks`, Сводка → представление `warehouse_receipt_summary`. Условия, которые раньше защищал `LockService`, держит база: уникальность кода ЧЗ, одно место на короб, уникальное имя приёмки, номера коробов через функцию `warehouse_next_box_number()`, повтор отправки скана отсекается по id.
 

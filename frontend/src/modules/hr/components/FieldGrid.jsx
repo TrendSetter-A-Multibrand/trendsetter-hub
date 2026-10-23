@@ -5,7 +5,7 @@ import strings from '../strings.js'
 import { parseRuDate } from '../lib/dossier.js'
 
 // Поле даты ДД.ММ.ГГГГ. value — ISO или null; пока текст не разобран, наружу уходит сырой текст (buildPatch отметит его как invalid).
-function DateInput({ value, onChange }) {
+export function DateInput({ value, onChange }) {
   const [text, setText] = useState(value ? formatDate(value) : '')
   const invalid = text.trim() !== '' && parseRuDate(text) === null
   return (

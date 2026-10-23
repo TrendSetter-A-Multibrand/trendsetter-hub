@@ -240,6 +240,12 @@
 .tm-tl-cell.head { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-height: 44px; font-size: 11px; }
 .tm-tl-wd { font-size: 9.5px; color: var(--faint); letter-spacing: 0; }
 .tm-tl-dn { font-weight: 500; }
+.tm-bd { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px; margin: 0 0 14px; padding: 8px 12px; background: #fff; border: 1px solid #E6E1DE; border-radius: 10px; font-size: 13px; }
+.tm-bd-title { font-size: 10.5px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+.tm-bd-empty { color: var(--muted); }
+.tm-bd-item { display: inline-flex; align-items: baseline; gap: 6px; }
+.tm-bd-when { font-size: 10.5px; color: var(--faint); letter-spacing: 0; }
+.tm-tl-bd { z-index: 3; align-self: center; justify-self: center; font-size: 14px; line-height: 1; cursor: default; }
 .tm-tl-seg { z-index: 2; align-self: center; height: 18px; border-radius: 4px; margin: 0 1px; cursor: pointer; }
 
 /* ---- метка «в отпуске» ---- */

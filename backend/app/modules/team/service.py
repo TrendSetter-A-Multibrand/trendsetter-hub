@@ -730,14 +730,17 @@ def update_person(session: Session, hr: User, person_id: int, d: dict) -> dict:
                         fail(422, MSG_MANAGER_NOT_FOUND)
                     if _would_cycle(session, person_id, target):
                         fail(422, MSG_CYCLE)
+                    moved = session.execute(text(f"SELECT id FROM {S}people WHERE manager_id = :p AND NOT is_archived"), {"p": person_id}).scalars().all()
                     session.execute(
                         text(f"UPDATE {S}people SET manager_id = :t, updated_at = now() WHERE manager_id = :p AND NOT is_archived"),
                         {"t": target, "p": person_id},
                     )
+                    _record_reassign_history(session, hr, moved, person_id, target)
                 archived_now = True
             cols["is_archived"] = d["isArchived"]
         if cols or answers_patch:
             _update_row(session, person_id, cols, answers_patch, row["answers"])
+            _record_history(session, hr, row, cols)
         if photo:
             _save_photo(session, person_id, *photo)
         log_action(
@@ -749,6 +752,37 @@ def update_person(session: Session, hr: User, person_id: int, d: dict) -> dict:
         session.rollback()
         fail(409, MSG_EMAIL_DUPLICATE)
     return _hr_person(session, person_id)
+
+
+def _record_history(session: Session, hr: User, row, cols: dict) -> None:
+    """Автозапись в историю HR при смене должности, руководителя, направления и статуса (только реальные изменения; значения — названия)."""
+    from app.modules.hr import history  # отложенный импорт: hr.service сам импортирует team.service
+
+    def label(sql: str, key):
+        return session.execute(text(sql), {"i": key}).scalar() if key is not None else None
+
+    pid = row["id"]
+    if "title" in cols and cols["title"] != row["title"]:
+        history.record_auto(session, pid, "position", "Изменена должность", row["title"], cols["title"], hr.id)
+    if "manager_id" in cols and cols["manager_id"] != row["manager_id"]:
+        sql = f"SELECT trim(last_name || ' ' || first_name) FROM {S}people WHERE id = :i"
+        history.record_auto(session, pid, "manager", "Изменён руководитель", label(sql, row["manager_id"]), label(sql, cols["manager_id"]), hr.id)
+    if "direction_id" in cols and cols["direction_id"] != row["direction_id"]:
+        sql = f"SELECT label FROM {S}directions WHERE id = :i"
+        history.record_auto(session, pid, "direction", "Изменено направление", label(sql, row["direction_id"]), label(sql, cols["direction_id"]), hr.id)
+    if "is_archived" in cols and cols["is_archived"] != row["is_archived"]:
+        old, new = ("Работает", "Уволен") if cols["is_archived"] else ("Уволен", "Работает")
+        history.record_auto(session, pid, "status", "Изменён статус", old, new, hr.id)
+
+
+def _record_reassign_history(session: Session, hr: User, moved: list[int], old_id: int, new_id: int) -> None:
+    """Автозапись «Изменён руководитель» каждому переданному подчинённому."""
+    from app.modules.hr import history  # отложенный импорт: hr.service сам импортирует team.service
+
+    sql = f"SELECT trim(last_name || ' ' || first_name) FROM {S}people WHERE id = :i"
+    old, new = (session.execute(text(sql), {"i": i}).scalar() for i in (old_id, new_id))
+    for pid in moved:
+        history.record_auto(session, pid, "manager", "Изменён руководитель", old, new, hr.id)
 
 
 def _active_reports(session: Session, person_id: int) -> bool:

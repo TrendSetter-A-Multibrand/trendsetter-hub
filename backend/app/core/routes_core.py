@@ -1,6 +1,8 @@
+import logging
+
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-from sqlalchemy import func, select, update
+from sqlalchemy import func, select, text, update
 from sqlalchemy.orm import Session
 
 from app.core.access import can_manage_users
@@ -11,10 +13,36 @@ from app.core.registry import MODULES
 from app.db.database import get_session
 
 router = APIRouter(prefix="/core", tags=["core"])
+log = logging.getLogger(__name__)
+DAILY_JOBS_LOCK = 70_007_001  # ключ advisory-блокировки ежедневных задач модулей
+
+
+def run_daily_jobs(session: Session) -> None:
+    """Ежедневные задачи модулей (напоминания). Блокировка на транзакцию: параллельные запросы не дублируют работу;
+    «не чаще раза в сутки» обеспечивает сама задача (запись в журнале отметок). Сбой не ломает ответ: откат и строка в лог без данных."""
+    jobs = [mod for mod in MODULES if mod.daily_job is not None]
+    if not jobs:
+        return
+    try:
+        if not session.execute(text("SELECT pg_try_advisory_xact_lock(:k)"), {"k": DAILY_JOBS_LOCK}).scalar():
+            session.rollback()
+            return
+        for mod in jobs:
+            try:
+                mod.daily_job(session)
+            except Exception as exc:  # noqa: BLE001 — задача модуля не должна ломать /core/me
+                session.rollback()
+                log.error("daily_job %s: %s", mod.id, type(exc).__name__)
+                session.execute(text("SELECT pg_try_advisory_xact_lock(:k)"), {"k": DAILY_JOBS_LOCK})
+        session.commit()
+    except Exception as exc:  # noqa: BLE001
+        session.rollback()
+        log.error("daily_jobs: %s", type(exc).__name__)
 
 
 @router.get("/me")
 def me(user: User = Depends(get_current_user), session: Session = Depends(get_session)) -> dict:
+    run_daily_jobs(session)
     departments = session.scalars(
         select(Department)
         .join(UserDepartment, UserDepartment.department_id == Department.id)

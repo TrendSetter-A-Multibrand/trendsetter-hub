@@ -31,7 +31,7 @@ const strOrNull = (v) => (typeof v === 'string' && v.trim() ? v.trim() : null)
 const emptyFile = (personId) => ({
   personId, legalName: null, birthDate: null, country: null, employmentType: null, hiredAt: null, probationUntil: null,
   contractNo: null, contractDate: null, workSchedule: null, dismissedAt: null, dismissalReason: null, phone: null,
-  personalEmail: null, emergencyContact: null, notes: null, updatedAt: null,
+  personalEmail: null, emergencyContact: null, notes: null, birthdayHidden: false, updatedAt: null,
 })
 const emptySensitive = (personId) => ({
   personId, salary: null, currency: null, payDay1: null, payDay2: null, bonusNote: null, taxId: null, socialId: null,
@@ -89,15 +89,15 @@ function seed() {
   // демо-документы: крошечные валидные файлы (txt и png 1x1), без реального содержимого
   const b64 = (text) => btoa(text)
   const PNG_1X1 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
-  const doc = (id, personId, category, title, fileName, dataBase64, uploadOff) => {
+  const doc = (id, personId, category, title, fileName, dataBase64, uploadOff, visibleToEmployee = false) => {
     const ext = extensionOf(fileName)
     return {
       id, personId, category, title, fileName, mime: DOC_MIME[ext], dataBase64, sizeBytes: base64Bytes(dataBase64),
-      uploadedBy: hub.users.find((u) => u.id === 13)?.full_name ?? null, uploadedAt: stamp(uploadOff),
+      uploadedBy: hub.users.find((u) => u.id === 13)?.full_name ?? null, uploadedAt: stamp(uploadOff), visibleToEmployee,
     }
   }
   const documents = [
-    doc(1, 11, 'contract', 'Трудовой договор', 'contract-demo.txt', b64('Demo file. No real content.'), -60),
+    doc(1, 11, 'contract', 'Трудовой договор', 'contract-demo.txt', b64('Demo file. No real content.'), -60, true),
     doc(2, 11, 'id_doc', 'Скан паспорта', 'passport-demo.png', PNG_1X1, -45),
     doc(3, 12, 'order', 'Приказ о приёме', 'order-demo.txt', b64('Demo file. No real content.'), -20),
   ]
@@ -131,8 +131,8 @@ export function createHrHandlers({ userFromToken, accessTo, isResponsible, team,
     if (!p) throw deny(404, err.personNotFound)
     return p
   }
-  const docOut = ({ id, category, title, fileName, mime, sizeBytes, uploadedBy, uploadedAt }) => ({
-    id, category, title, fileName, mime, sizeBytes, uploadedBy, uploadedAt,
+  const docOut = ({ id, category, title, fileName, mime, sizeBytes, uploadedBy, uploadedAt, visibleToEmployee }) => ({
+    id, category, title, fileName, mime, sizeBytes, uploadedBy, uploadedAt, visibleToEmployee,
   })
   const findDoc = (id) => {
     const doc = db.documents.find((d) => d.id === Number(id))
@@ -405,6 +405,10 @@ export function createHrHandlers({ userFromToken, accessTo, isResponsible, team,
         if (b.employmentType !== null && !EMPLOYMENT.includes(b.employmentType)) throw deny(422, err.fieldInvalid('employmentType'))
         next.employmentType = b.employmentType
       }
+      if (has(b, 'birthdayHidden')) {
+        if (typeof b.birthdayHidden !== 'boolean') throw deny(422, err.fieldInvalid('birthdayHidden'))
+        next.birthdayHidden = b.birthdayHidden
+      }
       next.updatedAt = new Date().toISOString()
       db.files[person.id] = next
       return { file: next, leave: leaveOf(person.id), canSeeSensitive: isResponsible(user) }
@@ -464,9 +468,11 @@ export function createHrHandlers({ userFromToken, accessTo, isResponsible, team,
       if (size === null || size === 0) throw deny(422, err.docData)
       if (size > DOC_MAX_BYTES) throw deny(422, err.docSize)
       if (db.documents.filter((d) => d.personId === person.id).length >= DOC_MAX_COUNT) throw deny(409, err.docLimit)
+      if (has(b, 'visibleToEmployee') && typeof b.visibleToEmployee !== 'boolean') throw deny(422, err.invalid)
       const doc = {
         id: db.nextId.document++, personId: person.id, category: b.category, title, fileName, mime: DOC_MIME[ext],
         dataBase64: b.dataBase64, sizeBytes: size, uploadedBy: user.full_name, uploadedAt: new Date().toISOString(),
+        visibleToEmployee: b.visibleToEmployee === true,
       }
       db.documents.push(doc)
       return docOut(doc)
@@ -476,6 +482,21 @@ export function createHrHandlers({ userFromToken, accessTo, isResponsible, team,
       ctxResp(token)
       const doc = findDoc(params.id)
       return { fileName: doc.fileName, mime: doc.mime, sizeBytes: doc.sizeBytes, dataBase64: doc.dataBase64 }
+    },
+
+    // Правка метаданных: «Показывать сотруднику», название, категория (Resp)
+    [`PATCH ${BASE}/documents/:id`]: ({ token, params, body }) => {
+      ctxResp(token)
+      const doc = findDoc(params.id)
+      const b = isObject(body) ? body : {}
+      if (has(b, 'visibleToEmployee') && typeof b.visibleToEmployee !== 'boolean') throw deny(422, err.invalid)
+      if (has(b, 'category') && !DOC_CATEGORIES.includes(b.category)) throw deny(422, err.docCategory)
+      const title = has(b, 'title') ? strOrNull(b.title) : doc.title
+      if (!title || title.length > DOC_TITLE_LIMIT) throw deny(422, err.docTitle)
+      if (has(b, 'visibleToEmployee')) doc.visibleToEmployee = b.visibleToEmployee
+      if (has(b, 'category')) doc.category = b.category
+      doc.title = title
+      return docOut(doc)
     },
 
     [`POST ${BASE}/documents/:id/delete`]: ({ token, params }) => {
@@ -558,5 +579,9 @@ export function createHrHandlers({ userFromToken, accessTo, isResponsible, team,
     return count > 0 ? { hr: count } : {}
   }
 
-  return { handlers, moduleBadges }
+  // Доступ к хранилищу для mock плана отпусков/дней рождения/своих документов (hr-plans.js): геттеры, т.к. db.documents и db.files[id] заменяются
+  const store = { documents: () => db.documents, files: () => db.files, fileOf }
+
+  // balanceOf/requests — для mock экспорта (hrOps.js): живые объекты, не изменять
+  return { handlers, moduleBadges, store, balanceOf, requests: () => db.requests }
 }

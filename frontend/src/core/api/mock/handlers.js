@@ -15,6 +15,8 @@ import { data, DEMO_PASSWORD } from './data.js'
 import { createTeamHandlers } from './team.js'
 import { createNotificationHandlers } from './notifications.js'
 import { createHrHandlers } from './hr.js'
+import { createHrOpsHandlers } from './hrOps.js'
+import { createPlanHandlers } from './hr-plans.js'
 
 const err = strings.errors
 
@@ -86,13 +88,18 @@ function findUser(id) {
 
 const team = createTeamHandlers({ userFromToken, accessTo })
 const notifications = createNotificationHandlers({ userFromToken, requireManager, findUser })
+const isHrResponsible = (user) => isModuleResponsible(user, groupPermissionsOf(user, 'hr'))
 const hr = createHrHandlers({
   userFromToken,
   accessTo,
-  isResponsible: (user) => isModuleResponsible(user, groupPermissionsOf(user, 'hr')),
+  isResponsible: isHrResponsible,
   team,
   notify: notifications.notify,
 })
+// История, оборудование, чек-листы, экспорт в Excel (часть «А»)
+const hrOps = createHrOpsHandlers({ userFromToken, accessTo, isResponsible: isHrResponsible, team, notify: notifications.notify, hr })
+// График отпусков, дни рождения, свои документы (часть «Б»): читают хранилище hr и создают заявки его обработчиком
+const hrPlans = createPlanHandlers({ userFromToken, accessTo, team, hr })
 
 // Бейджи модулей из разных источников суммируются (hr: анкеты на проверку + заявки на отпуск, ждущие HR)
 function moduleBadges(user) {
@@ -330,4 +337,6 @@ export const handlers = {
   ...team.handlers,
   ...notifications.handlers,
   ...hr.handlers,
+  ...hrOps.handlers,
+  ...hrPlans.handlers,
 }

@@ -80,6 +80,9 @@ def clean(database):
         # нормы отпуска возвращаются к стартовым; поле video_link — как после миграции 0005
         conn.execute("DELETE FROM trendsetter_hub.hr_leave_policies")
         conn.execute((BACKEND.parent / "db" / "05_hr_dossier.sql").read_text(encoding="utf-8"))
+        # напоминания (без FK на users) и шаблоны чек-листов возвращаются к стартовым (скрипт идемпотентен)
+        conn.execute("TRUNCATE trendsetter_hub.hr_reminder_log, trendsetter_hub.hr_checklist_templates RESTART IDENTITY CASCADE")
+        conn.execute((BACKEND.parent / "db" / "07_hr_people_ops.sql").read_text(encoding="utf-8"))
         conn.execute("DELETE FROM trendsetter_hub.departments WHERE code NOT IN ('purchasing','warehouse','wb','analytics','pricing','hr')")
 
 

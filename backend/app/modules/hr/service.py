@@ -6,6 +6,7 @@
 """
 import base64
 import binascii
+import calendar as pycalendar
 import re
 import unicodedata
 from datetime import date
@@ -531,12 +532,17 @@ def get_file(session: Session, user: User, person_id: int) -> dict:
     _person(session, person_id)
     row = _file_row(session, person_id)
     file = {name: _out_value(kind, row[col] if row else None) for name, (col, kind, _) in FILE_FIELDS.items()}
+    file["birthdayHidden"] = bool(row["birthday_hidden"]) if row else False
     return {"file": file, "leave": _leave_block(session, person_id), "canSeeSensitive": is_responsible(session, user)}
 
 
 def update_file(session: Session, user: User, person_id: int, d: dict) -> dict:
     _person(session, person_id, lock=True)
-    cols = {FILE_FIELDS[k][0]: _clean_field(k, FILE_FIELDS[k][1], FILE_FIELDS[k][2], v) for k, v in d.items()}
+    cols = {FILE_FIELDS[k][0]: _clean_field(k, FILE_FIELDS[k][1], FILE_FIELDS[k][2], v) for k, v in d.items() if k != "birthdayHidden"}
+    if "birthdayHidden" in d:
+        if not isinstance(d["birthdayHidden"], bool):
+            fail(422, MSG_FIELD.format("birthdayHidden"))
+        cols["birthday_hidden"] = d["birthdayHidden"]
     if cols:
         _upsert(session, "employee_files", person_id, cols, user)
         log_action(session, user.id, "hr.file_update", MODULE_ID, person_id=person_id, fields=sorted(d))
@@ -712,11 +718,12 @@ def _doc_out(r) -> dict:
     return {
         "id": r["id"], "category": r["category"], "title": r["title"], "fileName": r["file_name"], "mime": r["mime"],
         "sizeBytes": r["size_bytes"], "uploadedBy": r["uploader"], "uploadedAt": r["uploaded_at"].isoformat(),
+        "visibleToEmployee": r["visible_to_employee"],
     }
 
 
 DOC_SQL = (
-    "SELECT d.id, d.person_id, d.category, d.title, d.file_name, d.mime, d.size_bytes, d.uploaded_at, u.full_name AS uploader "
+    "SELECT d.id, d.person_id, d.category, d.title, d.file_name, d.mime, d.size_bytes, d.uploaded_at, d.visible_to_employee, u.full_name AS uploader "
     f"FROM {H}documents d LEFT JOIN {U} u ON u.id = d.uploaded_by"
 )
 
@@ -736,6 +743,9 @@ def upload_document(session: Session, user: User, person_id: int, d: dict) -> di
     title = title.strip() if isinstance(title, str) else ""
     if not 1 <= len(title) <= DOC_TITLE_LIMIT:
         fail(422, MSG_DOC_TITLE)
+    visible = d.get("visibleToEmployee", False)
+    if not isinstance(visible, bool):
+        fail(422, MSG_FIELD.format("visibleToEmployee"))
     name, ext = _doc_file_name(d.get("fileName"))
     content = _doc_content(d.get("dataBase64"), ext)
     count = session.execute(text(f"SELECT count(*) FROM {H}documents WHERE person_id = :p"), {"p": person_id}).scalar_one()
@@ -743,10 +753,10 @@ def upload_document(session: Session, user: User, person_id: int, d: dict) -> di
         fail(409, MSG_DOC_LIMIT)
     doc_id = session.execute(
         text(
-            f"INSERT INTO {H}documents (person_id, category, title, file_name, mime, size_bytes, uploaded_by) "
-            "VALUES (:p, :c, :t, :n, :m, :s, :u) RETURNING id"
+            f"INSERT INTO {H}documents (person_id, category, title, file_name, mime, size_bytes, uploaded_by, visible_to_employee) "
+            "VALUES (:p, :c, :t, :n, :m, :s, :u, :v) RETURNING id"
         ),
-        {"p": person_id, "c": category, "t": title, "n": name, "m": DOC_TYPES[ext][0], "s": len(content), "u": user.id},
+        {"p": person_id, "c": category, "t": title, "n": name, "m": DOC_TYPES[ext][0], "s": len(content), "u": user.id, "v": visible},
     ).scalar_one()
     session.execute(text(f"INSERT INTO {H}document_files (document_id, content) VALUES (:i, :c)"), {"i": doc_id, "c": content})
     log_action(session, user.id, "hr.document_upload", MODULE_ID, document_id=doc_id, person_id=person_id, category=category)
@@ -780,3 +790,86 @@ def delete_document(session: Session, user: User, doc_id: int) -> dict:
     log_action(session, user.id, "hr.document_delete", MODULE_ID, document_id=doc_id, person_id=doc["person_id"], category=doc["category"])
     session.commit()
     return {"ok": True}
+
+
+def update_document(session: Session, user: User, doc_id: int, d: dict) -> dict:
+    """Флаг «Показывать сотруднику», название и категория (Resp). Значения в журнал не пишутся."""
+    doc = _document(session, doc_id)
+    cols = {}
+    if "visibleToEmployee" in d:
+        if not isinstance(d["visibleToEmployee"], bool):
+            fail(422, MSG_FIELD.format("visibleToEmployee"))
+        cols["visible_to_employee"] = d["visibleToEmployee"]
+    if "title" in d:
+        title = d["title"].strip() if isinstance(d["title"], str) else ""
+        if not 1 <= len(title) <= DOC_TITLE_LIMIT:
+            fail(422, MSG_DOC_TITLE)
+        cols["title"] = title
+    if "category" in d:
+        if d["category"] not in DOC_CATEGORIES:
+            fail(422, MSG_DOC_CATEGORY)
+        cols["category"] = d["category"]
+    if cols:
+        session.execute(text(f"UPDATE {H}documents SET {', '.join(f'{c} = :{c}' for c in cols)} WHERE id = :_id"), {**cols, "_id": doc_id})
+        log_action(session, user.id, "hr.document_update", MODULE_ID, document_id=doc_id, person_id=doc["person_id"], fields=sorted(d))
+        session.commit()
+    return _doc_out(_document(session, doc_id))
+
+
+# ---------- Me: свои документы (только отмеченные HR) ----------
+
+
+def _own_card_by_user_id(session: Session, user: User) -> int | None:
+    """Документы чувствительны: «своя» карточка — только с team_people.user_id = пользователь (без поиска по почте и имени)."""
+    return session.execute(text(f"SELECT id FROM {T}people WHERE user_id = :u"), {"u": user.id}).scalar()
+
+
+def my_documents(session: Session, user: User) -> list[dict]:
+    pid = _own_card_by_user_id(session, user)
+    if pid is None:
+        return []
+    rows = session.execute(
+        text(DOC_SQL + " WHERE d.person_id = :p AND d.visible_to_employee ORDER BY d.uploaded_at DESC, d.id DESC"), {"p": pid}
+    ).mappings().all()
+    return [
+        {"id": r["id"], "category": r["category"], "title": r["title"], "fileName": r["file_name"], "sizeBytes": r["size_bytes"], "uploadedAt": r["uploaded_at"].isoformat()}
+        for r in rows
+    ]
+
+
+def download_my_document(session: Session, user: User, doc_id: int) -> dict:
+    pid = _own_card_by_user_id(session, user)
+    doc = session.execute(text(DOC_SQL + " WHERE d.id = :i"), {"i": doc_id}).mappings().first()
+    if doc is None or pid is None or doc["person_id"] != pid or not doc["visible_to_employee"]:
+        fail(404, MSG_DOC_NOT_FOUND)  # чужой и скрытый документ неотличимы от несуществующего
+    return download_document(session, user, doc_id)
+
+
+# ---------- Team: дни рождения ----------
+
+MONTH_RE = re.compile(r"^(\d{4})-(\d{2})$")
+MSG_MONTH = "Укажите месяц в формате ГГГГ-ММ"
+
+
+def birthdays(session: Session, month: str | None) -> list[dict]:
+    """День и месяц без года и возраста; без скрытых HR, архивных и не показываемых на карте."""
+    today = date.today()
+    year, mon = today.year, today.month
+    if month is not None:
+        found = MONTH_RE.match(month)
+        if not found or not 1 <= int(found.group(2)) <= 12:
+            fail(422, MSG_MONTH)
+        year, mon = int(found.group(1)), int(found.group(2))
+    rows = session.execute(
+        text(
+            f"""SELECT p.id, p.first_name, p.last_name, p.direction_id, f.birth_date FROM {H}employee_files f JOIN {T}people p ON p.id = f.person_id
+                WHERE f.birth_date IS NOT NULL AND extract(month FROM f.birth_date) = :m AND NOT f.birthday_hidden AND NOT p.is_archived AND p.show_in_map
+                ORDER BY extract(day FROM f.birth_date), p.id"""
+        ),
+        {"m": mon},
+    ).mappings().all()
+    out = []
+    for r in rows:
+        day = min(r["birth_date"].day, pycalendar.monthrange(year, mon)[1])  # 29 февраля в невисокосный год — 28-е
+        out.append({"personId": r["id"], "name": _name(r), "directionId": r["direction_id"], "day": day, "month": mon})
+    return sorted(out, key=lambda b: (b["day"], b["personId"]))

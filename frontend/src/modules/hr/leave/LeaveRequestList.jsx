@@ -10,7 +10,7 @@ export function StatusTag({ status, awaitingHr }) {
   return (
     <>
       <Tag color={st.color}>{st.label}</Tag>
-      {awaitingHr && <Tag color="volcano">{s.leaveTab.awaitingHr}</Tag>}
+      {awaitingHr && <Tag color="volcano">{strings.leaveTab.awaitingHr}</Tag>}
     </>
   )
 }
@@ -19,9 +19,9 @@ export function StatusTag({ status, awaitingHr }) {
 export function HrCancelButton({ request, onCancel }) {
   if (request.status !== 'pending' && request.status !== 'approved') return null
   return (
-    <Popconfirm title={s.leaveTab.cancelConfirm} okText={s.leaveTab.cancelYes} cancelText={s.leaveTab.cancelNo} onConfirm={() => onCancel(request)}>
+    <Popconfirm title={strings.leaveTab.cancelConfirm} okText={strings.leaveTab.cancelYes} cancelText={strings.leaveTab.cancelNo} onConfirm={() => onCancel(request)}>
       <Button size="small" danger>
-        {s.leaveTab.cancel}
+        {strings.leaveTab.cancel}
       </Button>
     </Popconfirm>
   )
