@@ -16,10 +16,10 @@ import PlanTab from './plan/PlanTab.jsx'
 // badge: 'pending' — число анкет на проверке, 'leavePending' — число заявок на отпуск, ждущих решения, рядом с названием.
 // group: ключ из strings.groups; вкладки одной группы должны идти подряд (новая группа, например «Зарплата» — новая запись + подпись в strings.groups).
 const TABS = [
-  { key: 'people', group: 'team', label: strings.tabs.people, Component: PeopleTab },
-  { key: 'submissions', group: 'team', label: strings.tabs.submissions, badge: 'pending', Component: SubmissionsTab },
-  { key: 'fields', group: 'team', label: strings.tabs.fields, Component: FieldsTab },
-  { key: 'checklists', group: 'team', label: strings.tabs.checklists, Component: ChecklistTemplatesTab },
+  { key: 'people', group: 'staff', label: strings.tabs.people, Component: PeopleTab },
+  { key: 'checklists', group: 'staff', label: strings.tabs.checklists, Component: ChecklistTemplatesTab },
+  { key: 'submissions', group: 'forms', label: strings.tabs.submissions, badge: 'pending', Component: SubmissionsTab },
+  { key: 'fields', group: 'forms', label: strings.tabs.fields, Component: FieldsTab },
   { key: 'leave', group: 'leave', label: strings.tabs.leave, badge: 'leavePending', Component: LeavesTab },
   { key: 'plan', group: 'leave', label: strings.tabs.plan, Component: PlanTab },
   { key: 'policies', group: 'leave', label: strings.tabs.policies, Component: PoliciesTab },

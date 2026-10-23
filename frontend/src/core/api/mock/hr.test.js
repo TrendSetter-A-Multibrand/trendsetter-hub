@@ -247,6 +247,22 @@ test('досье: Hr читает и правит, sensitive только Resp, 
   assert.deepEqual(Object.keys(mine.file).sort(), ['country', 'hiredAt', 'legalName', 'workSchedule'])
 })
 
+test('моя зарплата (Q-D5): только свой оклад, 4 поля, без привязки по userId — null', async () => {
+  const { hrCall } = setup()
+  const mine = await hrCall(10, 'GET', '/me/compensation')
+  assert.equal(mine.person.name.includes('Кравцов'), true)
+  assert.deepEqual(mine.compensation, { salary: 250000, currency: 'RUB', payDay1: 5, payDay2: 20 })
+  assert.equal(JSON.stringify(mine).includes('QQ 777'), false, 'паспорт не отдаётся')
+  const colleague = await hrCall(11, 'GET', '/me/compensation')
+  assert.equal(colleague.compensation.salary, 420000)
+  const none = await hrCall(3, 'GET', '/me/compensation')
+  assert.equal(none.person.id, 11)
+  assert.equal(none.compensation, null, 'записи нет')
+  assert.deepEqual(await hrCall(12, 'GET', '/me/compensation'), { person: null, compensation: null })
+  assert.equal(JSON.stringify(await hrCall(10, 'GET', '/me/file')).includes('250000'), false)
+  assert.equal(JSON.stringify(await hrCall(10, 'GET', '/me/leave')).includes('250000'), false)
+})
+
 test('HR: заявка за сотрудника задним числом, корректировка, список заявок, нормы', async () => {
   const { hrCall, inbox } = setup()
   const past = await hrCall(9, 'POST', '/people/12/leave/requests', { kind: 'annual', start: day(-30), end: day(-24), status: 'approved' })

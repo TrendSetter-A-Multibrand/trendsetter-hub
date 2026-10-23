@@ -47,7 +47,7 @@ a:hover { color: #7E1A1C; }
 .nav-item.active { background: rgba(255,255,255,.1); }
 .nav-dot { width: 6px; height: 6px; margin-top: 7px; flex: none; background: transparent; }
 .nav-item.live .nav-dot { background: rgba(255,255,255,.35); }
-.nav-item.active .nav-dot { background: var(--red); }
+.nav-item.active .nav-dot { background: #F3D03E; }
 .nav-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .nav-title { font-size: 15px; font-weight: 500; }
 .nav-dept { font-size: 10px; letter-spacing: .1em; color: rgba(255,255,255,.5); }
