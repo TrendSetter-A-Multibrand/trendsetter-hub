@@ -43,7 +43,8 @@ const strings = {
   scheme: {
     zoomOut: 'Уменьшить',
     zoomIn: 'Увеличить',
-    fit: 'Вписать',
+    fullscreen: 'На весь экран',
+    exitFullscreen: 'Свернуть',
     zoomLabel: 'Масштаб схемы',
   },
 

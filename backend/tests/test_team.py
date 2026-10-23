@@ -222,6 +222,45 @@ def test_approve_joins_existing_person(client, db, tree, emp, hr):
     assert client.post(f"{BASE}/hr/submissions/{sid2}/approve", json={"personId": pid}, headers=hr).status_code == 409
 
 
+def _owner(db, pid):
+    return db.execute(text("SELECT user_id FROM trendsetter_hub.team_people WHERE id = :p"), {"p": pid}).scalar()
+
+
+def test_name_match_any_order_and_yo(client, db, tree):
+    make_user(db, "yo@example.com", "employee", name="Фёдор  Тёмный!")
+    h = login(client, "yo@example.com")
+    pid = add_person(db, "Федор", "Темный", tree["a"])  # без почты и user_id; «Фамилия Имя» против «Имя Фамилия»
+    r = client.get(f"{BASE}/me", headers=h).json()
+    assert r["person"]["id"] == pid and r["values"]["first_name"] == "Федор"
+    assert _owner(db, pid) is None  # GET ничего не пишет
+    assert submit(client, h, values(first_name="Федор", last_name="Темный")).status_code == 200
+    assert _owner(db, pid) is not None  # привязка при первой отправке
+
+
+def test_name_match_ambiguous_or_taken_or_archived_is_ignored(client, db, tree, emp):
+    a = add_person(db, "Иван", "Тестов", tree["a"])
+    add_person(db, "Тестов", "Иван", tree["a"])  # вторая с тем же набором слов
+    assert client.get(f"{BASE}/me", headers=emp).json()["person"] is None
+    db.execute(text("UPDATE trendsetter_hub.team_people SET is_archived = true WHERE id = :p"), {"p": a})
+    db.commit()
+    assert client.get(f"{BASE}/me", headers=emp).json()["person"] is not None  # осталась ровно одна свободная
+    other = make_user_other(db, client)
+    uid = db.execute(text("SELECT id FROM trendsetter_hub.users WHERE email = 'other@example.com'")).scalar()
+    db.execute(text("UPDATE trendsetter_hub.team_people SET user_id = :u WHERE first_name = 'Тестов'"), {"u": uid})
+    db.commit()
+    assert client.get(f"{BASE}/me", headers=emp).json()["person"] is None  # карточка занята другим аккаунтом
+    assert other  # токен другого пользователя получен
+
+
+def test_new_person_is_prefilled_from_account(client, db, tree, emp):
+    r = client.get(f"{BASE}/me", headers=emp).json()
+    assert r["person"] is None
+    assert r["values"] == {"email": "emp@example.com", "first_name": "Иван", "last_name": "Тестов"}
+    make_user(db, "three@example.com", "employee", name="Анна Мария Ли")
+    r = client.get(f"{BASE}/me", headers=login(client, "three@example.com")).json()
+    assert r["values"] == {"email": "three@example.com"}
+
+
 def make_user_other(db, client):
     make_user(db, "other@example.com", "employee")
     return login(client, "other@example.com")

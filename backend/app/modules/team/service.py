@@ -300,13 +300,26 @@ def person_photo(session: Session, person_id: int, *, only_visible: bool) -> dic
 # ---------- анкета сотрудника ----------
 
 
-def _own_person_id(session: Session, user: User) -> int | None:
+def _name_words(*parts: str | None) -> frozenset:
+    """Имя как множество слов: lower, ё->е, без знаков препинания (порядок слов не важен)."""
+    return frozenset(re.findall(r"\w+", " ".join(p for p in parts if p).lower().replace("ё", "е")))
+
+
+def resolve_own_person(session: Session, user: User) -> int | None:
+    """Карточка пользователя: по user_id, затем по почте, затем по имени (ровно одна свободная неархивная карточка). Ничего не пишет."""
     pid = session.execute(text(f"SELECT id FROM {S}people WHERE user_id = :u"), {"u": user.id}).scalar()
     if pid is None and user.email:
         pid = session.execute(
             text(f"SELECT id FROM {S}people WHERE lower(email) = lower(:e) AND user_id IS NULL AND NOT is_archived ORDER BY id LIMIT 1"),
             {"e": user.email},
         ).scalar()
+    if pid is None:
+        words = _name_words(user.full_name)
+        if words:
+            rows = session.execute(text(f"SELECT id, first_name, last_name FROM {S}people WHERE user_id IS NULL AND NOT is_archived")).mappings().all()
+            found = [r["id"] for r in rows if _name_words(r["last_name"], r["first_name"]) == words]
+            if len(found) == 1:
+                pid = found[0]
     return pid
 
 
@@ -319,13 +332,17 @@ def _pending(session: Session, user_id: int, *, lock: bool = False):
 
 
 def get_me(session: Session, user: User) -> dict:
-    pid = _own_person_id(session, user)
+    pid = resolve_own_person(session, user)
     row = _person_row(session, pid) if pid else None
     pending = _pending(session, user.id)
     last = session.execute(
         text(f"""SELECT id, status, review_comment, created_at, "values", photo_full FROM {S}submissions WHERE user_id = :u ORDER BY id DESC LIMIT 1"""), {"u": user.id}
     ).mappings().first()
     values = _person_values(row) if row else {}
+    if row is None:  # новый человек: имя из учётки, только если оно ровно из двух слов («Имя Фамилия»)
+        parts = (user.full_name or "").split()
+        if len(parts) == 2:
+            values["first_name"], values["last_name"] = parts
     if not values.get("email"):
         values["email"] = user.email
     if pending:
@@ -353,7 +370,7 @@ def get_me(session: Session, user: User) -> dict:
 
 def submit(session: Session, user: User, values: dict, photo: dict | None, *, replace: bool) -> dict:
     """Новая заявка (replace=False) или замена своей pending (replace=True). Любая правка сотрудника — только через заявку."""
-    pid = _own_person_id(session, user)
+    pid = resolve_own_person(session, user)
     pending = _pending(session, user.id, lock=True)
     if replace and pending is None:
         fail(404, MSG_NO_PENDING)
@@ -395,7 +412,10 @@ def submit(session: Session, user: User, values: dict, photo: dict | None, *, re
                 {"u": user.id, "p": pid, "v": json.dumps(clean, ensure_ascii=False), "f": full, "t": thumb},
             ).scalar_one()
         if pid is not None:  # связь «учётка — карточка» запоминается при первой заявке
-            session.execute(text(f"UPDATE {S}people SET user_id = :u WHERE id = :p AND user_id IS NULL"), {"u": user.id, "p": pid})
+            bound = session.execute(text(f"UPDATE {S}people SET user_id = :u WHERE id = :p AND user_id IS NULL"), {"u": user.id, "p": pid}).rowcount
+            if not bound and session.execute(text(f"SELECT user_id FROM {S}people WHERE id = :p"), {"p": pid}).scalar() != user.id:
+                session.rollback()  # карточку успел занять другой пользователь
+                fail(409, MSG_USER_LINKED)
         log_action(session, user.id, "team.submit", MODULE_ID, submission_id=sid, person_id=pid, replace=replace, fields=sorted(clean))
         session.commit()
     except IntegrityError:
@@ -519,6 +539,9 @@ def approve(session: Session, hr: User, submission_id: int, d: dict) -> dict:
     pid = sub["person_id"]
     if pid is None:
         pid = session.execute(text(f"SELECT id FROM {S}people WHERE user_id = :u"), {"u": sub["user_id"]}).scalar()
+    if pid is None and d.get("personId") is None:
+        owner = session.get(User, sub["user_id"])
+        pid = resolve_own_person(session, owner) if owner else None
     if pid is None and d.get("personId") is not None:
         pid = d["personId"]
         other = session.execute(text(f"SELECT user_id FROM {S}people WHERE id = :i"), {"i": pid}).mappings().first()
@@ -553,6 +576,8 @@ def approve(session: Session, hr: User, submission_id: int, d: dict) -> dict:
             row = _person_row(session, pid, lock=True)
             if row is None:
                 fail(404, MSG_PERSON_NOT_FOUND)
+            if row["user_id"] not in (None, sub["user_id"]):
+                fail(409, MSG_USER_LINKED)
             org = _org_cols(session, row, d)
             _update_row(session, pid, {**cols, **org, "user_id": sub["user_id"]}, answers, row["answers"])
         if sub["photo_full"] is not None:
