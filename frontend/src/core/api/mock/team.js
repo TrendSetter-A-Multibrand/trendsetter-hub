@@ -11,7 +11,7 @@ const err = strings.errors
 const KEY_RE = /^[a-z][a-z0-9_]{1,40}$/
 const URL_RE = /^https?:\/\/\S+$/i
 const FIELD_KINDS = ['text', 'textarea', 'select', 'chips', 'links', 'photo']
-const LIMITS = { text: 200, textarea: 2000, select: 80, chip: 60, chips: 20, links: 5, label: 60, url: 300, comment: 500 }
+const LIMITS = { text: 200, textarea: 2000, select: 80, chip: 400, chips: 20, links: 5, label: 60, url: 300, comment: 500 }
 const PHOTO_LIMITS = { full: 300 * 1024, thumb: 30 * 1024 }
 // Значения анкеты, которые живут в колонках карточки, а не в answers
 const COLUMN_KEYS = { first_name: 'firstName', last_name: 'lastName', title: 'title', email: 'email' }
