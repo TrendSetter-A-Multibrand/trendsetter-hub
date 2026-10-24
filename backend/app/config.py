@@ -14,6 +14,7 @@ class Settings:
     cors_origin_regex: str | None
     warehouse_pin: str | None
     timezone: str
+    pii_key: str | None
 
 
 def get_settings() -> Settings:
@@ -28,4 +29,5 @@ def get_settings() -> Settings:
         cors_origin_regex=os.environ.get("HUB_CORS_ORIGIN_REGEX") or None,
         warehouse_pin=os.environ.get("HUB_WAREHOUSE_PIN") or None,
         timezone=os.environ.get("HUB_TIMEZONE", "Asia/Yerevan"),
+        pii_key=os.environ.get("HUB_PII_KEY") or None,  # не обязателен: без него запись ПДн отвечает 503
     )

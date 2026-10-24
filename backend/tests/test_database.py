@@ -44,7 +44,7 @@ def test_alembic_version_in_hub_schema(database):
     import psycopg
 
     with psycopg.connect(database["db_dsn"]) as conn:
-        assert conn.execute("SELECT version_num FROM trendsetter_hub.alembic_version").fetchone() == ("0007",)
+        assert conn.execute("SELECT version_num FROM trendsetter_hub.alembic_version").fetchone() == ("0008",)
         assert conn.execute("SELECT to_regclass('public.alembic_version')").fetchone() == (None,)
 
 

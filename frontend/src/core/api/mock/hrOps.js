@@ -99,8 +99,9 @@ function seed() {
 }
 
 // deps: userFromToken, accessTo(user, moduleId), isResponsible(user), team (createTeamHandlers), notify(userIds, notification),
-// hr — результат createHrHandlers (store.fileOf, balanceOf, requests). Подписывается на правки карточки команды (автозапись истории).
-export function createHrOpsHandlers({ userFromToken, accessTo, isResponsible, team, notify, hr }) {
+// hr — результат createHrHandlers (store.fileOf, balanceOf, requests). Подписывается на правки карточки команды (автозапись истории)
+// и на правку оклада/валюты (автозапись kind='salary'). audit — журнал, необязателен.
+export function createHrOpsHandlers({ userFromToken, accessTo, isResponsible, team, notify, hr, audit = { log: () => {} } }) {
   const db = seed()
   const BASE = '/modules/hr'
 
@@ -152,6 +153,12 @@ export function createHrOpsHandlers({ userFromToken, accessTo, isResponsible, te
     if (person.isArchived !== before.isArchived) {
       log('status', person.isArchived ? at.archived : at.restored, before.isArchived ? sv.archived : sv.active, person.isArchived ? sv.archived : sv.active)
     }
+  })
+
+  // Автоистория оклада (docs/TZ-security.md, п. 4): «120000.00» (валюта в текст не входит); первая установка — old_value пустой
+  const moneyText = (salary) => (salary === null || salary === undefined ? null : Number(salary).toFixed(2))
+  hr.onSensitivePatched(({ person, before, after, actor }) => {
+    addHistory(person.id, { kind: 'salary', title: strings.history.autoTitles.salary, oldValue: moneyText(before.salary), newValue: moneyText(after.salary) }, actor.id, true)
   })
 
   // ---- оборудование ----
@@ -439,7 +446,7 @@ export function createHrOpsHandlers({ userFromToken, accessTo, isResponsible, te
 
     // ---- Экспорт (Hr). Деньги, паспорта и документы в файл не попадают ----
     [`GET ${BASE}/export/people`]: async ({ token }) => {
-      ctxHr(token)
+      const user = ctxHr(token)
       const [people, fields] = await Promise.all([
         team.handlers['GET /modules/team/hr/people']({ token }),
         team.handlers['GET /modules/team/hr/fields']({ token }),
@@ -454,11 +461,12 @@ export function createHrOpsHandlers({ userFromToken, accessTo, isResponsible, te
           completeness(fields, p).percent, p.email ?? '', p.telegram ?? '', p.location ?? '', p.workFormat ?? '',
         ]
       })
+      audit.log(user.id, 'hr.export', { details: { kind: 'people', rows: rows.length } })
       return { fileName: `people_${todayIso()}.xlsx`, dataBase64: await toXlsx([[xs.peopleSheet, [xs.peopleColumns, ...rows]]]) }
     },
 
     [`GET ${BASE}/export/leave`]: async ({ token, query }) => {
-      ctxHr(token)
+      const user = ctxHr(token)
       const { from, to } = query
       if (!isIsoDate(from) || !isIsoDate(to) || to < from) throw deny(422, err.datesInvalid)
       if (countDays(from, to) > MAX_RANGE_DAYS) throw deny(422, err.rangeTooLong)
@@ -470,6 +478,7 @@ export function createHrOpsHandlers({ userFromToken, accessTo, isResponsible, te
         .filter((p) => !p.isArchived)
         .map((p) => ({ p, b: hr.balanceOf(p.id) }))
         .map(({ p, b }) => [personName(p), b?.accrued ?? '', b?.used ?? '', b?.planned ?? '', b?.available ?? ''])
+      audit.log(user.id, 'hr.export', { details: { kind: 'leave', rows: leaves.length } })
       const dataBase64 = await toXlsx([[xs.leaveSheet, [xs.leaveColumns, ...leaves]], [xs.balanceSheet, [xs.balanceColumns, ...balances]]])
       return { fileName: `leave_${from}_${to}.xlsx`, dataBase64 }
     },

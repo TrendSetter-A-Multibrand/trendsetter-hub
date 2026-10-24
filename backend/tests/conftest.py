@@ -8,6 +8,7 @@ from pathlib import Path
 
 import psycopg
 import pytest
+from cryptography.fernet import Fernet
 from fastapi.testclient import TestClient
 from psycopg import sql
 
@@ -17,6 +18,7 @@ ADMIN_PASSWORD_IN_TESTS = "Pass-12345"
 
 # Окружение должно быть задано до импорта приложения
 os.environ.setdefault("HUB_JWT_SECRET", "test-only-jwt-secret-0123456789-abcdefgh")
+os.environ.setdefault("HUB_PII_KEY", Fernet.generate_key().decode())  # тестовый ключ шифрования ПДн
 os.environ.setdefault("HUB_DATABASE_URL", "postgresql+psycopg://placeholder@localhost/placeholder")
 
 
@@ -68,6 +70,9 @@ def engine(database):
 @pytest.fixture()
 def clean(database):
     """Пользователи, привязки, журнал и данные склада очищаются перед каждым тестом (отделы и модули — стартовые)."""
+    from app.core.routes_auth import reset_password_attempts
+
+    reset_password_attempts()  # id пользователей после TRUNCATE начинаются с 1: счётчик попыток не должен «переезжать» между тестами
     with psycopg.connect(database["db_dsn"], autocommit=True) as conn:
         conn.execute(
             "TRUNCATE trendsetter_hub.audit_log, trendsetter_hub.access_groups, trendsetter_hub.user_departments, trendsetter_hub.users, "

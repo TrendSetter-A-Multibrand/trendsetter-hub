@@ -97,6 +97,18 @@ docker exec -u root trendsetter-hub-api rm -rf /tmp/team-import                 
 
 **Откат** (`alembic downgrade 0006`): удаляются только новые таблицы `hr_leave_plans`, `hr_checklist_*`, `hr_equipment`, `hr_employee_history`, `hr_reminder_log` и два новых столбца.
 
+## Безопасность: смена пароля, журнал, шифрование (ревизия 0008)
+`08_security.sql`: столбец `users.token_version` (смена/сброс пароля увеличивает его, прежние токены перестают действовать; токены без `tv` считаются `tv=0`) и два индекса `audit_log` (`action, at DESC` и `details->>'person_id'`). Новых таблиц нет. Шифрование ПДн (Fernet, `HUB_PII_KEY`) работает в приложении и структуру БД не меняет; оклад (`numeric`) не шифруется (TODO Q-S1). Подробности — `docs/TZ-security.md`.
+
+**Выкат 0008** (как у `0007`; `deploy.sh` миграции не выполняет):
+1. Положить `HUB_PII_KEY` в `/opt/trendsetter-hub/.env` на сервере (ключ создаётся там же: `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`, не показывать и не коммитить). Резервная копия ключа — в менеджере паролей владельца: потеря ключа = потеря зашифрованных данных.
+2. Под doadmin в `defaultdb` выполнить `db/08_security.sql` (после `07_hr_people_ops.sql`).
+3. Под doadmin выполнить `deploy/stamp_alembic_0008.sql` (версия миграции `0007` → `0008`).
+4. Только после этого — merge в `main`. Иначе деплой будет «зелёным», а вход и любые запросы с токеном начнут отвечать 500 (нет столбца `token_version`).
+5. После деплоя в контейнере API: `python -m app.modules.hr.encrypt_existing` (сухой прогон, только счётчики), затем `python -m app.modules.hr.encrypt_existing --apply` — шифрует уже загруженные документы и значения досье. Команда безопасна для повторного запуска.
+
+**Откат** (`alembic downgrade 0007`): удаляются только столбец `users.token_version` и два индекса журнала. Зашифрованные данные при откате кода без ключа не читаются — ключ хранить.
+
 ## Модуль «Склад»
 Листы Google Таблицы «Склад-приёмка» стали таблицами: Приемки → `warehouse_receipts`, Раскладки → `warehouse_receipt_plans`, Счётчики → `warehouse_box_counters` и `warehouse_pallet_pointers`, Сканы → `warehouse_scans`, Короба → `warehouse_boxes`, Хранение → `warehouse_storage_boxes`, Хранение — архив → `warehouse_storage_archive`, Секции → `warehouse_extra_sections`, Коды ЧЗ → `warehouse_marks`, Сводка → представление `warehouse_receipt_summary`. Условия, которые раньше защищал `LockService`, держит база: уникальность кода ЧЗ, одно место на короб, уникальное имя приёмки, номера коробов через функцию `warehouse_next_box_number()`, повтор отправки скана отсекается по id.
 

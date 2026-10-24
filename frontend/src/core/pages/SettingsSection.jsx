@@ -1,5 +1,6 @@
 import { Descriptions } from 'antd'
 import strings from '../strings.js'
+import ChangePasswordForm from './ChangePasswordForm.jsx'
 
 const s = strings.profile.settings
 
@@ -20,6 +21,7 @@ export default function SettingsSection({ me }) {
         ]}
       />
       <p style={{ color: 'var(--muted)', marginTop: 16 }}>{s.passwordHint}</p>
+      <ChangePasswordForm />
     </div>
   )
 }

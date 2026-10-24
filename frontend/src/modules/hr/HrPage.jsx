@@ -10,10 +10,12 @@ import FieldsTab from './components/FieldsTab.jsx'
 import LeavesTab from './components/LeavesTab.jsx'
 import PoliciesTab from './components/PoliciesTab.jsx'
 import ChecklistTemplatesTab from './components/ChecklistTemplatesTab.jsx'
+import AuditTab from './components/AuditTab.jsx'
 import PlanTab from './plan/PlanTab.jsx'
 
 // Вкладки модуля. Новая вкладка (зарплаты…) = одна запись здесь. Component получает { pending, onChanged }.
 // badge: 'pending' — число анкет на проверке, 'leavePending' — число заявок на отпуск, ждущих решения, рядом с названием.
+// visible(me): вкладка показывается только при true (нет поля — всем). Журнал: ответственный за HR или администратор.
 // group: ключ из strings.groups; вкладки одной группы должны идти подряд (новая группа, например «Зарплата» — новая запись + подпись в strings.groups).
 const TABS = [
   { key: 'people', group: 'staff', label: strings.tabs.people, Component: PeopleTab },
@@ -23,10 +25,11 @@ const TABS = [
   { key: 'leave', group: 'leave', label: strings.tabs.leave, badge: 'leavePending', Component: LeavesTab },
   { key: 'plan', group: 'leave', label: strings.tabs.plan, Component: PlanTab },
   { key: 'policies', group: 'leave', label: strings.tabs.policies, Component: PoliciesTab },
+  { key: 'audit', group: 'security', label: strings.tabs.audit, Component: AuditTab, visible: (me) => Boolean(me.module_responsible?.hr || me.can_manage_users) },
 ]
 
 export default function HrPage({ access }) {
-  const { syncMe } = useAuth()
+  const { me, syncMe } = useAuth()
   const [pending, setPending] = useState(0)
   const [leavePending, setLeavePending] = useState(0)
 
@@ -68,13 +71,14 @@ export default function HrPage({ access }) {
   if (access !== 'run') return <ForbiddenPage />
 
   const badges = { pending, leavePending }
+  const tabs = TABS.filter((t) => !t.visible || t.visible(me))
   return (
     <div style={{ padding: '24px 40px' }}>
       <Tabs
         destroyOnHidden
-        items={TABS.map(({ key, group, label, badge, Component }, i) => {
+        items={tabs.map(({ key, group, label, badge, Component }, i) => {
           // первая вкладка группы: тонкий разделитель слева (кроме самой первой) и mono-подпись группы
-          const groupStart = group !== TABS[i - 1]?.group
+          const groupStart = group !== tabs[i - 1]?.group
           return {
             key,
             label: (

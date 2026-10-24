@@ -35,3 +35,13 @@ test('401 без токена (неверный пароль при входе):
   off()
   assert.equal(calls, 0)
 })
+
+test('401 на смене пароля (неверный старый пароль): токен остаётся, сессия не истекает', async () => {
+  setToken('t')
+  let calls = 0
+  const off = onSessionExpired(() => calls++)
+  await assert.rejects(createClient(failWith401).post('/auth/change-password', {}), ApiError)
+  off()
+  assert.equal(getToken(), 't')
+  assert.equal(calls, 0)
+})
