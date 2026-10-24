@@ -109,9 +109,11 @@ function seed() {
 }
 
 // deps: userFromToken, accessTo(user, moduleId), isResponsible(user) — responsible на hr,
-// team — { people(), personOf(user), byId(id) } из createTeamHandlers, notify(userIds, notification)
-export function createHrHandlers({ userFromToken, accessTo, isResponsible, team, notify }) {
+// team — { people(), personOf(user), byId(id) } из createTeamHandlers, notify(userIds, notification),
+// audit — { log(userId, action, { personId, details }) } журнала (необязателен: без него записи не пишутся)
+export function createHrHandlers({ userFromToken, accessTo, isResponsible, team, notify, audit = { log: () => {} } }) {
   const db = seed()
+  const sensitiveListeners = []
   const BASE = '/modules/hr'
 
   // ---- права ----
@@ -431,13 +433,14 @@ export function createHrHandlers({ userFromToken, accessTo, isResponsible, team,
     },
 
     [`GET ${BASE}/people/:id/sensitive`]: ({ token, params }) => {
-      ctxResp(token)
+      const user = ctxResp(token)
       const person = findPerson(params.id)
+      audit.log(user.id, 'hr.sensitive_view', { personId: person.id })
       return db.sensitive[person.id] ?? emptySensitive(person.id)
     },
 
     [`PATCH ${BASE}/people/:id/sensitive`]: ({ token, params, body }) => {
-      ctxResp(token)
+      const user = ctxResp(token)
       const person = findPerson(params.id)
       const b = isObject(body) ? body : {}
       const next = { ...(db.sensitive[person.id] ?? emptySensitive(person.id)) }
@@ -459,14 +462,22 @@ export function createHrHandlers({ userFromToken, accessTo, isResponsible, team,
         next[key] = b[key]
       }
       next.updatedAt = new Date().toISOString()
+      const before = db.sensitive[person.id] ?? emptySensitive(person.id)
       db.sensitive[person.id] = next
+      // в журнал — только имена изменённых полей, без значений
+      const changed = Object.keys(next).filter((key) => key !== 'updatedAt' && next[key] !== before[key])
+      audit.log(user.id, 'hr.sensitive_update', { personId: person.id, details: { fields: changed } })
+      if (next.salary !== before.salary || next.currency !== before.currency) {
+        sensitiveListeners.forEach((fn) => fn({ person, before, after: next, actor: user }))
+      }
       return next
     },
 
     // ---- документы сотрудника (только Resp) ----
     [`GET ${BASE}/people/:id/documents`]: ({ token, params }) => {
-      ctxResp(token)
+      const user = ctxResp(token)
       const person = findPerson(params.id)
+      audit.log(user.id, 'hr.documents_list', { personId: person.id })
       return db.documents.filter((d) => d.personId === person.id).map(docOut)
     },
 
@@ -599,5 +610,6 @@ export function createHrHandlers({ userFromToken, accessTo, isResponsible, team,
   const store = { documents: () => db.documents, files: () => db.files, fileOf }
 
   // balanceOf/requests — для mock экспорта (hrOps.js): живые объекты, не изменять
-  return { handlers, moduleBadges, store, balanceOf, requests: () => db.requests }
+  // onSensitivePatched(fn) — fn({ person, before, after, actor }) после PATCH денег, если изменились salary или currency (автоистория оклада)
+  return { handlers, moduleBadges, store, balanceOf, requests: () => db.requests, onSensitivePatched: (fn) => sensitiveListeners.push(fn) }
 }

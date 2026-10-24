@@ -1,7 +1,7 @@
 """Таблицы ядра (схема trendsetter_hub). Структуру меняет только Alembic: create_all не вызывается."""
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, MetaData, SmallInteger, Text, func
+from sqlalchemy import BigInteger, Boolean, DateTime, ForeignKey, Integer, MetaData, SmallInteger, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -31,6 +31,7 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    token_version: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
 
 
 class UserDepartment(Base):

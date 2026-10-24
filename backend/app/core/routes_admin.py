@@ -139,7 +139,8 @@ def reset_password(user_id: int, body: PasswordBody, me: User = Depends(require_
     if not password_is_valid(body.password):
         raise HTTPException(422, m.PASSWORD_INVALID)
     user.password_hash = hash_password(body.password)
-    log_action(session, me.id, "user.password_reset", target_user_id=user.id)
+    user.token_version = (user.token_version or 0) + 1  # сессии пользователя закрыты
+    log_action(session, me.id, "core.password_reset", target_user_id=user.id)
     session.commit()
     return {}
 

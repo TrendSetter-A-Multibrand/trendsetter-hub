@@ -282,6 +282,10 @@ def export_people(session: Session, user: User) -> dict:
     sensitive = hr.is_responsible(session, user)
     fields = team_service._fields(session, False)
     people = _rows(session, PEOPLE_SQL.format(sensitive_select=SENSITIVE_SELECT if sensitive else "", sensitive_join=SENSITIVE_JOIN if sensitive else ""))
+    if sensitive:
+        for p in people:
+            for col in hr.ENCRYPTED_COLUMNS:
+                p[col] = hr.reveal_text(p[col])
     leave_rows = _rows(
         session,
         f"""SELECT r.person_id, {NAME}, r.kind, r.start_date, r.end_date, r.days, r.status, r.message FROM {hr.H}leave_requests r

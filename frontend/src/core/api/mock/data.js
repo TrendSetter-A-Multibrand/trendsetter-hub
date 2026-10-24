@@ -161,5 +161,9 @@ export const data = {
     },
   ],
 
+  // Смена пароля в демо: пароль пользователя (нет записи — DEMO_PASSWORD) и версия токена (нет записи — 0; смена пароля закрывает старые токены)
+  passwords: {},
+  tokenVersions: {},
+
   nextId: { user: 14, department: 6, preset: 4, group: 2 },
 }

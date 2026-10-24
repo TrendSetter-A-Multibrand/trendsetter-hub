@@ -7,6 +7,7 @@
 import base64
 import binascii
 import calendar as pycalendar
+import logging
 import re
 import unicodedata
 from datetime import date
@@ -16,6 +17,7 @@ from fastapi import HTTPException
 from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
+from app.core import crypto
 from app.core import messages as m
 from app.core.audit import log_action
 from app.core.deps import module_rights
@@ -59,6 +61,53 @@ MSG_ADJUST = "Укажите число дней (не 0, по модулю до
 
 def fail(status: int, message: str):
     raise HTTPException(status, message)
+
+
+# ---------- шифрование ПДн (app/core/crypto.py) ----------
+ENCRYPTED_COLUMNS = ("bonus_note", "tax_id", "social_id", "passport", "bank_details")  # salary (numeric) не шифруется, TODO(Q-S1)
+_crypto_log = logging.getLogger("app.hr.crypto")
+
+
+def protect_text(value: str | None) -> str | None:
+    """Текст перед записью в БД. Без ключа — 503: ПДн не пишем открытым текстом."""
+    if value is None:
+        return None
+    try:
+        return crypto.encrypt_text(value)
+    except crypto.KeyMissing:
+        raise HTTPException(503, m.ENCRYPTION_NOT_CONFIGURED) from None
+
+
+def reveal_text(value: str | None) -> str | None:
+    if value is None or not crypto.is_encrypted_text(value):
+        return value  # открытые значения (до encrypt_existing) читаются как есть
+    try:
+        return crypto.decrypt_text(value)
+    except crypto.KeyMissing:
+        raise HTTPException(503, m.ENCRYPTION_NOT_CONFIGURED) from None
+    except crypto.DecryptError:
+        _crypto_log.error("Не удалось расшифровать поле: %s", crypto.DecryptError.__name__)  # только тип ошибки
+        raise HTTPException(500, m.DECRYPT_FAILED) from None
+
+
+def protect_bytes(value: bytes) -> bytes:
+    try:
+        return crypto.encrypt_bytes(value)
+    except crypto.KeyMissing:
+        raise HTTPException(503, m.ENCRYPTION_NOT_CONFIGURED) from None
+
+
+def reveal_bytes(value: bytes) -> bytes:
+    value = bytes(value)
+    if not crypto.is_encrypted_bytes(value):
+        return value
+    try:
+        return crypto.decrypt_bytes(value)
+    except crypto.KeyMissing:
+        raise HTTPException(503, m.ENCRYPTION_NOT_CONFIGURED) from None
+    except crypto.DecryptError:
+        _crypto_log.error("Не удалось расшифровать документ: %s", crypto.DecryptError.__name__)
+        raise HTTPException(500, m.DECRYPT_FAILED) from None
 
 
 def fmt(d: date) -> str:
@@ -553,7 +602,18 @@ def update_file(session: Session, user: User, person_id: int, d: dict) -> dict:
 def get_sensitive(session: Session, person_id: int) -> dict:
     _person(session, person_id)
     row = session.execute(text(f"SELECT * FROM {H}employee_sensitive WHERE person_id = :p"), {"p": person_id}).mappings().first()
-    return {name: _out_value(kind, row[col] if row else None) for name, (col, kind, _) in SENSITIVE_FIELDS.items()}
+    return {
+        name: _out_value(kind, (reveal_text(row[col]) if col in ENCRYPTED_COLUMNS else row[col]) if row else None)
+        for name, (col, kind, _) in SENSITIVE_FIELDS.items()
+    }
+
+
+def view_sensitive(session: Session, user: User, person_id: int) -> dict:
+    """GET /people/{id}/sensitive: чтение пишется в журнал (только person_id)."""
+    data = get_sensitive(session, person_id)
+    log_action(session, user.id, "hr.sensitive_view", MODULE_ID, person_id=person_id)
+    session.commit()
+    return data
 
 
 MY_COMPENSATION_FIELDS = ("salary", "currency", "payDay1", "payDay2")
@@ -574,11 +634,30 @@ def get_my_compensation(session: Session, user: User) -> dict:
     return {"person": {"id": pid, "name": _name(person)}, "compensation": compensation}
 
 
+def _salary_pair(session: Session, person_id: int) -> tuple[Decimal | None, str | None]:
+    row = session.execute(text(f"SELECT salary, currency FROM {H}employee_sensitive WHERE person_id = :p"), {"p": person_id}).first()
+    return (row[0], row[1]) if row else (None, None)
+
+
+def _salary_text(salary: Decimal | None, _currency: str | None = None) -> str | None:
+    """«120000.00» (только число); пустой оклад — NULL."""
+    return None if salary is None else f"{salary:.2f}"
+
+
 def update_sensitive(session: Session, user: User, person_id: int, d: dict) -> dict:
     _person(session, person_id, lock=True)
     cols = {SENSITIVE_FIELDS[k][0]: _clean_field(k, SENSITIVE_FIELDS[k][1], SENSITIVE_FIELDS[k][2], v) for k, v in d.items()}
+    stored = {c: protect_text(v) if c in ENCRYPTED_COLUMNS else v for c, v in cols.items()}  # 503 без ключа — до любой записи
     if cols:
-        _upsert(session, "employee_sensitive", person_id, cols, user)
+        track_salary = "salary" in cols or "currency" in cols
+        before = _salary_pair(session, person_id) if track_salary else None
+        _upsert(session, "employee_sensitive", person_id, stored, user)
+        if track_salary:
+            after = _salary_pair(session, person_id)
+            if after != before:
+                from app.modules.hr import history  # отложенный импорт: history сам импортирует service
+
+                history.record_auto(session, person_id, "salary", "Изменение оклада", _salary_text(*before), _salary_text(*after), user.id)
         log_action(session, user.id, "hr.sensitive_update", MODULE_ID, person_id=person_id, fields=sorted(d))  # только имена полей
         session.commit()
     return get_sensitive(session, person_id)
@@ -752,6 +831,14 @@ def list_documents(session: Session, person_id: int) -> list[dict]:
     return [_doc_out(r) for r in rows]
 
 
+def view_documents(session: Session, user: User, person_id: int) -> list[dict]:
+    """GET /people/{id}/documents: чтение списка пишется в журнал (только person_id)."""
+    data = list_documents(session, person_id)
+    log_action(session, user.id, "hr.documents_list", MODULE_ID, person_id=person_id)
+    session.commit()
+    return data
+
+
 def upload_document(session: Session, user: User, person_id: int, d: dict) -> dict:
     _person(session, person_id, lock=True)  # замок на человека: лимит 50 не обходится параллельными загрузками
     category = d.get("category")
@@ -766,6 +853,7 @@ def upload_document(session: Session, user: User, person_id: int, d: dict) -> di
         fail(422, MSG_FIELD.format("visibleToEmployee"))
     name, ext = _doc_file_name(d.get("fileName"))
     content = _doc_content(d.get("dataBase64"), ext)
+    stored_content = protect_bytes(content)  # без ключа 503 — до любой записи
     count = session.execute(text(f"SELECT count(*) FROM {H}documents WHERE person_id = :p"), {"p": person_id}).scalar_one()
     if count >= DOC_MAX_PER_PERSON:
         fail(409, MSG_DOC_LIMIT)
@@ -776,7 +864,7 @@ def upload_document(session: Session, user: User, person_id: int, d: dict) -> di
         ),
         {"p": person_id, "c": category, "t": title, "n": name, "m": DOC_TYPES[ext][0], "s": len(content), "u": user.id, "v": visible},
     ).scalar_one()
-    session.execute(text(f"INSERT INTO {H}document_files (document_id, content) VALUES (:i, :c)"), {"i": doc_id, "c": content})
+    session.execute(text(f"INSERT INTO {H}document_files (document_id, content) VALUES (:i, :c)"), {"i": doc_id, "c": stored_content})
     log_action(session, user.id, "hr.document_upload", MODULE_ID, document_id=doc_id, person_id=person_id, category=category)
     session.commit()
     return _doc_out(session.execute(text(DOC_SQL + " WHERE d.id = :i"), {"i": doc_id}).mappings().one())
@@ -798,7 +886,7 @@ def download_document(session: Session, user: User, doc_id: int) -> dict:
     session.commit()
     return {
         "fileName": doc["file_name"], "mime": doc["mime"], "sizeBytes": doc["size_bytes"],
-        "dataBase64": base64.b64encode(bytes(content)).decode("ascii"),
+        "dataBase64": base64.b64encode(reveal_bytes(content)).decode("ascii"),
     }
 
 

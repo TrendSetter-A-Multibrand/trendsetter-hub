@@ -11,7 +11,9 @@ import {
 } from '../../admin/validation.js'
 import { MODULES, getModule } from '../../../modules/registry.js'
 import { ApiError } from '../client.js'
-import { data, DEMO_PASSWORD } from './data.js'
+import { data } from './data.js'
+import { createAuthHandlers, issueToken, passwordOf, setPassword, userFromToken } from './auth.js'
+import { createAuditStore } from './audit.js'
 import { createTeamHandlers } from './team.js'
 import { createNotificationHandlers } from './notifications.js'
 import { createHrHandlers } from './hr.js'
@@ -21,13 +23,6 @@ import { createPlanHandlers } from './hr-plans.js'
 const err = strings.errors
 
 const toPublicUser = (u) => ({ ...u })
-
-function userFromToken(token) {
-  const id = /^mock:(\d+)$/.exec(token ?? '')?.[1]
-  const user = id && data.users.find((u) => u.id === Number(id))
-  if (!user || !user.is_active) throw new ApiError(401, err.unauthorized)
-  return user
-}
 
 function requireManager(token) {
   const user = userFromToken(token)
@@ -89,15 +84,20 @@ function findUser(id) {
 const team = createTeamHandlers({ userFromToken, accessTo })
 const notifications = createNotificationHandlers({ userFromToken, requireManager, findUser })
 const isHrResponsible = (user) => isModuleResponsible(user, groupPermissionsOf(user, 'hr'))
+// Журнал HR: читает ответственный за HR или администратор; пишут в него фабрики hr/hrOps и смена пароля
+const audit = createAuditStore({ userFromToken, canView: (user) => isHrResponsible(user) || canManageUsers(user), byId: team.byId })
+const personIdOfUser = (userId) => team.people().find((p) => p.userId === userId)?.id ?? null
+const auth = createAuthHandlers({ userFromToken, audit, personIdOfUser })
 const hr = createHrHandlers({
   userFromToken,
   accessTo,
   isResponsible: isHrResponsible,
   team,
   notify: notifications.notify,
+  audit,
 })
 // История, оборудование, чек-листы, экспорт в Excel (часть «А»)
-const hrOps = createHrOpsHandlers({ userFromToken, accessTo, isResponsible: isHrResponsible, team, notify: notifications.notify, hr })
+const hrOps = createHrOpsHandlers({ userFromToken, accessTo, isResponsible: isHrResponsible, team, notify: notifications.notify, hr, audit })
 // График отпусков, дни рождения, свои документы (часть «Б»): читают хранилище hr и создают заявки его обработчиком
 const hrPlans = createPlanHandlers({ userFromToken, accessTo, team, hr })
 
@@ -112,17 +112,17 @@ export const handlers = {
   'POST /auth/login': ({ body }) => {
     const email = (body?.email ?? '').trim().toLowerCase()
     const user = data.users.find((u) => u.email.toLowerCase() === email)
-    if (!user || !user.is_active || body?.password !== DEMO_PASSWORD) {
+    if (!user || !user.is_active || body?.password !== passwordOf(user)) {
       throw new ApiError(401, err.badCredentials)
     }
-    return { token: `mock:${user.id}` }
+    return { token: issueToken(user.id) }
   },
 
   'POST /auth/demo-login': ({ body }) => {
     requireDemo()
     const user = data.users.find((u) => u.id === body?.user_id)
     if (!user || !user.is_active) throw new ApiError(401, err.badCredentials)
-    return { token: `mock:${user.id}` }
+    return { token: issueToken(user.id) }
   },
 
   'GET /auth/demo-users': () => {
@@ -249,10 +249,12 @@ export const handlers = {
   },
 
   'POST /admin/users/:id/password': ({ token, params, body }) => {
-    requireManager(token)
-    findUser(params.id)
+    const manager = requireManager(token)
+    const user = findUser(params.id)
     const problem = validatePassword(body?.password)
     if (problem) throw new ApiError(422, problem)
+    setPassword(user.id, body.password) // закрывает сессии этого пользователя (старые токены mock недействительны)
+    audit.log(manager.id, 'core.password_reset', { personId: personIdOfUser(user.id) })
     return {}
   },
 
@@ -334,6 +336,8 @@ export const handlers = {
     return groupOut(group)
   },
 
+  ...auth.handlers,
+  ...audit.handlers,
   ...team.handlers,
   ...notifications.handlers,
   ...hr.handlers,

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.core import messages as m
 from app.core.access import can_manage_users, can_run, compute_module_access, is_module_responsible
 from app.core.models import AccessGroupMember, AccessGroupPermission, ModuleDepartment, User, UserDepartment, UserModulePermission
-from app.core.security import read_token
+from app.core.security import read_token_claims
 from app.db.database import get_session
 
 bearer = HTTPBearer(auto_error=False)
@@ -16,10 +16,11 @@ def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
     session: Session = Depends(get_session),
 ) -> User:
-    user_id = read_token(credentials.credentials) if credentials else None
+    claims = read_token_claims(credentials.credentials) if credentials else None
     # Пользователь перечитывается из БД на каждом запросе: отключённый теряет доступ сразу, не дожидаясь конца токена
-    user = session.get(User, user_id) if user_id is not None else None
-    if user is None or not user.is_active:
+    user = session.get(User, claims[0]) if claims is not None else None
+    # Смена/сброс пароля увеличивает token_version: прежние токены перестают действовать
+    if user is None or not user.is_active or claims[1] != (user.token_version or 0):
         raise HTTPException(401, m.UNAUTHORIZED)
     return user
 

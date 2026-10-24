@@ -9,10 +9,11 @@ from pydantic import BaseModel, ConfigDict
 from sqlalchemy.orm import Session
 
 from app.core import messages as m
+from app.core.access import can_manage_users
 from app.core.deps import get_current_user
 from app.core.models import User
 from app.db.database import get_session
-from app.modules.hr import checklists, equipment, exports, history, plans, service
+from app.modules.hr import audit_view, checklists, equipment, exports, history, plans, service
 from app.modules.team.router import team_viewer
 
 router = APIRouter(prefix="/modules/hr", tags=["hr"])
@@ -31,10 +32,17 @@ def resp_user(user: User = Depends(get_current_user), session: Session = Db) -> 
     return user
 
 
+def audit_user(user: User = Depends(get_current_user), session: Session = Db) -> User:
+    if not (service.is_responsible(session, user) or can_manage_users(access_level=user.access_level, is_active=user.is_active)):
+        raise HTTPException(403, m.FORBIDDEN)
+    return user
+
+
 Me = Depends(get_current_user)
 Team = Depends(team_viewer)
 Hr = Depends(hr_user)
 Resp = Depends(resp_user)
+Audit = Depends(audit_user)
 
 
 class LeaveRequestBody(BaseModel):
@@ -261,8 +269,8 @@ def patch_file(person_id: int, body: FilePatchBody, user: User = Hr, session: Se
 
 
 @router.get("/people/{person_id}/sensitive")
-def get_sensitive(person_id: int, _: User = Resp, session: Session = Db) -> dict:
-    return service.get_sensitive(session, person_id)
+def get_sensitive(person_id: int, user: User = Resp, session: Session = Db) -> dict:
+    return service.view_sensitive(session, user, person_id)
 
 
 @router.patch("/people/{person_id}/sensitive")
@@ -271,8 +279,8 @@ def patch_sensitive(person_id: int, body: SensitivePatchBody, user: User = Resp,
 
 
 @router.get("/people/{person_id}/documents")
-def list_documents(person_id: int, _: User = Resp, session: Session = Db) -> list[dict]:
-    return service.list_documents(session, person_id)
+def list_documents(person_id: int, user: User = Resp, session: Session = Db) -> list[dict]:
+    return service.view_documents(session, user, person_id)
 
 
 @router.post("/people/{person_id}/documents")
@@ -479,3 +487,20 @@ def team_plan(year: int | None = None, user: User = Me, session: Session = Db) -
 @router.get("/leave/plan")
 def hr_plan(year: int | None = None, _: User = Hr, session: Session = Db) -> list[dict]:
     return plans.all_plans(session, year)
+
+
+# ---------- журнал (responsible на hr или администратор) ----------
+
+
+@router.get("/audit")
+def audit(
+    personId: int | None = None,
+    action: str | None = None,
+    date_from: str | None = Query(None, alias="from"),
+    date_to: str | None = Query(None, alias="to"),
+    limit: int = Query(50, ge=1, le=audit_view.LIMIT_MAX),
+    offset: int = Query(0, ge=0),
+    user: User = Audit,
+    session: Session = Db,
+) -> dict:
+    return audit_view.list_audit(session, user, personId, action, date_from, date_to, limit, offset)

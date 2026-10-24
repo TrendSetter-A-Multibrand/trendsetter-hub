@@ -26,13 +26,16 @@ export function onSessionExpired(listener) {
   return () => expiredListeners.delete(listener)
 }
 
+// 401 на смене пароля = неверный текущий пароль, а не истёкшая сессия: токен не чистим
+const KEEP_SESSION_PATHS = ['/auth/change-password']
+
 // Транспорт: async ({method, path, body, token}) => данные; ошибки — ApiError.
 export function createClient(transport) {
   async function request(method, path, body) {
     try {
       return await transport({ method, path, body, token: getToken() })
     } catch (error) {
-      if (error instanceof ApiError && error.status === 401) {
+      if (error instanceof ApiError && error.status === 401 && !KEEP_SESSION_PATHS.includes(path)) {
         const hadToken = Boolean(getToken())
         clearToken()
         if (hadToken) expiredListeners.forEach((listener) => listener())
