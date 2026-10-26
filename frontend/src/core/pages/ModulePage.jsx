@@ -12,7 +12,7 @@ export default function ModulePage() {
   const { me } = useAuth()
   const module = getModule(moduleId)
 
-  if (!module) return <NotFoundPage />
+  if (!module || module.hidden) return <NotFoundPage />
   const access = me.module_access[module.id] ?? 'none'
   if (access === 'none') return <ForbiddenPage />
   if (module.status === 'roadmap' || module.Component === null) {

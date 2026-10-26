@@ -20,6 +20,7 @@ import { createHrHandlers } from './hr.js'
 import { createHrOpsHandlers } from './hrOps.js'
 import { createPlanHandlers } from './hr-plans.js'
 import { createHomeHandlers } from './home.js'
+import { createNewsHandlers } from './news.js'
 
 const err = strings.errors
 
@@ -102,6 +103,13 @@ const hrOps = createHrOpsHandlers({ userFromToken, accessTo, isResponsible: isHr
 // График отпусков, дни рождения, свои документы (часть «Б»): читают хранилище hr и создают заявки его обработчиком
 const hrPlans = createPlanHandlers({ userFromToken, accessTo, team, hr })
 const home = createHomeHandlers({ userFromToken })
+// Новости: редактор — ответственный за news или администратор (как бэкенд is_editor)
+const news = createNewsHandlers({
+  userFromToken,
+  accessTo,
+  isEditor: (u) => isModuleResponsible(u, groupPermissionsOf(u, 'news')) || canManageUsers(u),
+  errors: getModule('news').strings.errors,
+})
 
 // Бейджи модулей из разных источников суммируются (hr: анкеты на проверку + заявки на отпуск, ждущие HR)
 function moduleBadges(user) {
@@ -346,4 +354,5 @@ export const handlers = {
   ...hrOps.handlers,
   ...hrPlans.handlers,
   ...home.handlers,
+  ...news.handlers,
 }
