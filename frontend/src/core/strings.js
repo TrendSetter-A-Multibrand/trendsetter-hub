@@ -24,13 +24,7 @@ const strings = {
     employee: 'Запуск в модулях своих отделов, просмотр результатов остальных модулей.',
     viewer: 'Видит только структуру платформы, без файлов и результатов.',
   },
-  moduleStatuses: { mvp: 'MVP', roadmap: 'ROADMAP' },
-  runStatuses: {
-    done: { label: 'Готово', fg: '#005844', bg: '#E3F3EA' },
-    running: { label: 'В обработке', fg: '#B03C00', bg: '#FFEADF' },
-    queued: { label: 'В очереди', fg: '#5B5552', bg: '#EFECEA' },
-    failed: { label: 'Ошибка', fg: '#A22325', bg: '#F7E3E3' },
-  },
+  moduleStatuses: { mvp: 'MVP', roadmap: 'ROADMAP' },
 
   login: {
     title: 'Вход в платформу',
@@ -103,10 +97,6 @@ const strings = {
       const part = hour < 6 ? 'Доброй ночи' : hour < 12 ? 'Доброе утро' : hour < 18 ? 'Добрый день' : 'Добрый вечер'
       return `${part}, ${name}`
     },
-    subtitle: 'Все инструменты отделов в одном месте',
-    recentRuns: 'Последние запуски',
-    allRuns: 'Все запуски',
-    noRuns: 'Запусков пока нет',
     loadFailed: 'Не удалось загрузить запуски',
     // Главная: сводка (часы, погода, курсы, «Мои инструменты»). Строки виджетов модуля team — в modules/team/strings.js
     home: {

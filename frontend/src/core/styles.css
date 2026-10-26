@@ -290,13 +290,14 @@ a:hover { color: #7E1A1C; }
 .tool-chip-title { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; text-transform: lowercase; }
 .tool-chip .badge { margin: 0; }
 
-.home-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; align-items: start; }
-.home-col { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
-.home-col.side { order: -1; }
-@media (min-width: 1100px) {
-  .home-grid { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
-  .home-col.side { order: 0; }
-}
+.stack.home { max-width: 1120px; margin: 0 auto; } .page:has(.stack.home) { margin: 0 auto; }
+.hero.compact { min-height: 150px; padding: 20px 32px; }
+.hero.compact .corner { font-size: 30px; }
+.hero.compact .corner.tl, .hero.compact .corner.tr { top: 14px; }
+.hero.compact .corner.bl, .hero.compact .corner.br { bottom: 14px; }
+.hero.compact h1 { font-size: 40px; }
+.home-grid { columns: 3 300px; column-gap: 24px; }
+.home-grid > * { break-inside: avoid; margin-bottom: 24px; }
 .home-card { background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; }
 .home-card-head { font-size: 11px; letter-spacing: .1em; color: var(--muted); }
 
@@ -309,7 +310,7 @@ a:hover { color: #7E1A1C; }
 .weather-city:first-of-type { border-top: 0; }
 .weather-city-head { display: flex; align-items: baseline; gap: 12px; }
 .weather-city-name { font-size: 16px; font-weight: 600; }
-.weather-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.weather-days { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 6px; }
 .weather-day { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .weather-date { font-size: 10px; letter-spacing: .06em; color: var(--muted); }
 .weather-max { font-size: 16px; font-weight: 700; }
@@ -319,9 +320,6 @@ a:hover { color: #7E1A1C; }
 .weather-stale { font-size: 10px; letter-spacing: .08em; color: var(--red); }
 .weather-source { font-size: 10px; letter-spacing: .08em; color: var(--muted); align-self: flex-start; }
 .weather-source:hover { color: var(--red); }
-@media (max-width: 860px) {
-  .weather-days { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-}
 
 .rates-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 15px; }
 .rates-value { font-weight: 600; }
@@ -333,4 +331,3 @@ a:hover { color: #7E1A1C; }
 .people-empty { font-size: 14px; color: var(--muted); }
 .people-gap { height: 6px; }
 
-.runs.compact .run-row { padding: 10px 16px; gap: 12px; }

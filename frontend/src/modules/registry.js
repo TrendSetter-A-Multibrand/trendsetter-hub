@@ -94,6 +94,6 @@ export const PROFILE_SECTIONS = [
 //   Component — получает { me }; сам грузит свои данные.
 // Данные людей (дни рождения, отпуска) видят только уровни view/run; наблюдатель (structure) — нет.
 export const HOME_WIDGETS = [
-  { id: 'birthdays', area: 'side', visible: (me) => canSeeData(me.module_access.team), Component: lazy(() => import('./team/components/HomeBirthdays.jsx')) },
-  { id: 'leave', area: 'side', visible: (me) => canSeeData(me.module_access.team), Component: lazy(() => import('./team/components/HomeLeave.jsx')) },
+  { id: 'birthdays', visible: (me) => canSeeData(me.module_access.team), Component: lazy(() => import('./team/components/HomeBirthdays.jsx')) },
+  { id: 'leave', visible: (me) => canSeeData(me.module_access.team), Component: lazy(() => import('./team/components/HomeLeave.jsx')) },
 ]
