@@ -19,6 +19,7 @@ import { createNotificationHandlers } from './notifications.js'
 import { createHrHandlers } from './hr.js'
 import { createHrOpsHandlers } from './hrOps.js'
 import { createPlanHandlers } from './hr-plans.js'
+import { createHomeHandlers } from './home.js'
 
 const err = strings.errors
 
@@ -100,6 +101,7 @@ const hr = createHrHandlers({
 const hrOps = createHrOpsHandlers({ userFromToken, accessTo, isResponsible: isHrResponsible, team, notify: notifications.notify, hr, audit })
 // График отпусков, дни рождения, свои документы (часть «Б»): читают хранилище hr и создают заявки его обработчиком
 const hrPlans = createPlanHandlers({ userFromToken, accessTo, team, hr })
+const home = createHomeHandlers({ userFromToken })
 
 // Бейджи модулей из разных источников суммируются (hr: анкеты на проверку + заявки на отпуск, ждущие HR)
 function moduleBadges(user) {
@@ -343,4 +345,5 @@ export const handlers = {
   ...hr.handlers,
   ...hrOps.handlers,
   ...hrPlans.handlers,
+  ...home.handlers,
 }

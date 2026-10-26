@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy import func, select, text, update
 from sqlalchemy.orm import Session
 
+from app.core import home
 from app.core.access import can_manage_users
 from app.core.deps import get_current_user, module_rights
 from app.core.models import Department, Notification, User, UserDepartment
@@ -69,6 +70,16 @@ def me(user: User = Depends(get_current_user), session: Session = Depends(get_se
 def runs(limit: int = 5, user: User = Depends(get_current_user)) -> list:
     # Таблицы задач пока нет (очередь — следующий этап): «последние запуски» пусты
     return []
+
+
+@router.get("/home/weather")
+def home_weather(user: User = Depends(get_current_user)) -> dict:
+    return home.weather_payload()
+
+
+@router.get("/home/rates")
+def home_rates(user: User = Depends(get_current_user)) -> dict:
+    return home.rates_payload()
 
 
 @router.get("/notifications")
