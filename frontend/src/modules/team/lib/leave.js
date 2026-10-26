@@ -47,3 +47,27 @@ export function awayMap(leaves, today) {
   }
   return away
 }
+
+// Сводка отпусков для главной: кто в отпуске сегодня и чьи отпуска начнутся в ближайшие days дней.
+// Вид отпуска (kind) в результат не попадает. away: [{ personId, name, end }] по end, затем имени;
+// upcoming: [{ personId, name, start, end }] по start, затем имени (дубль человека с тем же start схлопывается).
+export function homeLeave(items, today, days = 14) {
+  const last = addDays(today, days)
+  const byName = (a, b) => a.name.localeCompare(b.name, 'ru')
+  const away = new Map()
+  const upcoming = new Map()
+  for (const l of items ?? []) {
+    if (l.start <= today && l.end >= today) {
+      const cur = away.get(l.personId)
+      if (!cur || l.end > cur.end) away.set(l.personId, { personId: l.personId, name: l.name, end: l.end })
+    } else if (l.start > today && l.start <= last) {
+      const key = `${l.personId}|${l.start}`
+      const cur = upcoming.get(key)
+      if (!cur || l.end > cur.end) upcoming.set(key, { personId: l.personId, name: l.name, start: l.start, end: l.end })
+    }
+  }
+  return {
+    away: [...away.values()].sort((a, b) => a.end.localeCompare(b.end) || byName(a, b)),
+    upcoming: [...upcoming.values()].sort((a, b) => a.start.localeCompare(b.start) || byName(a, b)),
+  }
+}

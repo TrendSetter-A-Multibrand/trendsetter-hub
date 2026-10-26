@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { awayMap, monthDays, monthEnd, monthStart, segmentsOf, shiftMonth, weekday } from './leave.js'
+import { awayMap, homeLeave, monthDays, monthEnd, monthStart, segmentsOf, shiftMonth, weekday } from './leave.js'
 
 test('границы месяца и сдвиг', () => {
   assert.equal(monthStart('2026-10-23'), '2026-10-01')
@@ -39,4 +39,40 @@ test('awayMap: только отпуска, покрывающие сегодн�
   ]
   assert.deepEqual(awayMap(leaves, '2026-10-23'), { 1: { end: '2026-10-30' } })
   assert.deepEqual(awayMap(null, '2026-10-23'), {})
+})
+
+test('homeLeave: в отпуске сегодня — максимальный end, сортировка по end и имени, без kind', () => {
+  const items = [
+    { personId: 1, name: 'Борис', kind: 'annual', start: '2026-10-20', end: '2026-10-25' },
+    { personId: 1, name: 'Борис', kind: 'other', start: '2026-10-23', end: '2026-10-30' },
+    { personId: 2, name: 'Анна', kind: 'study', start: '2026-10-23', end: '2026-10-30' },
+    { personId: 3, name: 'Вера', kind: 'annual', start: '2026-10-22', end: '2026-10-24' },
+    { personId: 4, name: 'Глеб', kind: 'annual', start: '2026-10-10', end: '2026-10-22' },
+  ]
+  const { away } = homeLeave(items, '2026-10-23')
+  assert.deepEqual(away, [
+    { personId: 3, name: 'Вера', end: '2026-10-24' },
+    { personId: 2, name: 'Анна', end: '2026-10-30' },
+    { personId: 1, name: 'Борис', end: '2026-10-30' },
+  ])
+  assert.ok(away.every((a) => !('kind' in a)))
+})
+
+test('homeLeave: граница today + 14 включительно, начавшийся вчера — в away, а не в upcoming', () => {
+  const items = [
+    { personId: 1, name: 'Анна', kind: 'annual', start: '2026-11-06', end: '2026-11-10' }, // today + 14
+    { personId: 2, name: 'Борис', kind: 'annual', start: '2026-11-07', end: '2026-11-10' }, // today + 15
+    { personId: 3, name: 'Вера', kind: 'annual', start: '2026-10-22', end: '2026-10-28' }, // начался вчера
+    { personId: 4, name: 'Глеб', kind: 'annual', start: '2026-10-23', end: '2026-10-25' }, // сегодня — это away
+    { personId: 5, name: 'Дина', kind: 'sick', start: '2026-10-25', end: '2026-10-26' },
+    { personId: 5, name: 'Дина', kind: 'annual', start: '2026-10-25', end: '2026-10-29' }, // дубль того же start
+  ]
+  const { away, upcoming } = homeLeave(items, '2026-10-23')
+  assert.deepEqual(away.map((a) => a.personId), [4, 3])
+  assert.deepEqual(upcoming, [
+    { personId: 5, name: 'Дина', start: '2026-10-25', end: '2026-10-29' },
+    { personId: 1, name: 'Анна', start: '2026-11-06', end: '2026-11-10' },
+  ])
+  assert.ok(upcoming.every((u) => !('kind' in u)))
+  assert.deepEqual(homeLeave(null, '2026-10-23'), { away: [], upcoming: [] })
 })

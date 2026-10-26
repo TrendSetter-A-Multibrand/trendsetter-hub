@@ -6,6 +6,7 @@
 //   3. привязка к отделам — в данных (сейчас mock/data.js -> moduleDepartments);
 //   4. (позже) бэкенд-манифест модуля.
 import { lazy } from 'react'
+import { canSeeData } from '../core/access.js'
 import purchasingStrings from './purchasing/strings.js'
 import wbStrings from './wb/strings.js'
 import analyticsStrings from './analytics/strings.js'
@@ -84,4 +85,15 @@ export const PROFILE_SECTIONS = [
     visible: (me, data) => Boolean(data?.hasCard),
     Component: lazy(() => import('./hr/leave/MyDocumentsSection.jsx')),
   },
+]
+
+// Блоки главной страницы (/). Ядро само ничего не знает про модули: колонка и порядок = как здесь.
+//   id        — ключ блока;
+//   area      — 'main' (широкая колонка) | 'side' (узкая);
+//   visible   — (me) => показывать ли блок (скрытый не рендерится и не делает запросов);
+//   Component — получает { me }; сам грузит свои данные.
+// Данные людей (дни рождения, отпуска) видят только уровни view/run; наблюдатель (structure) — нет.
+export const HOME_WIDGETS = [
+  { id: 'birthdays', area: 'side', visible: (me) => canSeeData(me.module_access.team), Component: lazy(() => import('./team/components/HomeBirthdays.jsx')) },
+  { id: 'leave', area: 'side', visible: (me) => canSeeData(me.module_access.team), Component: lazy(() => import('./team/components/HomeLeave.jsx')) },
 ]

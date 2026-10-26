@@ -71,6 +71,17 @@ const strings = {
     tip: (name) => `День рождения: ${name}`,
   },
 
+  // Блоки главной страницы (подключаются через HOME_WIDGETS в modules/registry.js). TODO(Q-H1): строки у модуля, не в core/strings.js
+  home: {
+    awayTitle: 'Сегодня в отпуске',
+    awayEmpty: 'Сегодня все на месте',
+    upcomingTitle: 'Ближайшие отпуска',
+    upcomingEmpty: 'В ближайшие 2 недели отпусков нет',
+    until: (date) => `до ${date}`,
+    from: (date) => `с ${date}`,
+    more: (n) => `ещё ${n}`,
+  },
+
   scheme: {
     zoomOut: 'Уменьшить',
     zoomIn: 'Увеличить',
