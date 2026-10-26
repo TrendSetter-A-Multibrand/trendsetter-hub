@@ -197,7 +197,7 @@ def test_audit_details_whitelist_and_scope(client, db, resp, person):
     assert mystery["label"] == "hr.mystery_action"  # неизвестное действие — своим кодом
     assert mystery["details"] == {"year": 2026, "count": 3, "rows": 10, "sensitive": True, "template_id": 4, "kind": "people"}
     assert set(d) == {"id", "at", "userName", "action", "label", "personId", "personName", "details"}
-    blob = json.dumps(data, ensure_ascii=False)
+    blob = json.dumps([{k: v for k, v in i.items() if k != "at"} for i in data["items"]], ensure_ascii=False)  # без времени: в микросекундах случайно встречается «123»
     for secret in ("Секрет", "secret.pdf", "leak", "123"):
         assert secret not in blob
 
