@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { App, Button, Form, Input, Modal, Popconfirm, Select, Space, Table, Tag, Tooltip, Typography } from 'antd'
 import { api } from '../api/index.js'
 import { ACCESS_LEVELS } from '../access.js'
@@ -26,6 +26,25 @@ function UserModal({ mode, user, users, departments, onClose, onSaved }) {
   const [saving, setSaving] = useState(false)
   const level = Form.useWatch('access_level', form)
   const isSelf = mode === 'edit' && user.id === me.id
+  const [staff, setStaff] = useState([])
+
+  // Список сотрудников для подстановки: только те, у кого ещё нет пользователя; сбой загрузки список просто скрывает
+  useEffect(() => {
+    if (mode !== 'add') return
+    api.get('/modules/team/hr/people').then((people) => setStaff(people), () => {})
+  }, [mode])
+  const staffOptions = useMemo(() => {
+    const taken = new Set(users.map((u) => u.email.toLowerCase()))
+    return staff
+      .filter((p) => !p.isArchived && !p.userId && !(p.email && taken.has(p.email.toLowerCase())))
+      .map((p) => ({ value: p.id, label: p.title ? `${p.name} — ${p.title}` : p.name, person: p }))
+  }, [staff, users])
+
+  const pickStaff = (_, option) => {
+    const p = option.person
+    form.setFieldsValue({ full_name: `${p.firstName} ${p.lastName}`.trim(), email: p.email ?? '' })
+    form.setFields([{ name: 'full_name', errors: [] }, { name: 'email', errors: [] }])
+  }
 
   const submit = async (values) => {
     if (mode === 'add') {
@@ -76,6 +95,18 @@ function UserModal({ mode, user, users, departments, onClose, onSaved }) {
       >
         {mode === 'add' && (
           <>
+            {staffOptions.length > 0 && (
+              <Form.Item label={s.pickStaff} extra={s.pickStaffHint}>
+                <Select
+                  showSearch
+                  optionFilterProp="label"
+                  allowClear
+                  placeholder={s.pickStaffPlaceholder}
+                  options={staffOptions}
+                  onSelect={pickStaff}
+                />
+              </Form.Item>
+            )}
             <Form.Item name="full_name" label={s.fullName}>
               <Input />
             </Form.Item>
