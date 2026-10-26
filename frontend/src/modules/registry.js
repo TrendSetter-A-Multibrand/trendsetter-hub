@@ -17,7 +17,7 @@ import teamStrings from './team/strings.js'
 import newsStrings from './news/strings.js'
 import { canReadNews, isNewsEditor } from './news/lib/news.js'
 
-// hidden: модуль есть в реестре (особые права, группы, права в /core/me), но не показывается в меню и в «Моих инструментах»,
+// hidden: модуль есть в реестре (особые права, группы, права в /core/me), но не показывается в меню,
 // а его страница /modules/<id> — «Не найдено». Нужен модулям без своей страницы (новости: блоки на главной и вкладка профиля).
 export const MODULES = [
   { id: 'purchasing', status: 'roadmap', strings: purchasingStrings, Component: lazy(() => import('./purchasing/PurchasingPage.jsx')) },
@@ -103,8 +103,8 @@ export const PROFILE_SECTIONS = [
 
 // Блоки главной страницы (/). Ядро само ничего не знает про модули: место и порядок = как здесь.
 //   id        — ключ блока;
-//   slot      — место (необязательно): 'banner' — над шапкой; 'top' — на всю ширину между «Моими инструментами» и сеткой;
-//               не указано — в сетку .home-grid (рядом с часами, погодой и курсами);
+//   slot      — место (необязательно): 'banner' — над шапкой; 'left' и 'center' — левая и центральная колонки под шапкой
+//               (новости и события; без них главная — одна колонка виджетов); не указано — столбиком с часами, погодой и курсами;
 //   visible   — (me) => показывать ли блок (скрытый не рендерится и не делает запросов);
 //   Component — получает { me }; сам грузит свои данные.
 // Данные людей (дни рождения, отпуска) видят только уровни view/run; наблюдатель (structure) — нет.
@@ -112,5 +112,6 @@ export const HOME_WIDGETS = [
   { id: 'birthdays', visible: (me) => canSeeData(me.module_access.team), Component: lazy(() => import('./team/components/HomeBirthdays.jsx')) },
   { id: 'leave', visible: (me) => canSeeData(me.module_access.team), Component: lazy(() => import('./team/components/HomeLeave.jsx')) },
   { id: 'news-banner', slot: 'banner', visible: canReadNews, Component: lazy(() => import('./news/components/HomeBanner.jsx')) },
-  { id: 'news', slot: 'top', visible: canReadNews, Component: lazy(() => import('./news/components/HomeNews.jsx')) },
+  { id: 'news-feed', slot: 'left', visible: canReadNews, Component: lazy(() => import('./news/components/HomeNewsFeed.jsx')) },
+  { id: 'news-events', slot: 'center', visible: canReadNews, Component: lazy(() => import('./news/components/HomeEvents.jsx')) },
 ]

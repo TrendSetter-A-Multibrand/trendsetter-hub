@@ -98,9 +98,8 @@ const strings = {
       return `${part}, ${name}`
     },
     loadFailed: 'Не удалось загрузить запуски',
-    // Главная: сводка (часы, погода, курсы, «Мои инструменты»). Строки виджетов модуля team — в modules/team/strings.js
+    // Главная: сводка (часы, погода, курсы). Строки виджетов модуля team — в modules/team/strings.js
     home: {
-      toolsTitle: 'Мои инструменты',
       clocksTitle: 'Время',
       cities: { yerevan: 'Ереван', moscow: 'Москва', paris: 'Париж', newYork: 'Нью-Йорк' },
       weatherTitle: 'Погода на 7 дней',
@@ -122,6 +121,8 @@ const strings = {
       ratesHeading: 'Курсы ЦБ РФ',
       ratesTitle: (date) => `Курсы ЦБ РФ на ${date}`,
       ratesUnavailable: 'Курсы недоступны',
+      ratesRubLabel: '1 RUB',
+      ratesAmdUnit: 'AMD',
     },
   },
 

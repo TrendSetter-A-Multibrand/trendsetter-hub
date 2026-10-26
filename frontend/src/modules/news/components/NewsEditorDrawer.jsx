@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Alert, App, Button, Drawer, Input, Radio, Space, Switch } from 'antd'
 import { api } from '../../../core/api/index.js'
-import { fromLocalInput, toLocalInput } from '../lib/news.js'
+import { NEWS_COLORS, fromLocalInput, toLocalInput } from '../lib/news.js'
 import strings from '../strings.js'
 import '../news.css'
 
@@ -26,6 +26,7 @@ const initialOf = (item) => ({
   place: item?.place ?? '',
   body: item?.body ?? '',
   pinned: item?.pinned ?? false,
+  color: item?.color ?? null,
   rsvpEnabled: item?.rsvpEnabled ?? false,
   rsvpDeadline: toLocalInput(item?.rsvpDeadline),
   rsvpNamesPublic: item?.rsvpNamesPublic ?? false,
@@ -45,7 +46,7 @@ function validate(f) {
 }
 
 function payloadOf(f) {
-  const common = { title: f.title.trim(), body: f.body, pinned: f.pinned }
+  const common = { title: f.title.trim(), body: f.body, pinned: f.pinned, color: f.color }
   if (f.kind === 'news') return common
   return {
     ...common,
@@ -56,6 +57,32 @@ function payloadOf(f) {
     rsvpDeadline: fromLocalInput(f.rsvpDeadline),
     rsvpNamesPublic: f.rsvpNamesPublic,
   }
+}
+
+// Выбор цвета записи: ряд кружков (первый — «без цвета», null). Радиогруппа с aria-label у каждого кружка.
+function ColorPicker({ value, onChange }) {
+  const options = [{ key: null, label: s.colorNone }, ...NEWS_COLORS.map((key) => ({ key, label: s.colors[key] }))]
+  return (
+    <div className="news-field">
+      <span className="news-field-label" id="news-color-label">
+        {s.fieldColor}
+      </span>
+      <div className="news-swatches" role="radiogroup" aria-labelledby="news-color-label">
+        {options.map(({ key, label }) => (
+          <button
+            key={key ?? 'none'}
+            type="button"
+            role="radio"
+            aria-checked={value === key}
+            aria-label={label}
+            title={label}
+            className={`news-swatch ${key ?? 'none'}`}
+            onClick={() => onChange(key)}
+          />
+        ))}
+      </div>
+    </div>
+  )
 }
 
 // Создание и правка записи. item — null для новой. onSaved() вызывается после успешного сохранения.
@@ -136,6 +163,7 @@ export default function NewsEditorDrawer({ item, onClose, onSaved }) {
       <Field label={s.fieldBody}>
         <Input.TextArea value={form.body} maxLength={5000} showCount autoSize={{ minRows: 5, maxRows: 16 }} placeholder={s.bodyPlaceholder} onChange={(e) => set({ body: e.target.value })} />
       </Field>
+      <ColorPicker value={form.color} onChange={(color) => set({ color })} />
       <div className="news-field inline">
         <Switch checked={form.pinned} onChange={(pinned) => set({ pinned })} aria-label={s.fieldPinned} />
         <span>{s.fieldPinned}</span>

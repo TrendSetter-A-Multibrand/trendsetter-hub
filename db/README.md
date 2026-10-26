@@ -124,6 +124,16 @@ docker exec -u root trendsetter-hub-api rm -rf /tmp/team-import                 
 
 **Откат** (`alembic downgrade 0008`): удаляются только таблицы `news_rsvp`, `news_items`, `news_banners`. Строки `module_id='news'` в `user_module_permissions` и `access_group_permissions` не удаляются (безвредны: интерфейс перечисляет только модули из реестра; при повторном upgrade редакторы сохраняются).
 
+## Новости: цвет записи (ревизия 0010)
+`10_news_color.sql`: столбец `news_items.color` (`text`, `NULL` = нейтральный) и ограничение `news_items_color_check` (ключи `red`, `green`, `yellow`, `blue`, `pink`, `gray`; хранится ключ, не hex). Скрипт идемпотентен.
+
+**Выкат 0010** (как у `0009`; `deploy.sh` миграции не выполняет):
+1. Под doadmin в `defaultdb` выполнить `db/10_news_color.sql` (после `09_news.sql`).
+2. Под doadmin выполнить `deploy/stamp_alembic_0010.sql` (версия миграции `0009` → `0010`).
+3. Только после этого — merge в `main`. Иначе `/modules/news/*` отвечает 500 (в запросах есть столбец `color`).
+
+**Откат** (`alembic downgrade 0009`): удаляются ограничение `news_items_color_check` и столбец `color` (цвета записей теряются).
+
 ## Модуль «Склад»
 Листы Google Таблицы «Склад-приёмка» стали таблицами: Приемки → `warehouse_receipts`, Раскладки → `warehouse_receipt_plans`, Счётчики → `warehouse_box_counters` и `warehouse_pallet_pointers`, Сканы → `warehouse_scans`, Короба → `warehouse_boxes`, Хранение → `warehouse_storage_boxes`, Хранение — архив → `warehouse_storage_archive`, Секции → `warehouse_extra_sections`, Коды ЧЗ → `warehouse_marks`, Сводка → представление `warehouse_receipt_summary`. Условия, которые раньше защищал `LockService`, держит база: уникальность кода ЧЗ, одно место на короб, уникальное имя приёмки, номера коробов через функцию `warehouse_next_box_number()`, повтор отправки скана отсекается по id.
 

@@ -9,7 +9,9 @@ const FEED_LIMIT = 5
 const ZONE = /(Z|[+-]\d{2}:\d{2})$/
 const ANSWERS = ['yes', 'maybe', 'no']
 const TABS = ['current', 'past', 'drafts']
-const PATCH_FIELDS = ['title', 'body', 'place', 'startsAt', 'endsAt', 'pinned', 'rsvpEnabled', 'rsvpDeadline', 'rsvpNamesPublic', 'status', 'archived']
+const PATCH_FIELDS = ['title', 'body', 'place', 'startsAt', 'endsAt', 'pinned', 'color', 'rsvpEnabled', 'rsvpDeadline', 'rsvpNamesPublic', 'status', 'archived']
+// Ключи цветов записи (зеркало бэкенда и modules/news/lib/news.js: ядро не импортирует modules/news)
+const COLORS = ['red', 'green', 'yellow', 'blue', 'pink', 'gray']
 const NEWS_NULL = ['place', 'startsAt', 'endsAt', 'rsvpDeadline']
 const NEWS_FALSE = ['rsvpEnabled', 'rsvpNamesPublic']
 
@@ -28,7 +30,7 @@ export function createNewsHandlers({ userFromToken, accessTo, isEditor, errors: 
 
   const add = (item) => {
     const row = {
-      kind: 'news', body: '', place: null, startsAt: null, endsAt: null, pinned: false, status: 'published', archived: false,
+      kind: 'news', body: '', place: null, startsAt: null, endsAt: null, pinned: false, color: null, status: 'published', archived: false,
       rsvpEnabled: false, rsvpDeadline: null, rsvpNamesPublic: false, publishedAt: null, ...item,
     }
     row.id = nextItemId++
@@ -40,19 +42,19 @@ export function createNewsHandlers({ userFromToken, accessTo, isEditor, errors: 
 
   // ---- демо-данные ----
   const picnic = add({
-    kind: 'event', title: 'Выезд на природу', place: 'Дилижан', pinned: true, publishedAt: at(-48),
+    kind: 'event', title: 'Выезд на природу', place: 'Дилижан', pinned: true, color: 'green', publishedAt: at(-48),
     startsAt: at(7 * 24), endsAt: at(7 * 24 + 10), rsvpEnabled: true, rsvpDeadline: at(5 * 24), rsvpNamesPublic: true,
     body: 'Сбор у офиса в 08:30\nАвтобус в 09:00\nВозврат около 19:00\nВзять: удобную обувь, дождевик',
   })
   const training = add({
-    kind: 'event', title: 'Обучение по новому складскому учёту', place: 'Переговорная 2', publishedAt: at(-24),
+    kind: 'event', title: 'Обучение по новому складскому учёту', place: 'Переговорная 2', color: 'blue', publishedAt: at(-24),
     startsAt: at(3 * 24), endsAt: at(3 * 24 + 2), rsvpEnabled: true, rsvpNamesPublic: false,
     body: 'Короткая встреча для всех, кто работает со складом.',
   })
   add({ kind: 'event', title: 'Командный завтрак', place: 'Кухня', publishedAt: at(-10 * 24), startsAt: at(-3 * 24), endsAt: at(-3 * 24 + 2) })
-  add({ kind: 'news', title: 'Новая политика отпусков', pinned: true, publishedAt: at(-5 * 24), body: 'С ноября заявки на отпуск подаются через раздел «Отпуск» в профиле.' })
+  add({ kind: 'news', title: 'Новая политика отпусков', pinned: true, color: 'yellow', publishedAt: at(-5 * 24), body: 'С ноября заявки на отпуск подаются через раздел «Отпуск» в профиле.' })
   add({ kind: 'news', title: 'Обновили карту команды', publishedAt: at(-2 * 24), body: 'В карте появились календарь отпусков и дни рождения.' })
-  add({ kind: 'news', title: 'Итоги месяца', publishedAt: at(-24), body: 'Спасибо всем за работу! Подробности — на планёрке в понедельник.' })
+  add({ kind: 'news', title: 'Итоги месяца', color: 'pink', publishedAt: at(-24), body: 'Спасибо всем за работу! Подробности — на планёрке в понедельник.' })
   add({ kind: 'news', title: 'Черновик объявления', status: 'draft', body: 'Текст ещё не готов.' })
   add({ kind: 'news', title: 'Старая новость из архива', archived: true, publishedAt: at(-60 * 24), body: 'Эта запись убрана в архив.' })
   for (const [userId, value] of [[3, 'yes'], [4, 'yes'], [6, 'maybe'], [8, 'no'], [10, 'yes']]) answer(picnic.id, userId, value)
@@ -144,6 +146,7 @@ export function createNewsHandlers({ userFromToken, accessTo, isEditor, errors: 
     startsAt: dateOrNull,
     endsAt: dateOrNull,
     pinned: bool,
+    color: (v) => (v === null ? null : oneOf(v, COLORS)),
     rsvpEnabled: bool,
     rsvpDeadline: dateOrNull,
     rsvpNamesPublic: bool,
@@ -228,7 +231,7 @@ export function createNewsHandlers({ userFromToken, accessTo, isEditor, errors: 
       const user = editorOf(token)
       if (!isObject(body)) throw new ApiError(422, err.invalid)
       const state = {
-        kind: oneOf(body.kind, ['news', 'event']), title: null, body: '', place: null, startsAt: null, endsAt: null, pinned: false,
+        kind: oneOf(body.kind, ['news', 'event']), title: null, body: '', place: null, startsAt: null, endsAt: null, pinned: false, color: null,
         status: 'draft', rsvpEnabled: false, rsvpDeadline: null, rsvpNamesPublic: false,
       }
       if (!('title' in body)) throw new ApiError(422, err.invalid)
@@ -246,8 +249,8 @@ export function createNewsHandlers({ userFromToken, accessTo, isEditor, errors: 
       if (!isObject(body) || Object.keys(body).some((k) => !PATCH_FIELDS.includes(k))) throw new ApiError(422, err.invalid)
       const state = { ...r }
       for (const [field, value] of Object.entries(body)) {
-        // title, body, pinned, rsvp*, status, archived — без null; place и даты допускают null
-        if (value === null && !['place', 'startsAt', 'endsAt', 'rsvpDeadline'].includes(field)) throw new ApiError(422, err.invalid)
+        // title, body, pinned, rsvp*, status, archived — без null; place, color и даты допускают null
+        if (value === null && !['place', 'color', 'startsAt', 'endsAt', 'rsvpDeadline'].includes(field)) throw new ApiError(422, err.invalid)
         state[field] = PARSERS[field](value)
       }
       validateState(state)

@@ -17,6 +17,7 @@ Db = Depends(get_session)
 Title = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
 Body = Annotated[str, StringConstraints(strip_whitespace=True, max_length=5000)]
 Place = Annotated[str, StringConstraints(max_length=200)]
+Color = Literal["red", "green", "yellow", "blue", "pink", "gray"]
 BannerText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=300)]
 
 
@@ -55,6 +56,7 @@ class ItemBody(_PlaceMixin):
     startsAt: AwareDatetime | None = None
     endsAt: AwareDatetime | None = None
     pinned: bool = False
+    color: Color | None = None
     rsvpEnabled: bool = False
     rsvpDeadline: AwareDatetime | None = None
     rsvpNamesPublic: bool = False
@@ -71,6 +73,7 @@ class ItemPatchBody(_PlaceMixin):
     startsAt: AwareDatetime | None = None
     endsAt: AwareDatetime | None = None
     pinned: bool = Field(None)
+    color: Color | None = None
     rsvpEnabled: bool = Field(None)
     rsvpDeadline: AwareDatetime | None = None
     rsvpNamesPublic: bool = Field(None)
