@@ -348,4 +348,17 @@ DELETE/PUT не используются (CORS разрешает только G
 ---
 
 ## Отступления реализации
-(заполняет исполнитель)
+Открытые вопросы Q-N3, Q-N4, Q-N6…Q-N12 решены вариантом из ТЗ; в коде стоят `TODO(Q-Nn)` (Q-N3 — `service.is_editor`, `lib/news.js`; Q-N4 — `registry.js`; Q-N6 — `lib/news.js`; Q-N7 — `service._is_past`; Q-N8 — `NewsItemModal.jsx`; Q-N9 — `service.feed`; Q-N10 — `service.set_rsvp`; Q-N11, Q-N12 — шапка `service.py`).
+
+Мелкие уточнения, которых в ТЗ не было:
+- **RSVP черновика — 404 всем**, включая редактора (в ТЗ: «записи нет или черновик — 404»); `responses` черновика редактору отдаётся.
+- Зависимость `reader` пропускает и редактора без `view`/`run` (в реальности редактор всегда имеет `run`, это лишь явное «редактор проходит проверки читателя»).
+- Плашка: `endsAt <= now` — 422 (равное текущему считается прошедшим). Для плашки с тем же текстом, но истёкшей, обновляется `ends_at` (id сохраняется), как в ТЗ.
+- PATCH без реальных изменений не делает `UPDATE` (`updatedAt` не меняется) и не пишет в журнал. `news.update` не пишется, если менялись только `status` / `archived`.
+- PATCH: не-nullable поля (`title`, `body`, `pinned`, `rsvpEnabled`, `rsvpNamesPublic`, `status`, `archived`) с явным `null` — 422; в модели они объявлены как `T = Field(None)`, «не передано» определяется по `model_fields_set`.
+- `backend/tests/test_database.py`: помимо версии `0009` добавлен тест `test_app_role_can_use_news_tables` (права hub_app на `news_*` и каскад).
+- Mock `core/api/mock/news.js` получает тексты ошибок параметром `errors` (в `handlers.js` — `getModule('news').strings.errors`): ядро не импортирует `modules/news/**`. `updatedAt` в `responses` mock-а — время запроса (per-answer время в mock не хранится).
+- `excerpt` обрезает хвостовые пробелы перед «…».
+- `news.css` — для строк, которых нет в токенах ядра, использованы `#fff` и `rgba(255,255,255,…)` только внутри красной плашки.
+
+Не проверено: визуальная проверка демо в браузере (1440px и 800px под admin / «Сотрудник HR» / employee / viewer, проверка плашки с падающим обработчиком) не выполнялась — в среде исполнителя нет браузера. Проверены только `npm test`, `npm run lint`, `npm run build`, `pytest` и логика mock-обработчиков тестами.

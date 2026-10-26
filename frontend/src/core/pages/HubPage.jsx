@@ -19,19 +19,22 @@ export default function HubPage() {
   const [hour] = useState(() => new Date().getHours())
   const [today] = useState(formatToday)
 
-  const visibleModules = MODULES.filter((m) => (me.module_access[m.id] ?? 'none') !== 'none')
+  const visibleModules = MODULES.filter((m) => !m.hidden && (me.module_access[m.id] ?? 'none') !== 'none')
 
   // Блоки модулей (HOME_WIDGETS): ядро не знает, чьи они; невидимые не рендерятся и запросов не делают
-  const widgets = HOME_WIDGETS.filter((w) => w.visible(me)).map(({ id, Component }) => (
-    <Suspense key={id} fallback={<Spin size="small" />}>
-      <Component me={me} />
-    </Suspense>
-  ))
+  // slot: 'banner' — над шапкой, 'top' — между «Моими инструментами» и сеткой, не указан — в сетку
+  const widgetsOf = (slot) =>
+    HOME_WIDGETS.filter((w) => (w.slot ?? null) === slot && w.visible(me)).map(({ id, Component }) => (
+      <Suspense key={id} fallback={slot === 'banner' ? null : <Spin size="small" />}>
+        <Component me={me} />
+      </Suspense>
+    ))
 
   const firstName = me.full_name.split(' ')[0]
 
   return (
     <div className="stack home">
+      {widgetsOf('banner')}
       <div className="hero compact">
         <span className="corner tl">T</span>
         <span className="corner tr">R</span>
@@ -66,11 +69,13 @@ export default function HubPage() {
         </div>
       </section>
 
+      {widgetsOf('top')}
+
       <div className="home-grid">
         <ClocksCard />
         <WeatherCard />
         <RatesCard />
-        {widgets}
+        {widgetsOf(null)}
       </div>
     </div>
   )

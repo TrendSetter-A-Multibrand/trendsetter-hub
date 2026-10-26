@@ -21,8 +21,8 @@ export default function AppLayout() {
   const { me } = useAuth()
   const location = useLocation()
 
-  // Все модули остаются в меню; недоступные открываются заглушкой «Нет доступа» (ModulePage)
-  const navModules = MODULES.map((m, i) => ({
+  // Все модули, кроме скрытых (hidden), остаются в меню; недоступные открываются заглушкой «Нет доступа» (ModulePage)
+  const navModules = MODULES.filter((m) => !m.hidden).map((m, i) => ({
     ...m,
     idx: String(i + 1).padStart(2, '0'),
     allowed: (me.module_access[m.id] ?? 'none') !== 'none',

@@ -40,11 +40,26 @@ def test_app_role_can_use_access_group_tables(db):
     db.rollback()
 
 
+def test_app_role_can_use_news_tables(db):
+    """Права hub_app на таблицы новостей и их последовательности выданы автоматически."""
+    item_id = db.execute(text("INSERT INTO trendsetter_hub.news_items (kind, title) VALUES ('news', 'Тест') RETURNING id")).scalar_one()
+    user_id = db.execute(
+        text("INSERT INTO trendsetter_hub.users (email, full_name, password_hash, access_level) VALUES ('n@example.com', 'Н', 'x', 'employee') RETURNING id")
+    ).scalar_one()
+    db.execute(text("INSERT INTO trendsetter_hub.news_rsvp (item_id, user_id, answer) VALUES (:i, :u, 'yes')"), {"i": item_id, "u": user_id})
+    db.execute(text("UPDATE trendsetter_hub.news_rsvp SET answer = 'no' WHERE item_id = :i"), {"i": item_id})
+    db.execute(text("INSERT INTO trendsetter_hub.news_banners (text) VALUES ('Плашка')"))
+    assert db.execute(text("SELECT count(*) FROM trendsetter_hub.news_banners WHERE active")).scalar_one() == 1
+    db.execute(text("DELETE FROM trendsetter_hub.news_items WHERE id = :i"), {"i": item_id})
+    assert db.execute(text("SELECT count(*) FROM trendsetter_hub.news_rsvp")).scalar_one() == 0  # CASCADE
+    db.rollback()
+
+
 def test_alembic_version_in_hub_schema(database):
     import psycopg
 
     with psycopg.connect(database["db_dsn"]) as conn:
-        assert conn.execute("SELECT version_num FROM trendsetter_hub.alembic_version").fetchone() == ("0008",)
+        assert conn.execute("SELECT version_num FROM trendsetter_hub.alembic_version").fetchone() == ("0009",)
         assert conn.execute("SELECT to_regclass('public.alembic_version')").fetchone() == (None,)
 
 

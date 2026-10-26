@@ -53,7 +53,7 @@ export default function UserPermissionsModal({ user, onClose }) {
         <Form form={form} layout="horizontal" labelCol={{ span: 10 }} initialValues={initial} onFinish={submit}>
           <Alert type="info" title={s.specialRightsHint} style={{ marginBottom: 16 }} />
           {MODULES.map((m) => (
-            <Form.Item key={m.id} name={m.id} label={m.strings.tool}>
+            <Form.Item key={m.id} name={m.id} label={m.strings.tool} extra={m.strings.permissionHint}>
               <Select options={options} />
             </Form.Item>
           ))}
