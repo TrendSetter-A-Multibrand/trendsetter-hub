@@ -1,6 +1,6 @@
-name: Deploy backend
+name: Deploy
 
-# Сайт на Vercel выкатывается сам. Здесь — только бэкенд на сервере, и только после зелёного CI на том же коммите.
+# Бэкенд, затем сайт; только после зелёного CI на том же коммите.
 on:
   workflow_run:
     workflows: [CI]
@@ -19,6 +19,25 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Сборка сайта
+        working-directory: frontend
+        env:
+          VITE_API_URL: https://hub-api.trendsettercrew.com
+          VITE_DEMO_MODE: "false"
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          npm ci
+          npm run build
+          echo "$HEAD_SHA" > dist/version.txt
+          if ! grep -rqF "$VITE_API_URL" dist/assets; then
+            echo "В сборке нет адреса API — получились бы моки" >&2
+            exit 1
+          fi
       - name: Ключ и известный хост
         env:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
@@ -28,7 +47,7 @@ jobs:
           printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_deploy
           chmod 600 ~/.ssh/id_deploy
           printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
-      - name: Деплой
+      - name: Деплой бэкенда
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
@@ -36,3 +55,66 @@ jobs:
         run: |
           ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
             "$DEPLOY_USER@$DEPLOY_HOST" bash -s -- "$DEPLOY_PATH" < deploy/deploy.sh
+      - name: Деплой сайта
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          WEB_ROOT: /var/www/trendsetter-hub
+        run: |
+          tar -C frontend/dist -czf "$RUNNER_TEMP/site.tgz" .
+          scp -i ~/.ssh/id_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            "$RUNNER_TEMP/site.tgz" "$DEPLOY_USER@$DEPLOY_HOST:$WEB_ROOT/incoming/$HEAD_SHA.tgz"
+          ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            "$DEPLOY_USER@$DEPLOY_HOST" bash -s -- "$WEB_ROOT" activate "$HEAD_SHA" < deploy/deploy-frontend.sh
+      - name: Проверка сайта
+        env:
+          SITE_HOST: ${{ vars.HUB_WEB_HOST || 'hub.trendsettercrew.com' }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          WEB_ROOT: /var/www/trendsetter-hub
+        run: |
+          # Все запросы идут на сервер напрямую, даже если DNS у раннера ещё отдаёт Vercel
+          get() {
+            curl -sS --max-time 10 --connect-to "$SITE_HOST:443:$DEPLOY_HOST:443" "$@"
+          }
+
+          check() {
+            local body headers js code
+            body="$(get "https://$SITE_HOST/version.txt")" || { echo "version.txt не отвечает"; return 1; }
+            [ "$(printf '%s' "$body" | tr -d '\r\n')" = "$HEAD_SHA" ] || { echo "version.txt не равен $HEAD_SHA"; return 1; }
+
+            for path in / /modules/warehouse; do
+              headers="$(get -o "$RUNNER_TEMP/page.html" -D - -w '' "https://$SITE_HOST$path")" || { echo "$path не отвечает"; return 1; }
+              printf '%s' "$headers" | head -n 1 | grep -q ' 200' || { echo "$path: не 200"; return 1; }
+              printf '%s' "$headers" | grep -i '^content-type:' | grep -qi 'text/html' || { echo "$path: content-type не text/html"; return 1; }
+              grep -qF '<div id="root">' "$RUNNER_TEMP/page.html" || { echo "$path: нет <div id=\"root\">"; return 1; }
+            done
+
+            js="$(get "https://$SITE_HOST/" | grep -o '/assets/[^"]*\.js' | head -n 1)"
+            [ -n "$js" ] || { echo "в HTML нет ссылки на /assets/*.js"; return 1; }
+            headers="$(get -o /dev/null -D - "https://$SITE_HOST$js")" || { echo "$js не отвечает"; return 1; }
+            printf '%s' "$headers" | head -n 1 | grep -q ' 200' || { echo "$js: не 200"; return 1; }
+            printf '%s' "$headers" | grep -i '^content-type:' | grep -qi 'javascript' || { echo "$js: content-type не javascript"; return 1; }
+            printf '%s' "$headers" | grep -i '^cache-control:' | grep -qi 'immutable' || { echo "$js: нет cache-control immutable"; return 1; }
+
+            code="$(get -o /dev/null -w '%{http_code}' "https://$SITE_HOST/assets/does-not-exist.js")" || { echo "несуществующий ассет: нет ответа"; return 1; }
+            [ "$code" = "404" ] || { echo "несуществующий ассет вернул $code, ожидался 404"; return 1; }
+          }
+
+          for attempt in 1 2 3 4 5; do
+            if check; then
+              echo "Проверка сайта пройдена (попытка $attempt)"
+              exit 0
+            fi
+            echo "Попытка $attempt из 5 не прошла"
+            sleep 3
+          done
+
+          echo "Проверка сайта не прошла, откат фронтенда" >&2
+          if ! ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            "$DEPLOY_USER@$DEPLOY_HOST" bash -s -- "$WEB_ROOT" rollback < deploy/deploy-frontend.sh; then
+            echo "ВНИМАНИЕ: откат фронтенда тоже не удался" >&2
+          fi
+          exit 1

@@ -1,6 +1,39 @@
-# Добавить в конец /etc/caddy/Caddyfile (по образцу блока weeek-mcp.trendsettercrew.com):
+# Добавить в конец /etc/caddy/Caddyfile два блока: hub-api (по образцу weeek-mcp.trendsettercrew.com) и сайт hub:
 hub-api.trendsettercrew.com {
     reverse_proxy 127.0.0.1:8010
+    tls {
+        issuer acme {
+            disable_http_challenge
+        }
+    }
+}
+
+# Сайт хаба: статика фронтенда. Релизы кладёт deploy/deploy-frontend.sh, current — симлинк на активный релиз.
+# До переключения DNS вместо hub.trendsettercrew.com здесь временное имя hub-next.trendsettercrew.com (docs/TZ-frontend-move.md).
+hub.trendsettercrew.com {
+    root * /var/www/trendsetter-hub/current
+    encode zstd gzip
+
+    header {
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Strict-Transport-Security "max-age=31536000"
+    }
+
+    # Файлы сборки с хэшем в имени: кэш навсегда; нет файла — 404, а не index.html
+    handle /assets/* {
+        header Cache-Control "public, max-age=31536000, immutable"
+        file_server
+    }
+
+    # Остальное: файл, если есть, иначе index.html (маршруты SPA: /profile, /modules/..., /admin)
+    handle {
+        header Cache-Control "no-cache"
+        try_files {path} /index.html
+        file_server
+    }
+
     tls {
         issuer acme {
             disable_http_challenge
