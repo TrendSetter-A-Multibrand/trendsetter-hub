@@ -183,3 +183,17 @@ test('редактор: создание, валидация, публикаци
   status(() => call('POST /modules/news/items/:id/delete', { token: EDITOR, params: { id: item.id } }), 404)
   status(() => call('GET /modules/news/items', { token: EDITOR, query: { tab: 'x' } }), 422)
 })
+
+test('цвет записи: сохранение, сброс в null, валидация, виден читателю', () => {
+  const { call } = setup()
+  const create = (body) => call('POST /modules/news/items', { token: EDITOR, body })
+  const patch = (id, body) => call('PATCH /modules/news/items/:id', { token: EDITOR, params: { id }, body })
+  assert.equal(create({ kind: 'news', title: 'Без цвета' }).color, null)
+  for (const bad of ['#A22325', 'purple', '', 5]) status(() => create({ kind: 'news', title: 'Т', color: bad }), 422)
+  const item = create({ kind: 'news', title: 'Цветная', color: 'blue', status: 'published' })
+  assert.equal(item.color, 'blue')
+  status(() => patch(item.id, { color: '#fff' }), 422)
+  assert.equal(patch(item.id, { color: 'gray' }).color, 'gray')
+  assert.equal(call('GET /modules/news/feed', { token: EMPLOYEE }).news.find((n) => n.id === item.id).color, 'gray')
+  assert.equal(patch(item.id, { color: null }).color, null)
+})

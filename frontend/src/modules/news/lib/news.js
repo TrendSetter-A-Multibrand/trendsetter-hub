@@ -3,6 +3,12 @@ import { canSeeData } from '../../../core/access.js'
 
 export const HIDDEN_BANNER_KEY = 'hub.news.hiddenBanner'
 
+// Ключи цвета записи (зеркало бэкенд Color и mock/news.js); null = нейтральный. Hex хранится только в news.css.
+export const NEWS_COLORS = ['red', 'green', 'yellow', 'blue', 'pink', 'gray']
+
+// Класс цвета записи для .news-row: неизвестный ключ и null — без модификатора
+export const colorClass = (color) => (NEWS_COLORS.includes(color) ? ` color-${color}` : '')
+
 // Читатель: view/run на news (viewer на for_all-модуле имеет structure — не читатель). Зеркало бэкенд can_read.
 export const canReadNews = (me) => canSeeData(me?.module_access?.news)
 

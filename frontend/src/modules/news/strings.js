@@ -9,7 +9,6 @@ const strings = {
   profile: { title: 'Новости' },
 
   home: {
-    blockLabel: 'Новости компании',
     eventsTitle: 'Ближайшие события',
     newsTitle: 'Новости',
     noEvents: 'Ближайших событий нет',
@@ -89,6 +88,9 @@ const strings = {
     fieldBody: 'Описание / программа',
     bodyPlaceholder: 'Например: сбор у офиса в 08:30, автобус в 09:00, возврат около 19:00, взять с собой удобную обувь и дождевик',
     fieldPinned: 'Закрепить',
+    fieldColor: 'Цвет',
+    colorNone: 'Без цвета',
+    colors: { red: 'Красный', green: 'Зелёный', yellow: 'Жёлтый', blue: 'Синий', pink: 'Розовый', gray: 'Серый' },
     fieldRsvp: 'Голосование «Кто пойдёт»',
     fieldDeadline: 'Принимать ответы до',
     fieldNamesPublic: 'Показывать всем, кто идёт',
