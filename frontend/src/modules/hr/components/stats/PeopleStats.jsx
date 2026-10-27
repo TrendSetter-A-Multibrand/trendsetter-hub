@@ -110,31 +110,32 @@ function Body({ stats, directions }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       <div style={{ fontSize: 13, color: '#5B5552' }}>{s.asOf(formatDate(stats.asOf))}</div>
       <div style={GRID}>
-        <Kpi title={c.total} value={total} sub={c.totalSub(stats.withAccount)} />
+        <Kpi title={c.total} value={total} sub={c.totalSub(stats.withAccount)} hint={c.totalHint} />
         <Kpi title={c.outsideMap} value={stats.hiddenFromMap} sub={c.outsideMapSub} hint={c.outsideMapHint} />
-        <Kpi title={c.directions} value={stats.directions.length} sub={c.directionsSub(stats.teamsCount)} />
-        <Kpi title={c.managers} value={stats.managers.count} sub={c.managersSub(stats.managers.avgSpan)} />
+        <Kpi title={c.directions} value={stats.directions.length} sub={c.directionsSub(stats.teamsCount)} hint={c.directionsHint} />
+        <Kpi title={c.managers} value={stats.managers.count} sub={c.managersSub(stats.managers.avgSpan)} hint={c.managersHint} />
         <Kpi
           title={c.newcomers(stats.newcomers.days)}
           value={stats.newcomers.count}
           sub={c.newcomersSub(stats.dismissed.count, stats.dismissed.days, stats.upcomingHires)}
+          hint={c.newcomersHint(stats.newcomers.days)}
         />
-        <Kpi title={c.probation} value={stats.probation.count} />
+        <Kpi title={c.probation} value={stats.probation.count} hint={c.probationHint} />
         <Kpi
           title={c.leaveNow}
           value={leaveNow.length}
           sub={c.leaveNowSub(stats.leave.soon.length, stats.leave.soonDays)}
-          hint={leaveHint || undefined}
+          hint={leaveHint || c.leaveNowHint}
         />
         <Kpi
           title={c.avgAge}
           value={average === null ? strings.none : `${String(average).replace('.', ',')} ${s.yearsUnit}`}
-          hint={average === null ? s.fewData : undefined}
+          hint={average === null ? `${c.avgAgeHint} ${s.fewData}.` : c.avgAgeHint}
         />
         <Kpi
           title={c.avgTenure}
           value={averageMonths === null ? strings.none : formatTenure(averageMonths)}
-          hint={averageMonths === null ? s.fewData : undefined}
+          hint={averageMonths === null ? `${c.avgTenureHint} ${s.fewData}.` : c.avgTenureHint}
         />
       </div>
 

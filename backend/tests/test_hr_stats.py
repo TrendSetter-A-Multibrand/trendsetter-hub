@@ -91,6 +91,15 @@ def test_scope_archived_hidden_and_upcoming(client, db, hr):
     assert s["directions"] == [{"id": "ops", "count": 3}]
 
 
+def test_with_account_by_email_match(client, db, hr):
+    add_person(db, "Есть", "Учётка", email="has.account@example.com")
+    add_person(db, "Нет", "Учётки", email="nobody@example.com")
+    add_person(db, "Без", "Почты")
+    make_user(db, "HAS.account@example.com", "employee")
+    make_user(db, "nobody@example.com", "employee", active=False)  # отключённый пользователь не считается
+    assert get(client, hr)["withAccount"] == 1
+
+
 def test_buckets_sum_and_boundaries(client, db, hr):
     on = add_person(db, "Ровно", "Двадцатьпятов")
     before = add_person(db, "Накануне", "Двадцатьпятов")
