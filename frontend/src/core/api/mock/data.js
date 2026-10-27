@@ -23,6 +23,7 @@ export const data = {
 
   users: [
     { id: 1, email: 'karen@example.com', full_name: 'Карен В.', access_level: 'admin', department_ids: [], is_active: true },
+    { id: 14, email: 'diana@example.com', full_name: 'Диана А.', access_level: 'admin', department_ids: [], is_active: true },
     { id: 2, email: 'head@example.com', full_name: 'Руководитель', access_level: 'superuser', department_ids: [], is_active: true },
     { id: 3, email: 'ani@example.com', full_name: 'Ани С.', access_level: 'employee', department_ids: [1], is_active: true },
     { id: 4, email: 'wb@example.com', full_name: 'Сотрудник WB', access_level: 'employee', department_ids: [2], is_active: true },
@@ -165,5 +166,5 @@ export const data = {
   passwords: {},
   tokenVersions: {},
 
-  nextId: { user: 14, department: 6, preset: 4, group: 2 },
+  nextId: { user: 15, department: 6, preset: 4, group: 2 },
 }

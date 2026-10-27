@@ -22,7 +22,11 @@ import { canReadNews, isNewsEditor } from './news/lib/news.js'
 export const MODULES = [
   { id: 'purchasing', status: 'roadmap', strings: purchasingStrings, Component: lazy(() => import('./purchasing/PurchasingPage.jsx')) },
   { id: 'warehouse', status: 'mvp', wide: true, strings: warehouseStrings, Component: lazy(() => import('./warehouse/WarehousePage.jsx')) },
-  { id: 'wb', status: 'roadmap', strings: wbStrings, Component: null },
+  // sections: разделы модуля — всплывают в меню при наведении, ведут на /modules/<id>?section=<key>
+  {
+    id: 'wb', status: 'mvp', strings: wbStrings, Component: lazy(() => import('./wb/WbPage.jsx')),
+    sections: Object.entries(wbStrings.sections).map(([key, v]) => ({ key, label: v.label })),
+  },
   { id: 'analytics', status: 'roadmap', strings: analyticsStrings, Component: null },
   { id: 'pricing', status: 'roadmap', strings: pricingStrings, Component: null },
   { id: 'hr', status: 'mvp', wide: true, strings: hrStrings, Component: lazy(() => import('./hr/HrPage.jsx')) },

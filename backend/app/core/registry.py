@@ -28,7 +28,7 @@ class ModuleManifest:
 MODULES: list[ModuleManifest] = [
     ModuleManifest("purchasing", "Закупки", "roadmap"),
     ModuleManifest("warehouse", "Склад", "mvp", warehouse_router),
-    ModuleManifest("wb", "WB-карточки", "roadmap"),
+    ModuleManifest("wb", "Wildberries", "roadmap"),
     ModuleManifest("analytics", "Аналитика", "roadmap"),
     ModuleManifest("pricing", "Цены", "roadmap"),
     ModuleManifest("hr", "HR", "roadmap", hr_router, badge=hr_service.badge, daily_job=hr_reminders.run_daily),
