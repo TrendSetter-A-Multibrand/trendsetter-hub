@@ -3,7 +3,7 @@
 Читает team_people, team_directions, team_form_fields, hr_employee_files и hr_leave_requests; таблица денег и реквизитов не читается.
 Охват: все неархивные карточки (как фильтр «Работают»). TODO(Q-HA2): скрытые из карты входят, их число отдельно в hiddenFromMap.
 Больничные не показываются. TODO(Q-HA3): совпадает с service.calendar().
-Пол: колонки в досье нет; берётся из ответа анкеты answers.gender ('male' / 'female'), заполнение — отдельная задача. TODO(Q-HA1)
+Пол: колонки в досье нет; берётся из ответа анкеты answers.gender: текст опции ('Мужской' / 'Женский') или 'male' / 'female'.
 
 ПРАВИЛО НА БУДУЩЕЕ: сейчас эндпойнт открыт только праву run на hr (эти люди и так видят досье каждого). Если доступ откроют шире
 (руководителям, team, главной), нужно новое ТЗ с обязательным подавлением малых групп (k >= 3, включая итоги) и ревью приватности.
@@ -25,6 +25,7 @@ LEAVE_SOON_DAYS = 14
 TOP_MANAGERS = 10
 AGE_MIN, AGE_MAX = 14, 100
 GENDERS = ("male", "female")
+GENDER_ALIASES = {"мужской": "male", "женский": "female", "male": "male", "female": "female"}
 
 AGE_KEYS = ("under_25", "25_34", "35_44", "45_54", "55_plus")
 TENURE_KEYS = ("lt_3m", "3_12m", "1_3y", "3_5y", "5y_plus")
@@ -78,6 +79,10 @@ def _text_groups(values: list, options: list[str]) -> dict:
         items.append({"label": label, "count": sum(counter.values())})
     items.sort(key=lambda i: (-i["count"], i["label"]))
     return {"known": sum(i["count"] for i in items), "items": items}
+
+
+def _gender(v):
+    return GENDER_ALIASES.get(v.strip().lower()) if isinstance(v, str) else None
 
 
 def _keyed(values: list, order: tuple) -> dict:
@@ -166,7 +171,7 @@ def get_stats(session: Session, today: date | None = None) -> dict:
         "teamsCount": len(teams),
         "location": _text_groups([a.get("location") for a in answers], options.get("location", [])),
         "workFormat": _text_groups([a.get("work_format") for a in answers], options.get("work_format", [])),
-        "gender": _keyed([a.get("gender") for a in answers], GENDERS),  # TODO(Q-HA1): поле анкеты пока не заведено
+        "gender": _keyed([_gender(a.get("gender")) for a in answers], GENDERS),
         "country": _keyed([p["country"] for p in people], COUNTRIES),
         "employmentType": _keyed([p["employment_type"] for p in people], EMPLOYMENT_TYPES),
         "age": {

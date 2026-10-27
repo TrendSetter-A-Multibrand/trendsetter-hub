@@ -208,6 +208,12 @@ def test_location_normalization_and_gender(client, db, hr):
     assert s["gender"] == {"known": 3, "items": [{"key": "male", "count": 2}, {"key": "female", "count": 1}]}
 
 
+def test_gender_accepts_option_text_and_keys(client, db, hr):
+    for i, g in enumerate(("Мужской", " женский ", "male", "Женский", "female", "Другое", None)):
+        add_person(db, f"Пол{i}", "Гендеров", answers=json.dumps({"gender": g}))
+    assert get(client, hr)["gender"] == {"known": 5, "items": [{"key": "male", "count": 2}, {"key": "female", "count": 3}]}
+
+
 def test_does_not_write_audit_log(client, db, hr):
     before = db.execute(text("SELECT count(*) FROM trendsetter_hub.audit_log")).scalar_one()
     get(client, hr)

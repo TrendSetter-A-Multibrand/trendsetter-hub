@@ -134,6 +134,14 @@ docker exec -u root trendsetter-hub-api rm -rf /tmp/team-import                 
 
 **Откат** (`alembic downgrade 0009`): удаляются ограничение `news_items_color_check` и столбец `color` (цвета записей теряются).
 
+## Анкета: поле «Пол» (ревизия 0011)
+`11_gender_field.sql`: строка `team_form_fields` с ключом `gender` (`select`, обязательное, системное, опции «Мужской» / «Женский», `sort` 85). В `answers.gender` хранится текст опции; сводка HR приводит его к `male` / `female` (значения `male` / `female` тоже принимаются). Обязательность проверяется только при новых отправках; утверждённые анкеты не затрагиваются. В карту, профиль и экспорт карты пол не попадает, сотрудник заполняет его в своей анкете, видит и правит у карточки только HR. Скрипт идемпотентен.
+
+**Выкат 0011** (как у `0010`; `deploy.sh` миграции не выполняет):
+1. Под doadmin в `defaultdb` выполнить `db/11_gender_field.sql` (после `10_news_color.sql`).
+2. Под doadmin выполнить `deploy/stamp_alembic_0011.sql` (версия миграции `0010` → `0011`).
+3. Только после этого — merge в `main`.
+
 ## Модуль «Склад»
 Листы Google Таблицы «Склад-приёмка» стали таблицами: Приемки → `warehouse_receipts`, Раскладки → `warehouse_receipt_plans`, Счётчики → `warehouse_box_counters` и `warehouse_pallet_pointers`, Сканы → `warehouse_scans`, Короба → `warehouse_boxes`, Хранение → `warehouse_storage_boxes`, Хранение — архив → `warehouse_storage_archive`, Секции → `warehouse_extra_sections`, Коды ЧЗ → `warehouse_marks`, Сводка → представление `warehouse_receipt_summary`. Условия, которые раньше защищал `LockService`, держит база: уникальность кода ЧЗ, одно место на короб, уникальное имя приёмки, номера коробов через функцию `warehouse_next_box_number()`, повтор отправки скана отсекается по id.
 

@@ -28,7 +28,7 @@ const photo = { full: jpeg(1000), thumb: jpeg(500) }
 
 const fullValues = {
   first_name: 'Тест', last_name: 'Тестов', title: 'Тестировщик', manager_claim: 'Громов', responsibility: 'Проверки',
-  ask_me_about: 'Тесты', location: 'Москва', work_format: 'Гибрид', telegram: '@tester', hobbies: ['Чай'],
+  ask_me_about: 'Тесты', location: 'Москва', work_format: 'Гибрид', telegram: '@tester', hobbies: ['Чай'], gender: 'Женский',
 }
 
 test('/map: сотрудник видит анкету и превью, viewer — только структуру', async () => {
@@ -211,4 +211,18 @@ test('firstName/lastName есть в PersonHr и PersonOwn', async () => {
   assert.equal(own.firstName, 'Ани')
   assert.equal(own.lastName, 'Саркисян')
   assert.equal('firstName' in (await call(3, 'GET', '/map')).people[0], false)
+})
+
+test('пол: у HR есть в анкете, в карту и профиль не попадает, варианты не меняются', async () => {
+  const { call } = setup()
+  const gender = (await call(9, 'GET', '/hr/fields')).find((f) => f.key === 'gender')
+  assert.deepEqual([gender.isSystem, gender.required, gender.options], [true, true, ['Мужской', 'Женский']])
+  await rejects(call(9, 'PATCH', `/hr/fields/${gender.id}`, { options: ['М', 'Ж'] }), 422)
+  await call(6, 'POST', '/me/submission/cancel')
+  await call(6, 'POST', '/me/submission', { values: { ...fullValues, gender: 'Женский' }, photo })
+  const sub = (await call(9, 'GET', '/hr/submissions?status=pending')).find((x) => x.userId === 6)
+  const person = await call(9, 'POST', `/hr/submissions/${sub.id}/approve`, { directionId: 'ops', managerId: 3 })
+  assert.equal(person.answers.gender, 'Женский')
+  assert.ok(!JSON.stringify((await call(3, 'GET', '/map')).people).includes('Женский'))
+  assert.ok(!('gender' in (await call(6, 'GET', '/me')).person))
 })
