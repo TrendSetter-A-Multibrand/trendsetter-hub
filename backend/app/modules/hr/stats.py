@@ -104,7 +104,10 @@ def get_stats(session: Session, today: date | None = None) -> dict:
     today = today or date.today()
     people = session.execute(
         text(
-            f"""SELECT p.id, p.first_name, p.last_name, p.direction_id, p.team, p.user_id, p.show_in_map, p.manager_id, p.answers,
+            f"""SELECT p.id, p.first_name, p.last_name, p.direction_id, p.team, p.show_in_map, p.manager_id, p.answers,
+                       (p.user_id IS NOT NULL OR EXISTS (
+                           SELECT 1 FROM trendsetter_hub.users u WHERE u.is_active AND p.email IS NOT NULL AND lower(u.email) = lower(p.email)
+                       )) AS has_account,
                        f.birth_date, f.hired_at, f.probation_until, f.country, f.employment_type
                 FROM {T}people p LEFT JOIN {H}employee_files f ON f.person_id = p.id
                 WHERE NOT p.is_archived"""
@@ -156,7 +159,7 @@ def get_stats(session: Session, today: date | None = None) -> dict:
     return {
         "asOf": today.isoformat(),
         "total": len(people),
-        "withAccount": sum(1 for p in people if p["user_id"] is not None),
+        "withAccount": sum(1 for p in people if p["has_account"]),
         "hiddenFromMap": sum(1 for p in people if not p["show_in_map"]),  # TODO(Q-HA2)
         "upcomingHires": sum(1 for p in people if p["hired_at"] and p["hired_at"] > today),
         "directions": [{"id": d, "count": by_direction[d]} for d in directions if by_direction[d] > 0],
