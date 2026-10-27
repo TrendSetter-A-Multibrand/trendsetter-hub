@@ -9,6 +9,7 @@ import { completeness, levelOf } from '../lib/completeness.js'
 import { useAutoChecklist } from '../lib/useAutoChecklist.js'
 import AutoChecklistOption from './AutoChecklistOption.jsx'
 import PersonModal from './PersonModal.jsx'
+import PeopleStats from './stats/PeopleStats.jsx'
 import ExportButton from './ExportButton.jsx'
 
 const s = strings.people
@@ -173,7 +174,7 @@ function ReassignModal({ person, people, initialAuto, onClose, onDone }) {
   )
 }
 
-function PeopleTable({ people, directions, reload }) {
+function PeopleTable({ people, directions, reload, stats, statsError }) {
   const { message } = App.useApp()
   const { data: fields } = useLoad(`${BASE}/fields`)
   const { data: users } = useLoad(`${BASE}/users`)
@@ -382,6 +383,7 @@ function PeopleTable({ people, directions, reload }) {
   const ready = fields && users
   return (
     <>
+      <PeopleStats stats={stats} error={statsError} directions={directions} />
       <Space wrap style={{ marginBottom: 16 }}>
         <Segmented value={mode} onChange={setMode} options={MODES.map((value) => ({ value, label: s.modes[value] }))} />
         <Input.Search
@@ -488,7 +490,12 @@ function PeopleTable({ people, directions, reload }) {
 export default function PeopleTab() {
   const { data: people, error, reload } = useLoad(`${BASE}/people`)
   const { data: directions, error: dirError } = useLoad(`${BASE}/directions`)
+  const { data: stats, error: statsError, reload: reloadStats } = useLoad('/modules/hr/stats')
   if (error || dirError) return <Alert type="error" showIcon title={strings.loadFailed} description={error ?? dirError} />
   if (!people || !directions) return <Spin />
-  return <PeopleTable people={people} directions={directions} reload={reload} />
+  const reloadAll = () => {
+    reload()
+    reloadStats()
+  }
+  return <PeopleTable people={people} directions={directions} reload={reloadAll} stats={stats} statsError={statsError} />
 }
