@@ -1,6 +1,6 @@
 // Mock сводки HR над таблицей «Сотрудники»: GET /modules/hr/stats. Контракт и правила — docs/TZ-hr-analytics.md, раздел «API»
 // (бэкенд — backend/app/modules/hr/stats.py). Все люди вымышленные. Только чтение хранилищ team и hr; денег, больничных и дат рождения в ответе нет.
-// Права: run на hr. Охват — все неархивные карточки, включая скрытые из карты (TODO(Q-HA2)). Пол — answers.gender (TODO(Q-HA1)).
+// Права: run на hr. Охват — все неархивные карточки, включая скрытые из карты (TODO(Q-HA2)). Пол — answers.gender (текст опции или male/female).
 import { ApiError } from '../client.js'
 import strings from '../../../modules/hr/strings.js'
 import { addDays, fullMonths, parseIso, todayIso } from '../../dates.js'
@@ -51,6 +51,10 @@ function textGroups(values, options) {
   items.sort((a, b) => b.count - a.count || cmp(a.label, b.label))
   return { known: items.reduce((a, i) => a + i.count, 0), items }
 }
+
+// Пол в анкете хранится текстом опции («Мужской» / «Женский»); допускаются и ключи male / female
+const GENDER_ALIASES = { мужской: 'male', женский: 'female', male: 'male', female: 'female' }
+const genderOf = (v) => (typeof v === 'string' ? GENDER_ALIASES[v.trim().toLowerCase()] : undefined)
 
 function keyed(values, order) {
   const items = order.map((key) => ({ key, count: values.filter((v) => v === key).length })).filter((i) => i.count > 0)
@@ -127,7 +131,7 @@ export function computeStats({ people, directions, files, requests, fields, toda
     teamsCount: teams.size,
     location: textGroups(working.map((p) => answersOf(p).location), optionsOf('location')),
     workFormat: textGroups(working.map((p) => answersOf(p).work_format), optionsOf('work_format')),
-    gender: keyed(working.map((p) => answersOf(p).gender), GENDERS),
+    gender: keyed(working.map((p) => genderOf(answersOf(p).gender)), GENDERS),
     country: keyed(working.map((p) => fileOf(p).country), COUNTRIES),
     employmentType: keyed(working.map((p) => fileOf(p).employmentType), EMPLOYMENT_TYPES),
     age: {

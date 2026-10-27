@@ -1,5 +1,6 @@
 """Модуль «Карта команды»: права, анкета и модерация, иерархия, конструктор полей, фото. Люди в тестах — вымышленные."""
 import base64
+import json
 import os
 from pathlib import Path
 
@@ -61,7 +62,7 @@ def tree(db):
 def values(**over) -> dict:
     v = {
         "first_name": "Иван", "last_name": "Тестов", "title": "Тестировщик", "manager_claim": "Альфа Анна", "responsibility": "Тесты",
-        "ask_me_about": "Про тесты", "location": "Москва", "work_format": "Гибрид", "telegram": "@ivan_t", "hobbies": ["шахматы"],
+        "ask_me_about": "Про тесты", "location": "Москва", "work_format": "Гибрид", "telegram": "@ivan_t", "hobbies": ["шахматы"], "gender": "Мужской",
     }
     return {**v, **over}
 
@@ -136,6 +137,33 @@ def test_submission_validation(client, emp):
     assert submit(client, emp, values(socials=[{"label": "a", "url": "https://x.example"}] * 6)).status_code == 422
     assert submit(client, emp, values(email="не-почта")).status_code == 422
     assert client.post(f"{BASE}/me/submission", json={"values": values(), "photo": {"full": url()}}, headers=emp).status_code == 422
+
+
+def test_gender_is_hr_only(client, db, tree, emp, hr):
+    by_key = {f["key"]: f for f in client.get(f"{BASE}/hr/fields", headers=hr).json()}
+    g = by_key["gender"]
+    assert g["isSystem"] and g["required"] and g["kind"] == "select" and g["options"] == ["Мужской", "Женский"]
+    assert client.patch(f"{BASE}/hr/fields/{g['id']}", json={"active": False}, headers=hr).status_code == 422
+    assert client.patch(f"{BASE}/hr/fields/{g['id']}", json={"options": ["М", "Ж"]}, headers=hr).status_code == 422
+    # обязательное при отправке; значение вне опций отклоняется
+    no_gender = values()
+    del no_gender["gender"]
+    r = submit(client, emp, no_gender)
+    assert r.status_code == 422 and "Пол" in r.json()["detail"]
+    assert submit(client, emp, values(gender="Другое")).status_code == 422
+    assert submit(client, emp, values(gender="Женский")).status_code == 200
+    sub = client.get(f"{BASE}/hr/submissions", headers=hr).json()[0]
+    pid = client.post(f"{BASE}/hr/submissions/{sub['id']}/approve", json={"directionId": "ops", "managerId": tree["b"]}, headers=hr).json()["id"]
+    assert client.get(f"{BASE}/hr/people", headers=hr).json()[-1]["answers"]["gender"] == "Женский"
+    # HR правит пол в карточке
+    r = client.patch(f"{BASE}/hr/people/{pid}", json={"values": {"gender": "Мужской"}}, headers=hr)
+    assert r.status_code == 200 and r.json()["answers"]["gender"] == "Мужской"
+    # обычным пользователям пол нигде не отдаётся: ни в карте, ни в профиле, ни в extra
+    for h in (emp, hr):
+        mapped = client.get(f"{BASE}/map", headers=h).json()["people"]
+        assert "gender" not in json.dumps(mapped) and "Мужской" not in json.dumps(mapped)
+    mine = client.get(f"{BASE}/me", headers=emp).json()["person"]
+    assert "gender" not in mine and mine["extra"] == [] and "Мужской" not in json.dumps(mine)
 
 
 def test_submission_flow_new_person(client, db, tree, emp, hr):
