@@ -33,7 +33,7 @@ jobs:
         run: |
           npm ci
           npm run build
-          echo "$HEAD_SHA" > dist/version.txt
+          printf '%s' "$HEAD_SHA" > dist/version.txt
           if ! grep -rqF "$VITE_API_URL" dist/assets; then
             echo "В сборке нет адреса API — получились бы моки" >&2
             exit 1
