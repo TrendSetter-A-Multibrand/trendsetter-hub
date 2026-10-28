@@ -1,5 +1,4 @@
 import { Link, useSearchParams } from 'react-router-dom'
-import { Tabs } from 'antd'
 import coreStrings from '../../core/strings.js'
 import MarkingTab from './marking/MarkingTab.jsx'
 
@@ -17,6 +16,7 @@ function SectionStub({ section, s }) {
   return (
     <div className="stub">
       <div className="stub-body">
+        <span className="stub-tag">{coreStrings.roadmapTag}</span>
         <h2 className="h2">{section.label}</h2>
         <div className="stub-text">
           {section.description}. {s.sectionStub}
@@ -26,34 +26,28 @@ function SectionStub({ section, s }) {
   )
 }
 
+// Разделы переключаются только в левом меню (пункты под «Wildberries» ведут на ?section=<key>); на странице — выбранный раздел.
 export default function WbPage({ module, access }) {
   const s = module.strings
-  // открытый раздел — в адресе (?section=), чтобы на него вёл пункт всплывающего меню
-  const [params, setParams] = useSearchParams()
-  const section = SECTIONS.some((x) => x.key === params.get('section')) ? params.get('section') : SECTIONS[0].key
+  const [params] = useSearchParams()
+  const current = SECTIONS.find((x) => x.key === params.get('section')) ?? SECTIONS[0]
+  const { Component } = current
   return (
     <div className="stack module">
       <div className="module-head">
         <div>
-          <div className="crumbs mono">
+          <div className="crumbs">
             <Link to="/">{coreStrings.layout.hub}</Link>
             <span>/</span>
-            <span className="current">{s.dept}</span>
+            <Link to={`/modules/${module.id}`}>{s.dept}</Link>
+            <span>/</span>
+            <span className="current">{s.sections[current.key].label}</span>
           </div>
-          <h1 className="h1">{s.pageTitle}</h1>
-          <div className="subtitle">{s.pageSubtitle}</div>
+          <h1 className="h1">{s.sections[current.key].label}</h1>
+          <div className="subtitle">{s.sections[current.key].description}</div>
         </div>
       </div>
-      <Tabs
-        destroyOnHidden
-        activeKey={section}
-        onChange={(key) => setParams({ section: key })}
-        items={SECTIONS.map(({ key, Component }) => ({
-          key,
-          label: s.sections[key].label,
-          children: Component ? <Component module={module} access={access} /> : <SectionStub section={s.sections[key]} s={s} />,
-        }))}
-      />
+      {Component ? <Component key={current.key} module={module} access={access} /> : <SectionStub section={s.sections[current.key]} s={s} />}
     </div>
   )
 }

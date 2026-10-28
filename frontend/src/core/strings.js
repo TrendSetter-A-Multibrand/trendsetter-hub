@@ -1,6 +1,6 @@
 // Общие строки ядра. Строки модулей лежат в modules/<id>/strings.js.
 const strings = {
-  brand: 'trendsetter',
+  brand: 'Trendsetter',
   brandSub: 'Хаб инструментов',
   appTitle: 'Платформа инструментов',
   demoBanner: 'Демо-версия · данные вымышленные, изменения сбрасываются при перезагрузке',
@@ -24,7 +24,8 @@ const strings = {
     employee: 'Запуск в модулях своих отделов, просмотр результатов остальных модулей.',
     viewer: 'Видит только структуру платформы, без файлов и результатов.',
   },
-  moduleStatuses: { mvp: 'MVP', roadmap: 'ROADMAP' },
+  moduleStatuses: { mvp: 'MVP', roadmap: 'ROADMAP' },
+
 
   login: {
     title: 'Вход в платформу',
@@ -50,6 +51,10 @@ const strings = {
     moreActions: 'Ещё',
     logout: 'Выйти',
     moduleBadge: (n) => `Требует внимания: ${n}`,
+    themeDark: 'Тёмная тема',
+    themeLight: 'Светлая тема',
+    openMenu: 'Открыть меню',
+    closeMenu: 'Закрыть меню',
   },
 
   notifications: {
@@ -73,7 +78,8 @@ const strings = {
       email: 'Почта',
       level: 'Уровень доступа',
       departments: 'Отделы',
-      passwordHint: 'Забыли пароль — его сбрасывает администратор.',
+      passwordHint: 'Забыли пароль — его сбрасывает администратор.',
+
       password: {
         title: 'Смена пароля',
         old: 'Текущий пароль',
@@ -95,7 +101,7 @@ const strings = {
   hub: {
     greeting: (name, hour) => {
       const part = hour < 6 ? 'Доброй ночи' : hour < 12 ? 'Доброе утро' : hour < 18 ? 'Добрый день' : 'Добрый вечер'
-      return `${part}, ${name}`
+      return { part, name }
     },
     loadFailed: 'Не удалось загрузить запуски',
     // Главная: сводка (часы, погода, курсы). Строки виджетов модуля team — в modules/team/strings.js
@@ -128,6 +134,7 @@ const strings = {
 
   noDataAccess: 'Нет доступа к данным. Ваш уровень доступа позволяет видеть только структуру модуля.',
   roadmap: 'Модуль в разработке — он появится здесь после подключения.',
+  roadmapTag: 'В разработке',
   forbidden: 'Нет доступа к этому разделу. Если он вам нужен, обратитесь к администратору',
   notFound: 'Страница не найдена',
 

@@ -6,10 +6,10 @@ import ClocksCard from '../home/ClocksCard.jsx'
 import RatesCard from '../home/RatesCard.jsx'
 import WeatherCard from '../home/WeatherCard.jsx'
 import strings from '../strings.js'
+import mascot from '../layout/mascot.svg'
 
 const s = strings.hub
-const formatToday = () =>
-  new Date().toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase()
+const formatToday = () => new Date().toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' })
 
 export default function HubPage() {
   const { me } = useAuth()
@@ -31,20 +31,22 @@ export default function HubPage() {
   const hasFeed = left.length > 0 || center.length > 0
 
   const firstName = me.full_name.split(' ')[0]
+  const greeting = s.greeting(firstName, hour)
 
   return (
     <div className="stack home">
       {widgetsOf('banner')}
-      <div className="hero compact">
-        <span className="corner tl">T</span>
-        <span className="corner tr">R</span>
-        <span className="corner bl">S</span>
-        <span className="corner br">T</span>
-        <div className="hero-body">
-          <div className="hero-date mono">{today}</div>
-          <h1>{s.greeting(firstName, hour)}</h1>
+      <header className="greeting">
+        <div className="greeting-date">{today}</div>
+        <div className="greeting-row">
+          <span className="greeting-mascot">
+            <img src={mascot} alt="" width="52" height="52" />
+          </span>
+          <h1>
+            {greeting.part}, <span className="accent">{greeting.name}</span>
+          </h1>
         </div>
-      </div>
+      </header>
 
       <div className={`home-layout${hasFeed ? ' with-feed' : ''}`}>
         {left.length > 0 && <div className="home-col">{left}</div>}

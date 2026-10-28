@@ -22,11 +22,11 @@ export default function ClocksCard() {
 
   return (
     <section className="home-card">
-      <div className="home-card-head mono">{s.clocksTitle}</div>
+      <div className="home-card-head">{s.clocksTitle}</div>
       <div className="clocks">
         {CLOCK_ZONES.map((z) => (
           <div className="clock" key={z.id}>
-            <span className="clock-city mono">{s.cities[z.id]}</span>
+            <span className="clock-city">{s.cities[z.id]}</span>
             <span className="clock-time">{formatClock(now, z.timeZone)}</span>
           </div>
         ))}

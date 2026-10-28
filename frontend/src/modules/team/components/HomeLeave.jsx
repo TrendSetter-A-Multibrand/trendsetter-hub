@@ -15,7 +15,7 @@ function PeopleList({ title, rows, empty, when }) {
   const hidden = rows.length - MAX_ROWS
   return (
     <>
-      <div className="home-card-head mono">{title}</div>
+      <div className="home-card-head">{title}</div>
       {rows.length === 0 && <div className="people-empty">{empty}</div>}
       {rows.slice(0, MAX_ROWS).map((r) => (
         <div className="people-row" key={`${r.personId}|${r.start ?? ''}`}>

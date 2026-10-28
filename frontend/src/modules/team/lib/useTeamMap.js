@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { api } from '../../../core/api/index.js'
+import { softDirections } from '../../../core/palette.js'
 
 // Загрузка карты команды: { status: 'loading' | 'ready' | 'error', map, error }
 export function useTeamMap() {
@@ -8,7 +9,7 @@ export function useTeamMap() {
     let alive = true
     api
       .get('/modules/team/map')
-      .then((map) => alive && setState({ status: 'ready', map, error: null }))
+      .then((map) => alive && setState({ status: 'ready', map: { ...map, directions: softDirections(map.directions) }, error: null }))
       .catch((e) => alive && setState({ status: 'error', map: null, error: e.message }))
     return () => {
       alive = false

@@ -93,7 +93,7 @@ export default function HistoryTab({ person, canSeeSensitive }) {
       </div>
       {data.length === 0 && <Typography.Text type="secondary">{s.empty}</Typography.Text>}
       {data.map((h) => (
-        <div key={h.id} style={{ borderLeft: '2px solid #DDD7D4', paddingLeft: 12, marginBottom: 14 }}>
+        <div key={h.id} style={{ borderLeft: '2px solid var(--border-input)', paddingLeft: 12, marginBottom: 14 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
             <Space wrap size={6}>
               <Typography.Text strong>{formatDate(h.effectiveDate)}</Typography.Text>

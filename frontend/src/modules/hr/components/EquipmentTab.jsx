@@ -96,7 +96,7 @@ export default function EquipmentTab({ person }) {
         v ? (
           isEquipmentOverdue(item, today) ? (
             <Space size={4} wrap>
-              <Typography.Text style={{ color: '#A22325' }}>{formatDate(v)}</Typography.Text>
+              <Typography.Text style={{ color: 'var(--red)' }}>{formatDate(v)}</Typography.Text>
               <Tag color="error" style={{ marginInlineEnd: 0 }}>{s.overdue}</Tag>
             </Space>
           ) : (
@@ -157,7 +157,7 @@ export default function EquipmentTab({ person }) {
         pagination={false}
         scroll={{ x: 'max-content' }}
         locale={{ emptyText: s.empty }}
-        onRow={(item) => ({ style: isEquipmentOverdue(item, today) ? { background: '#FDECEC' } : undefined })}
+        onRow={(item) => ({ style: isEquipmentOverdue(item, today) ? { background: 'var(--tint-red)' } : undefined })}
       />
       {adding && (
         <AddModal

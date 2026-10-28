@@ -3,17 +3,17 @@ import strings from '../../strings.js'
 import { donutArcs, pct } from '../../lib/stats.js'
 
 const s = strings.stats
-const INK = '#252120'
-const INK_SECOND = '#5B5552'
-const INK_MUTED = '#8A837F'
-const TRACK = '#F0EDEB'
+const INK = 'var(--ink)'
+const INK_SECOND = 'var(--muted)'
+const INK_MUTED = 'var(--faint)'
+const TRACK = 'var(--border-soft)'
 
 // Карточка-число. hint — Tooltip на всю карточку
 export function Kpi({ title, value, sub, hint }) {
   const body = (
-    <div style={{ padding: '10px 14px', border: '1px solid #E6E1DE', background: '#fff', borderRadius: 4, height: '100%' }}>
+    <div style={{ padding: '10px 14px', border: '1px solid var(--border)', background: 'var(--surface)', borderRadius: 'var(--radius-card)', height: '100%' }}>
       <div style={{ fontSize: 13, color: INK_SECOND, marginBottom: 2 }}>{title}</div>
-      <div style={{ fontSize: 28, fontWeight: 600, lineHeight: 1.15, color: INK }}>{value}</div>
+      <div style={{ fontSize: 28, fontWeight: 500, lineHeight: 1.15, color: INK }}>{value}</div>
       {sub && <div style={{ fontSize: 12, color: INK_MUTED, marginTop: 2 }}>{sub}</div>}
     </div>
   )
@@ -27,7 +27,7 @@ export function Donut({ items, center, size = 120 }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
       <svg width={size} height={size} style={{ flexShrink: 0, transform: 'rotate(-90deg)' }}>
-        <circle cx={size / 2} cy={size / 2} r={arcs[0]?.r ?? 0} fill="none" stroke={TRACK} strokeWidth={18} />
+        <circle cx={size / 2} cy={size / 2} r={arcs[0]?.r ?? 0} fill="none" style={{ stroke: TRACK }} strokeWidth={18} />
         {arcs.map((a) => (
           <Tooltip key={a.label} title={`${a.label}: ${a.value} ${s.unit} · ${pct(a.value, sum)}%`}>
             <circle
@@ -47,7 +47,7 @@ export function Donut({ items, center, size = 120 }) {
         {center && <div style={{ fontSize: 12, color: INK_MUTED, marginBottom: 2 }}>{center}</div>}
         {arcs.map((a) => (
           <div key={a.label} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, minWidth: 0 }}>
-            <span style={{ width: 10, height: 10, borderRadius: 2, background: a.color, flexShrink: 0 }} />
+            <span style={{ width: 10, height: 10, borderRadius: 3, background: a.color, flexShrink: 0 }} />
             <span style={{ color: INK_SECOND, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }} title={a.label}>
               {a.label}
             </span>
@@ -70,7 +70,7 @@ export function BarList({ rows }) {
             {r.label}
           </div>
           <div style={{ flex: 1, minWidth: 0, height: 16, background: TRACK, borderRadius: 4 }}>
-            <div style={{ height: '100%', background: r.color, borderRadius: '0 4px 4px 0', width: `${Math.max((r.value / max) * 100, r.value > 0 ? 1.5 : 0)}%` }} />
+            <div style={{ height: '100%', background: r.color, borderRadius: 4, width: `${Math.max((r.value / max) * 100, r.value > 0 ? 1.5 : 0)}%` }} />
           </div>
           <div style={{ width: 80, flexShrink: 0, fontSize: 13, fontVariantNumeric: 'tabular-nums', textAlign: 'right', color: INK }}>
             {r.value} · {pct(r.value, r.total)}%

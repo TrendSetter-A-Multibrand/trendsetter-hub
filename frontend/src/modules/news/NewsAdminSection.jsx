@@ -22,7 +22,7 @@ function ItemRow({ item, onEdit, onResponses, onPatch, onRemove }) {
       <div className="news-admin-head">
         <Tag>{s.kinds[item.kind]}</Tag>
         <Tag color={state === 'published' ? 'green' : undefined}>{s.status[state]}</Tag>
-        {item.pinned && <span className="news-pin mono">{strings.home.pinned}</span>}
+        {item.pinned && <span className="news-pin">{strings.home.pinned}</span>}
         <span className="news-admin-title">{item.title}</span>
       </div>
       <div className="news-when mono">

@@ -83,10 +83,10 @@ export default function HrPage({ access }) {
             key,
             label: (
               <span
-                style={groupStart && i > 0 ? { borderLeft: '1px solid #DDD7D4', paddingLeft: 16, marginLeft: 0 } : undefined}
+                style={groupStart && i > 0 ? { borderLeft: '1px solid var(--border-input)', paddingLeft: 16, marginLeft: 0 } : undefined}
               >
                 {groupStart && (
-                  <span className="mono" style={{ fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: '#8A8381', marginRight: 8 }}>
+                  <span className="mono" style={{ fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--faint)', marginRight: 8 }}>
                     {strings.groups[group]}
                   </span>
                 )}

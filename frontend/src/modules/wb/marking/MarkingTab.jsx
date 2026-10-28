@@ -37,7 +37,7 @@ function periodDays(from, to) {
 function Kpi({ label, value, hint, accent }) {
   return (
     <div className={`mk-kpi${accent ? ' accent' : ''}`}>
-      <span className="mk-kpi-label mono">{label}</span>
+      <span className="mk-kpi-label">{label}</span>
       <span className="mk-kpi-value">{value}</span>
       {hint && <span className="mk-kpi-hint">{hint}</span>}
     </div>
@@ -50,7 +50,7 @@ function Sources({ sources }) {
     <div className="mk-sources">
       {Object.entries(sources).map(([key, src]) => (
         <Tooltip key={key} title={src.table}>
-          <span className={`mk-source mono${src.lastDate ? '' : ' off'}`}>
+          <span className={`mk-source${src.lastDate ? '' : ' off'}`}>
             <span className="mk-source-dot" />
             {s.sources[key]} · {src.lastDate ? s.sourceUntil(fullDate(src.lastDate)) : s.sourceEmpty}
           </span>
@@ -297,7 +297,7 @@ export default function MarkingTab({ access }) {
               <span className="mk-day-bar">
                 <span style={{ width: `${(dayItems.length / maxDay) * 100}%` }} />
               </span>
-              <span className={`mk-day-issues mono${waiting || (list === 'strange' && dayItems.length) ? ' has' : ''}`}>
+              <span className={`mk-day-issues${waiting || (list === 'strange' && dayItems.length) ? ' has' : ''}`}>
                 {list === 'strange' ? s.checkThem : waiting ? s.waitingCount(waiting) : s.allDone}
               </span>
             </button>

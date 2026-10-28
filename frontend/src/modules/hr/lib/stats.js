@@ -1,10 +1,12 @@
 // Чистые функции сводки HR (кольца, проценты, стаж). Без React.
 import strings from '../strings.js'
+import { DATA_COLORS } from '../../../core/palette.js'
 
 const s = strings.stats
 
-// 5 цветов брендбука + серый для «Другие» (последний)
-export const SLICE_COLORS = ['#1D428A', '#FE5000', '#005844', '#E59BDC', '#7CE0D3', '#B3ACA9']
+// 5 приглушённых цветов палитры данных + серый для «Другие» (последний)
+const { blue, terracotta, green, rose, teal, stone } = DATA_COLORS
+export const SLICE_COLORS = [blue, terracotta, green, rose, teal, stone]
 const OTHERS_COLOR = SLICE_COLORS[SLICE_COLORS.length - 1]
 
 // items: [{ count, ... }], labelOf(item) -> подпись. Сектора > 0; всё сверх max-1 складывается в «Другие» ({ rest: сколько схлопнули }).

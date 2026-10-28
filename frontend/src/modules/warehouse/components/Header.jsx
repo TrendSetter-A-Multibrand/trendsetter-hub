@@ -32,62 +32,74 @@ export default function Header() {
 
   return (
     <header className="wh-header">
-      <h1>{u.title}</h1>
-      <label>
-        {u.worker}
-        <input
-          ref={(el) => (S.workerEl = el)}
-          className="wh-worker"
-          maxLength={40}
-          autoComplete="off"
-          placeholder={u.workerPlaceholder}
-          defaultValue={cfg.worker}
-          onChange={(e) => setCfg({ worker: e.target.value.trim().replace(/\s+/g, ' ') })}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault()
-              focusScan()
-            }
-          }}
-        />
-      </label>
-      <label>
-        <input type="checkbox" checked={cfg.autoprint} onChange={(e) => { setCfg({ autoprint: e.target.checked }); focusScan() }} /> {u.autoprint}
-      </label>
-      <label title={u.palLabelTitle}>
-        <input type="checkbox" checked={cfg.palLabel} onChange={(e) => { setCfg({ palLabel: e.target.checked }); focusScan() }} /> {u.palLabel}
-      </label>
-      <button type="button" className={`wh-toggle${cfg.cz ? ' on' : ''}`} title={u.czTitle} onClick={toggleCz}>
-        {u.cz}: {cfg.cz ? u.on : u.off}
-      </button>
-      <button type="button" className={`wh-toggle nocz${cfg.noCz ? ' on' : ''}`} title={u.noCzTitle} onClick={toggleNoCz}>
-        {u.noCz}: {cfg.noCz ? u.on : u.off}
-      </button>
-      <button
-        type="button"
-        className={`wh-toggle dup${dupOn ? ' on' : ''}`}
-        disabled={cfg.cz || cfg.noCz}
-        title={cfg.noCz ? u.dupTitleNoCz : cfg.cz ? u.dupTitleCz : u.dupTitle}
-        onClick={() => {
-          if (cfg.noCz) return
-          setCfg({ dupGuard: !cfg.dupGuard })
-          focusScan()
-        }}
-      >
-        {u.dup}: {cfg.noCz ? u.dupOnForced : cfg.dupGuard ? u.on : u.off}
-      </button>
+      <div className="wh-hgroup">
+        <h1>{u.title}</h1>
+        <label className="wh-field">
+          {u.worker}
+          <input
+            ref={(el) => (S.workerEl = el)}
+            className="wh-worker"
+            maxLength={40}
+            autoComplete="off"
+            placeholder={u.workerPlaceholder}
+            defaultValue={cfg.worker}
+            onChange={(e) => setCfg({ worker: e.target.value.trim().replace(/\s+/g, ' ') })}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                focusScan()
+              }
+            }}
+          />
+        </label>
+      </div>
       <span className="wh-sp" />
-      <span className="wh-who">{shared ? me.email : u.localMode}</span>
-      <span className={`wh-sync ${syncCls}`} title={lastErr || ''}>
-        {syncText}
-      </span>
-      <button type="button" className="wh-primary" onClick={() => startLoad(() => { fileRef.current.value = ''; fileRef.current.click() })}>
-        {u.loadExcel}
-      </button>
-      <input ref={fileRef} type="file" accept=".xlsx,.xls,.xlsm,.csv" hidden onChange={(e) => loadFile(e.target.files[0])} />
-      <button type="button" className={`wh-primary wh-rcpt${st.receipt ? ' set' : ''}`} title={st.receipt || ''} onClick={() => openReceipts()}>
-        {st.receipt ? u.receiptPrefix + st.receipt : u.chooseReceipt}
-      </button>
+      <div className="wh-hgroup">
+        <span className="wh-who">{shared ? me.email : u.localMode}</span>
+        <span className={`wh-sync ${syncCls}`} title={lastErr || ''}>
+          {syncText}
+        </span>
+      </div>
+      <div className="wh-hgroup">
+        <button type="button" onClick={() => startLoad(() => { fileRef.current.value = ''; fileRef.current.click() })}>
+          {u.loadExcel}
+        </button>
+        <input ref={fileRef} type="file" accept=".xlsx,.xls,.xlsm,.csv" hidden onChange={(e) => loadFile(e.target.files[0])} />
+        <button type="button" className={`wh-primary wh-rcpt${st.receipt ? ' set' : ''}`} title={st.receipt || ''} onClick={() => openReceipts()}>
+          {st.receipt ? u.receiptPrefix + st.receipt : u.chooseReceipt}
+        </button>
+      </div>
+      <div className="wh-hrow">
+        <div className="wh-hgroup">
+          <label className="wh-check">
+            <input type="checkbox" checked={cfg.autoprint} onChange={(e) => { setCfg({ autoprint: e.target.checked }); focusScan() }} /> {u.autoprint}
+          </label>
+          <label className="wh-check" title={u.palLabelTitle}>
+            <input type="checkbox" checked={cfg.palLabel} onChange={(e) => { setCfg({ palLabel: e.target.checked }); focusScan() }} /> {u.palLabel}
+          </label>
+        </div>
+        <div className="wh-hgroup">
+          <button type="button" className={`wh-toggle${cfg.cz ? ' on' : ''}`} title={u.czTitle} onClick={toggleCz}>
+            {u.cz}: {cfg.cz ? u.on : u.off}
+          </button>
+          <button type="button" className={`wh-toggle nocz${cfg.noCz ? ' on' : ''}`} title={u.noCzTitle} onClick={toggleNoCz}>
+            {u.noCz}: {cfg.noCz ? u.on : u.off}
+          </button>
+          <button
+            type="button"
+            className={`wh-toggle dup${dupOn ? ' on' : ''}`}
+            disabled={cfg.cz || cfg.noCz}
+            title={cfg.noCz ? u.dupTitleNoCz : cfg.cz ? u.dupTitleCz : u.dupTitle}
+            onClick={() => {
+              if (cfg.noCz) return
+              setCfg({ dupGuard: !cfg.dupGuard })
+              focusScan()
+            }}
+          >
+            {u.dup}: {cfg.noCz ? u.dupOnForced : cfg.dupGuard ? u.on : u.off}
+          </button>
+        </div>
+      </div>
     </header>
   )
 }

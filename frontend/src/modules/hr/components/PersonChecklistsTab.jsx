@@ -9,7 +9,7 @@ import { DateInput } from './FieldGrid.jsx'
 
 const s = strings.checklists
 const BASE = '/modules/hr'
-const RED = '#A22325'
+const RED = 'var(--red)'
 
 function StartModal({ personId, templates, onClose, onDone }) {
   const { message } = App.useApp()
@@ -138,7 +138,7 @@ function ChecklistCard({ checklist, users, today, onChanged }) {
       title: s.item,
       render: (_, item) => (
         <div>
-          <span style={item.done ? { textDecoration: 'line-through', color: '#8A8381' } : undefined}>{item.title}</span>
+          <span style={item.done ? { textDecoration: 'line-through', color: 'var(--faint)' } : undefined}>{item.title}</span>
           {item.note && <div><Typography.Text type="secondary" style={{ fontSize: 12 }}>{item.note}</Typography.Text></div>}
           {item.done && item.doneAt && (
             <div>
@@ -178,7 +178,7 @@ function ChecklistCard({ checklist, users, today, onChanged }) {
   ]
 
   return (
-    <section style={{ border: '1px solid #e5e5e5', borderRadius: 8, padding: 12, marginBottom: 16, opacity: active ? 1 : 0.85 }}>
+    <section style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-card)', padding: 12, marginBottom: 16, opacity: active ? 1 : 0.85 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
         <Space wrap size={6}>
           <Typography.Text strong>{checklist.title}</Typography.Text>

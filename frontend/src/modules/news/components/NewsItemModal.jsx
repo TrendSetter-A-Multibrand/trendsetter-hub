@@ -29,7 +29,7 @@ function Who({ item }) {
 
   return (
     <div className="news-who">
-      <div className="news-who-title mono">{r.whoTitle}</div>
+      <div className="news-who-title">{r.whoTitle}</div>
       {failed && <div className="news-note">{r.namesLoadError}</div>}
       {names &&
         GROUPS.map((group) => (
@@ -76,7 +76,7 @@ export default function NewsItemModal({ item, canManage, onChange, onClose }) {
         <div className="news-who">
           <div className="news-counts">{r.counts(item.rsvp.counts)}</div>
           {item.rsvpDeadline && <div className="news-note">{r.deadline(formatDateTime(item.rsvpDeadline))}</div>}
-          {item.rsvp.open ? <RsvpControl item={item} onChange={onChange} /> : <div className="news-closed mono">{r.closed}</div>}
+          {item.rsvp.open ? <RsvpControl item={item} onChange={onChange} /> : <div className="news-closed">{r.closed}</div>}
           {item.rsvp.canSeeNames && <Who item={item} />}
         </div>
       )}

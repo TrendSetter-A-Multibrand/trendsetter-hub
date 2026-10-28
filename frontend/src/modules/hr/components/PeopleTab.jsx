@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Alert, App, Avatar, Button, Collapse, Dropdown, Input, Modal,Segmented, Select, Space, Spin, Switch, Table, Tag, Typography } from 'antd'
 import { api } from '../../../core/api/index.js'
 import coreStrings from '../../../core/strings.js'
+import { softDirections } from '../../../core/palette.js'
 import strings from '../strings.js'
 import { useLoad } from '../lib/useLoad.js'
 import { managerOptions, personName } from '../lib/options.js'
@@ -321,12 +322,12 @@ function PeopleTable({ people, directions, reload, stats, statsError }) {
         {rows.slice(0, shown).map((p) => (
           <div
             key={p.id}
-            style={{ border: '1px solid #e5e5e5', borderRadius: 8, padding: 12, display: 'flex', flexDirection: 'column', gap: 8, opacity: p.isArchived ? 0.75 : 1 }}
+            style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-card)', padding: 12, display: 'flex', flexDirection: 'column', gap: 8, opacity: p.isArchived ? 0.75 : 1 }}
           >
             <Space align="start">
               {avatar(p, 48)}
               <div>
-                <div style={{ fontWeight: 600 }}>{p.name}</div>
+                <div style={{ fontWeight: 500 }}>{p.name}</div>
                 <Typography.Text type="secondary">{p.title}</Typography.Text>
               </div>
             </Space>
@@ -489,7 +490,8 @@ function PeopleTable({ people, directions, reload, stats, statsError }) {
 
 export default function PeopleTab() {
   const { data: people, error, reload } = useLoad(`${BASE}/people`)
-  const { data: directions, error: dirError } = useLoad(`${BASE}/directions`)
+  const { data: rawDirections, error: dirError } = useLoad(`${BASE}/directions`)
+  const directions = useMemo(() => softDirections(rawDirections), [rawDirections])
   const { data: stats, error: statsError, reload: reloadStats } = useLoad('/modules/hr/stats')
   if (error || dirError) return <Alert type="error" showIcon title={strings.loadFailed} description={error ?? dirError} />
   if (!people || !directions) return <Spin />

@@ -17,7 +17,7 @@ export default function HomeBirthdays() {
 
   return (
     <section className="home-card">
-      <div className="home-card-head mono">{s.title}</div>
+      <div className="home-card-head">{s.title}</div>
       {entries === null ? (
         <Spin size="small" />
       ) : list.length === 0 ? (

@@ -109,7 +109,7 @@ function Summary() {
       </div>
       <div className="wh-meta">{plan.version > 0 ? u.sharedLine(plan.receipt, plan.by, plan.when) : plan.version === -1 ? u.localLine : ''}</div>
       {S.remoteInfo && (
-        <div className="wh-warn" style={{ fontWeight: 700 }}>
+        <div className="wh-warn" style={{ fontWeight: 500 }}>
           {u.remoteNew(S.remoteInfo)}{' '}
           <button type="button" onClick={() => pullPlan(S.st.receipt)}>{u.pull}</button>
         </div>

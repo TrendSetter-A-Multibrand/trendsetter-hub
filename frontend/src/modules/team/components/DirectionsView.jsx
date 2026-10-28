@@ -112,7 +112,7 @@ export default function DirectionsView({ idx, selectedId, matches, path, collaps
                       <Card id={row.id} cs={cardState(row.id, state)} onSelect={onSelect} className="tm-card">
                         <Avatar person={person} size={28} font={10.5} />
                         <div className="tm-card-text">
-                          <span className="tm-card-name" style={{ fontWeight: row.depth === 1 ? 600 : 500 }}>
+                          <span className="tm-card-name" style={{ fontWeight: 500 }}>
                             {person.name}
                           </span>
                           <span className="tm-card-title">{person.title}</span>

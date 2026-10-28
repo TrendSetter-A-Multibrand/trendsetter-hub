@@ -9,7 +9,7 @@ const s = strings.stats
 const OPEN_KEY = 'hr.people.stats'
 const GRID = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }
 const GRID_WIDE = { ...GRID, gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }
-const PANEL = { border: '1px solid #E6E1DE', background: '#fff', borderRadius: 4, padding: '12px 14px' }
+const PANEL = { border: '1px solid var(--border)', background: 'var(--surface)', borderRadius: 'var(--radius-card)', padding: '12px 14px' }
 
 const loadOpen = () => {
   try {
@@ -37,8 +37,8 @@ function DirTag({ d }) {
 function Panel({ title, source, children }) {
   return (
     <div style={PANEL}>
-      <div style={{ fontWeight: 600, marginBottom: 2 }}>{title}</div>
-      {source && <div style={{ fontSize: 12, color: '#8A837F', marginBottom: 8 }}>{source}</div>}
+      <div style={{ fontWeight: 500, marginBottom: 2 }}>{title}</div>
+      {source && <div style={{ fontSize: 12, color: 'var(--faint)', marginBottom: 8 }}>{source}</div>}
       {children}
     </div>
   )
@@ -52,8 +52,8 @@ function DonutPanel({ title, source, dist, total, labelOf }) {
     <Panel title={title} source={source}>
       {dist.known === 0 ? (
         <>
-          <div style={{ color: '#8A837F', padding: '24px 0' }}>{s.noData}</div>
-          <div style={{ fontSize: 12, color: '#8A837F' }}>{caption}</div>
+          <div style={{ color: 'var(--faint)', padding: '24px 0' }}>{s.noData}</div>
+          <div style={{ fontSize: 12, color: 'var(--faint)' }}>{caption}</div>
         </>
       ) : (
         <Donut items={items} center={caption} />
@@ -67,7 +67,7 @@ function PersonLine({ p, directionOf, extra }) {
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, padding: '3px 0' }}>
       <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
       <DirTag d={directionOf(p.directionId)} />
-      <span style={{ color: '#5B5552', fontVariantNumeric: 'tabular-nums' }}>{extra}</span>
+      <span style={{ color: 'var(--muted)', fontVariantNumeric: 'tabular-nums' }}>{extra}</span>
     </div>
   )
 }
@@ -75,8 +75,8 @@ function PersonLine({ p, directionOf, extra }) {
 function LeaveList({ title, list, directionOf }) {
   return (
     <div style={{ marginBottom: 8 }}>
-      <div style={{ fontSize: 12, color: '#8A837F' }}>{title}</div>
-      {list.length === 0 && <div style={{ fontSize: 13, color: '#8A837F' }}>{s.lists.empty}</div>}
+      <div style={{ fontSize: 12, color: 'var(--faint)' }}>{title}</div>
+      {list.length === 0 && <div style={{ fontSize: 13, color: 'var(--faint)' }}>{s.lists.empty}</div>}
       {list.map((l) => (
         <PersonLine
           key={l.personId}
@@ -108,7 +108,7 @@ function Body({ stats, directions }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <div style={{ fontSize: 13, color: '#5B5552' }}>{s.asOf(formatDate(stats.asOf))}</div>
+      <div style={{ fontSize: 13, color: 'var(--muted)' }}>{s.asOf(formatDate(stats.asOf))}</div>
       <div style={GRID}>
         <Kpi title={c.total} value={total} sub={c.totalSub(stats.withAccount)} hint={c.totalHint} />
         <Kpi title={c.outsideMap} value={stats.hiddenFromMap} sub={c.outsideMapSub} hint={c.outsideMapHint} />
@@ -182,7 +182,7 @@ function Body({ stats, directions }) {
 
 export default function PeopleStats({ stats, error, directions }) {
   const [open, setOpen] = useState(loadOpen)
-  let content = <Skeleton active />
+  let content = <Skeleton />
   if (stats) content = <Body stats={stats} directions={directions} />
   else if (error) content = <Alert type="error" showIcon title={s.loadFailed} description={error} />
   return (
