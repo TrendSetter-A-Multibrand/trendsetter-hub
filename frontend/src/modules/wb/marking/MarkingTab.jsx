@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react'
-import { App, Button, DatePicker, Input, Segmented, Switch, Table, Tooltip } from 'antd'
+import { useEffect, useState } from 'react'
+import { Alert, App, Button, DatePicker, Input, Segmented, Switch, Table, Tooltip } from 'antd'
 import dayjs from 'dayjs'
 import 'dayjs/locale/ru' // календарь с понедельника (локаль ru из ConfigProvider)
 import { canRun } from '../../../core/access.js'
-import { formatDateTime, formatPrice } from '../../../core/format.js'
+import { api } from '../../../core/api/index.js'
+import { formatPrice } from '../../../core/format.js'
 import strings from '../strings.js'
-import { DEFAULT_PERIOD, LAST_DATE, demoPeriod, periodDays } from './demoData.js'
 import './marking.css'
 
 const s = strings.marking
@@ -15,6 +15,17 @@ const MAX_DAYS = 31
 const numberFormatter = new Intl.NumberFormat('ru-RU')
 const dayLabel = (iso) => new Date(`${iso}T00:00:00`).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' })
 const weekday = (iso) => s.weekdays[(new Date(`${iso}T00:00:00`).getDay() + 6) % 7]
+const fullDate = (iso) => new Date(`${iso}T00:00:00`).toLocaleDateString('ru-RU')
+// Последний день с данными — вчера; по умолчанию — прошлая неделя Пн–Сб (как сверяли раньше)
+const LAST_DATE = dayjs().subtract(1, 'day').format('YYYY-MM-DD')
+const lastMonday = dayjs().subtract((dayjs().day() + 6) % 7 + 7, 'day')
+const DEFAULT_PERIOD = { from: lastMonday.format('YYYY-MM-DD'), to: lastMonday.add(5, 'day').format('YYYY-MM-DD') }
+
+function periodDays(from, to) {
+  const days = []
+  for (let d = dayjs(from); d.format('YYYY-MM-DD') <= to; d = d.add(1, 'day')) days.push(d.format('YYYY-MM-DD'))
+  return days
+}
 
 function Kpi({ label, value, hint, accent }) {
   return (
@@ -26,15 +37,15 @@ function Kpi({ label, value, hint, accent }) {
   )
 }
 
-// откуда взяты данные и когда таблица обновлялась последний раз
+// откуда взяты данные и по какую дату они есть
 function Sources({ sources }) {
   return (
     <div className="mk-sources">
       {Object.entries(sources).map(([key, src]) => (
         <Tooltip key={key} title={src.table}>
-          <span className={`mk-source mono${src.updatedAt ? '' : ' off'}`}>
+          <span className={`mk-source mono${src.lastDate ? '' : ' off'}`}>
             <span className="mk-source-dot" />
-            {s.sources[key]} · {src.updatedAt ? formatDateTime(src.updatedAt) : s.sourceEmpty}
+            {s.sources[key]} · {src.lastDate ? s.sourceUntil(fullDate(src.lastDate)) : s.sourceEmpty}
           </span>
         </Tooltip>
       ))}
@@ -45,15 +56,46 @@ function Sources({ sources }) {
 export default function MarkingTab({ access }) {
   const { message } = App.useApp()
   const [period, setPeriod] = useState(DEFAULT_PERIOD)
-  const data = useMemo(() => demoPeriod(period.from, period.to), [period])
-  // номера документов «Честного ЗНАКа», введённые на странице (в демо — только в памяти)
+  const [version, setVersion] = useState(0) // «Пересчитать сверку» — тот же запрос заново
+  const [result, setResult] = useState({ key: null, data: null, error: null })
+  // номера документов «Честного ЗНАКа», которые сейчас редактируются (сохраняются по Enter или уходу с поля)
   const [documents, setDocuments] = useState({})
   const [list, setList] = useState('withdraw')
   const [day, setDay] = useState('all')
   const [onlyPending, setOnlyPending] = useState(false)
   const [query, setQuery] = useState('')
 
-  const items = data.items.map((it) => ({ ...it, document: documents[it.key] ?? it.document }))
+  const requestKey = `${period.from}|${period.to}|${version}`
+  const loading = result.key !== requestKey
+  const { data, error } = result
+  useEffect(() => {
+    let alive = true
+    api
+      .get(`/modules/wb/marking?from=${period.from}&to=${period.to}`)
+      .then((d) => alive && setResult({ key: requestKey, data: d, error: null }))
+      .catch((e) => alive && setResult((prev) => ({ key: requestKey, data: prev.data, error: e.message })))
+    return () => {
+      alive = false
+    }
+  }, [requestKey, period])
+
+  const saveDocument = async (it) => {
+    const document = (documents[it.key] ?? it.document).trim()
+    if (document === it.document) return
+    try {
+      await api.post('/modules/wb/marking/document', { key: it.key, document })
+      setResult((prev) => ({ ...prev, data: { ...prev.data, items: prev.data.items.map((x) => (x.key === it.key ? { ...x, document } : x)) } }))
+      setDocuments((prev) => {
+        const next = { ...prev }
+        delete next[it.key]
+        return next
+      })
+    } catch (e) {
+      message.error(e.message)
+    }
+  }
+
+  const items = data?.items ?? []
   const pending = (it) => it.list !== 'strange' && !it.document
   const byList = Object.fromEntries(LISTS.map((l) => [l, items.filter((it) => it.list === l)]))
   const days = periodDays(period.from, period.to)
@@ -83,8 +125,10 @@ export default function MarkingTab({ access }) {
         size="small"
         className="mono"
         placeholder={s.documentPlaceholder}
-        value={it.document}
+        value={documents[it.key] ?? it.document}
         onChange={(e) => setDocuments((prev) => ({ ...prev, [it.key]: e.target.value }))}
+        onBlur={() => saveDocument(it)}
+        onPressEnter={(e) => e.target.blur()}
         style={{ width: 130 }}
       />
     ) : (
@@ -146,13 +190,16 @@ export default function MarkingTab({ access }) {
           />
         </div>
         <div className="mk-actions">
-          {canRun(access) && <Button onClick={() => message.info(s.notYet)}>{s.refresh}</Button>}
+          <Button onClick={() => setVersion((v) => v + 1)} loading={loading}>
+            {s.refresh}
+          </Button>
           <Button type="primary" onClick={() => message.info(s.notYet)}>
             ↓ {s.download}
           </Button>
         </div>
       </div>
-      <Sources sources={data.sources} />
+      {error && <Alert type="error" showIcon message={error} />}
+      {data && <Sources sources={data.sources} />}
 
       <div className="mk-kpis">
         <Kpi
@@ -228,11 +275,12 @@ export default function MarkingTab({ access }) {
         size="small"
         columns={columns}
         dataSource={rows}
+        rowKey="key"
+        loading={loading}
         pagination={{ pageSize: 20, showSizeChanger: false, hideOnSinglePage: true }}
         rowClassName={(it) => (it.list === 'strange' ? 'mk-row-issue' : pending(it) ? 'mk-row-wait' : '')}
         scroll={{ x: 960 }}
       />
-      <div className="mk-demo-note mono">{s.demoNote}</div>
     </div>
   )
 }

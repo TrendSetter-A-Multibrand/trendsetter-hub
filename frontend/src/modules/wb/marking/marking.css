@@ -46,4 +46,3 @@
 .mk-status.st-wait .mk-status-dot { background: #D9A400; }
 .mk-row-issue > td { background: var(--red-tint) !important; }
 .mk-row-wait > td { background: #FFFBEF !important; }
-.mk-demo-note { font-size: 11px; letter-spacing: .06em; color: var(--faint); }

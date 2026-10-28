@@ -12,6 +12,7 @@ from app.modules.hr.router import router as hr_router
 from app.modules.news.router import router as news_router
 from app.modules.team.router import router as team_router
 from app.modules.warehouse.router import router as warehouse_router
+from app.modules.wb.router import router as wb_router
 
 
 @dataclass(frozen=True)
@@ -28,7 +29,7 @@ class ModuleManifest:
 MODULES: list[ModuleManifest] = [
     ModuleManifest("purchasing", "Закупки", "roadmap"),
     ModuleManifest("warehouse", "Склад", "mvp", warehouse_router),
-    ModuleManifest("wb", "Wildberries", "roadmap"),
+    ModuleManifest("wb", "Wildberries", "mvp", wb_router),
     ModuleManifest("analytics", "Аналитика", "roadmap"),
     ModuleManifest("pricing", "Цены", "roadmap"),
     ModuleManifest("hr", "HR", "roadmap", hr_router, badge=hr_service.badge, daily_job=hr_reminders.run_daily),

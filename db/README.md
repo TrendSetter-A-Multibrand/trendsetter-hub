@@ -124,6 +124,22 @@ docker exec -u root trendsetter-hub-api rm -rf /tmp/team-import                 
 
 **Откат** (`alembic downgrade 0008`): удаляются только таблицы `news_rsvp`, `news_items`, `news_banners`. Строки `module_id='news'` в `user_module_permissions` и `access_group_permissions` не удаляются (безвредны: интерфейс перечисляет только модули из реестра; при повторном upgrade редакторы сохраняются).
 
+## WB, раздел «Маркировка» (ревизия 0010)
+`modules/wb/001_wb_marking.sql`: таблица `wb_marking_documents` — номер документа «Честного ЗНАКа», внесённый в хабе по строке сверки (`item_key` = `<withdraw|return>:<srid>:<код маркировки>`). Сами отчёты WB (`api_wb_FinanceReport`, `api_wb_Orders_FBS`, `api_wb_ExciseReport`) остаются в схеме `public`, хаб их только читает отдельным подключением `HUB_WB_DATABASE_URL`.
+
+**Выкат 0010** (как у `0009`):
+1. Под doadmin в `defaultdb` выполнить `db/modules/wb/001_wb_marking.sql`, затем `deploy/stamp_alembic_0010.sql` (`0009` → `0010`).
+2. Пользователь только для чтения отчётов (не `doadmin` и не общий `claude_ro`), например:
+   `CREATE ROLE hub_wb_ro LOGIN PASSWORD '<пароль>'; GRANT USAGE ON SCHEMA public TO hub_wb_ro;`
+   `GRANT SELECT ON public."api_wb_FinanceReport", public."api_wb_Orders_FBS", public."api_wb_ExciseReport" TO hub_wb_ro;`
+   (последняя таблица — после первого запуска загрузчика api_wb_ExciseReport).
+3. Индекс по дате продажи — без него запрос сверки упирается в таймаут:
+   `CREATE INDEX CONCURRENTLY IF NOT EXISTS "api_wb_FinanceReport_sale_dt_idx" ON public."api_wb_FinanceReport" (sale_dt);`
+4. В окружении сервера задать `HUB_WB_DATABASE_URL` (см. `backend/.env.example`). Без него «Маркировка» отвечает 503.
+5. Только после этого — merge в `main`.
+
+**Откат** (`alembic downgrade 0009`): удаляется только `wb_marking_documents`.
+
 ## Модуль «Склад»
 Листы Google Таблицы «Склад-приёмка» стали таблицами: Приемки → `warehouse_receipts`, Раскладки → `warehouse_receipt_plans`, Счётчики → `warehouse_box_counters` и `warehouse_pallet_pointers`, Сканы → `warehouse_scans`, Короба → `warehouse_boxes`, Хранение → `warehouse_storage_boxes`, Хранение — архив → `warehouse_storage_archive`, Секции → `warehouse_extra_sections`, Коды ЧЗ → `warehouse_marks`, Сводка → представление `warehouse_receipt_summary`. Условия, которые раньше защищал `LockService`, держит база: уникальность кода ЧЗ, одно место на короб, уникальное имя приёмки, номера коробов через функцию `warehouse_next_box_number()`, повтор отправки скана отсекается по id.
 
