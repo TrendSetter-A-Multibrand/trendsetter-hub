@@ -5,6 +5,7 @@ import { MODULES } from '../../modules/registry.js'
 import strings from '../strings.js'
 import DemoUserSwitcher from './DemoUserSwitcher.jsx'
 import NotificationsBell from './NotificationsBell.jsx'
+import logo from './logo.png'
 
 const s = strings.layout
 
@@ -34,7 +35,10 @@ export default function AppLayout() {
     <div className="shell">
       <aside className="sidebar">
         <div className="brand">
-          <Link to="/">{strings.brand}</Link>
+          {/* Логотип — только из файла (дизайн-система: не перерисовывать и не набирать текстом) */}
+          <Link to="/" className="brand-logo">
+            <img src={logo} alt={strings.brand} width="180" height="13" />
+          </Link>
           <div className="brand-sub mono">{strings.brandSub}</div>
         </div>
         <nav aria-label={strings.mainNav}>

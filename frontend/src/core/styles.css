@@ -47,8 +47,9 @@ a:hover { color: #7E1A1C; }
   background: #fff; color: var(--ink); border-right: 1px solid var(--border); display: flex; flex-direction: column;
   position: sticky; top: 0; height: 100vh; padding: 28px 16px 20px; overflow-y: auto;
 }
-.brand { padding: 0 10px 32px; display: flex; flex-direction: column; gap: 6px; }
-.brand a { color: var(--red); font-size: 24px; font-weight: 500; letter-spacing: -0.02em; line-height: 1; }
+.brand { padding: 0 10px 32px; display: flex; flex-direction: column; gap: 10px; }
+.brand-logo { display: block; width: 180px; }
+.brand-logo img { display: block; width: 100%; height: auto; }
 .brand-sub { font-size: 10px; letter-spacing: .12em; color: var(--muted); }
 .nav-label { font-size: 10px; letter-spacing: .12em; color: var(--muted); padding: 28px 10px 10px; }
 .nav-list { display: flex; flex-direction: column; gap: 2px; }
