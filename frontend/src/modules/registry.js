@@ -28,7 +28,8 @@ export const MODULES = [
     sections: Object.entries(wbStrings.sections).map(([key, v]) => ({ key, label: v.label })),
   },
   { id: 'analytics', status: 'roadmap', strings: analyticsStrings, Component: null },
-  { id: 'pricing', status: 'roadmap', strings: pricingStrings, Component: null },
+  // Ценообразование — раздел модуля WB (решение 2026-10-28); модуль скрыт из меню, права и отдел остаются
+  { id: 'pricing', status: 'roadmap', hidden: true, strings: pricingStrings, Component: null },
   { id: 'hr', status: 'mvp', wide: true, strings: hrStrings, Component: lazy(() => import('./hr/HrPage.jsx')) },
   // forAll: виден всем активным сотрудникам (просмотр), без привязки к отделу; анкета — в настройках профиля (позже)
   { id: 'team', status: 'mvp', forAll: true, wide: true, strings: teamStrings, Component: lazy(() => import('./team/TeamPage.jsx')) },

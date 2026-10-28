@@ -19,12 +19,15 @@ from app.core.models import User
 from app.modules.wb.reports import reports_connection
 
 MODULE_ID = "wb"
-MAX_DAYS = 31  # как на странице: длиннее — тяжёлый запрос к отчёту о реализации
+MIN_DATE = date(2026, 8, 1)  # раньше данных FBS и маркировки в хабе не сверяем
+FRESHNESS_DAYS = 31  # за сколько дней до конца периода искать последнюю дату отчёта о реализации
+IMPORT_MAX_ROWS = 20000
 LISTS = ("withdraw", "return")
 GS = "\x1d"  # разделитель групп в полном коде маркировки
 SALE, RETURN = "Продажа", "Возврат"
 
-PERIOD_INVALID = "Неверный период: начало позже конца или длиннее 31 дня"
+PERIOD_INVALID = "Неверный период: начало позже конца или раньше 01.08.2026"
+IMPORT_TOO_LARGE = "В файле больше 20 000 строк — разбейте его на части"
 KEY_INVALID = "Строка сверки не найдена"
 
 FINANCE_SQL = text("""
@@ -40,6 +43,7 @@ FINANCE_SQL = text("""
 EXCISE_SQL = text("""
     SELECT excise_short, srid, operation_type_id FROM public."api_wb_ExciseReport" WHERE excise_short = ANY(:codes)
 """)
+CODE_PREFIX_LEN = 18  # 01 + GTIN(14) + 21
 
 
 def short_code(kiz: str) -> str:
@@ -54,11 +58,13 @@ def _price(value) -> float:
         return 0.0
 
 
-def reconcile(rows: list[dict], excise: set[tuple[str, str, int]] | None, excise_last: date | None) -> list[dict]:
+def reconcile(
+    rows: list[dict], excise: set[tuple[str, str, int]] | None, excise_last: date | None, excise_first: date | None = None
+) -> list[dict]:
     """Строки отчёта о реализации -> строки сверки. Только FBS (есть сборочное задание): FBO WB выводит из оборота сам.
 
-    excise — {(код, srid, operation_type_id)} или None, если отчёта о маркировке нет; строки позже excise_last с ним не сверяются
-    (отчёт ещё не догнал продажи).
+    excise — {(код, srid, operation_type_id)} или None, если отчёта о маркировке нет; сверяются только строки в пределах
+    [excise_first, excise_last]: позже — отчёт ещё не догнал продажи, раньше — его ещё не загружали.
     """
     items = []
     for r in rows:
@@ -93,6 +99,7 @@ def reconcile(rows: list[dict], excise: set[tuple[str, str, int]] | None, excise
         operation = 1 if it["list"] == "withdraw" else 2
         if (
             it["reason"] is None and excise is not None and excise_last is not None and it["date"] <= excise_last.isoformat()
+            and (excise_first is None or it["date"] >= excise_first.isoformat())
             and (it["km"], it["srid"], operation) not in excise
         ):
             it["reason"] = "notInExcise"
@@ -107,29 +114,34 @@ def _excise_available(conn) -> bool:
 
 
 def marking(session: Session, date_from: date, date_to: date) -> dict:
-    if date_from > date_to or (date_to - date_from).days >= MAX_DAYS:
+    if date_from > date_to or date_from < MIN_DATE:
         raise HTTPException(422, PERIOD_INVALID)
     with reports_connection() as conn:
         rows = [dict(r._mapping) for r in conn.execute(FINANCE_SQL, {"date_from": date_from, "date_to": date_to})]
         # свежесть источников: последняя дата данных (запросы по индексированным колонкам или небольшой таблице FBS)
         finance_last = conn.execute(
             text('SELECT max(sale_dt) FROM public."api_wb_FinanceReport" WHERE sale_dt >= :since'),
-            {"since": date_to - timedelta(days=MAX_DAYS)},
+            {"since": date_to - timedelta(days=FRESHNESS_DAYS)},
         ).scalar()
         fbs_last = conn.execute(text('SELECT max(left("createdAt", 10)) FROM public."api_wb_Orders_FBS"')).scalar()
-        excise, excise_last = None, None
+        excise, excise_first, excise_last = None, None, None
         if _excise_available(conn):
-            excise_last = conn.execute(text('SELECT max(fiscal_dt) FROM public."api_wb_ExciseReport"')).scalar()
+            excise_first, excise_last = conn.execute(text('SELECT min(fiscal_dt), max(fiscal_dt) FROM public."api_wb_ExciseReport"')).one()
             codes = sorted({short_code(r["kiz"]) for r in rows})
             excise = {(c, s, int(op)) for c, s, op in conn.execute(EXCISE_SQL, {"codes": codes})} if codes else set()
 
-    items = reconcile(rows, excise, excise_last)
+    items = reconcile(rows, excise, excise_last, excise_first)
     keys = [it["key"] for it in items if it["list"] != "strange"]
+    codes = sorted({it["km"] for it in items if it["list"] != "strange"})
     documents = dict(session.execute(
         text("SELECT item_key, document FROM trendsetter_hub.wb_marking_documents WHERE item_key = ANY(:keys)"), {"keys": keys}
     ).all()) if keys else {}
+    # загруженные из Excel: по списку и коду; номер, внесённый по строке в хабе, важнее
+    imported = {(lst, km): doc for lst, km, doc in session.execute(
+        text("SELECT list, km, document FROM trendsetter_hub.wb_marking_imported WHERE km = ANY(:codes)"), {"codes": codes}
+    ).all()} if codes else {}
     for it in items:
-        it["document"] = documents.get(it["key"], "") if it["list"] != "strange" else ""
+        it["document"] = documents.get(it["key"]) or imported.get((it["list"], it["km"]), "") if it["list"] != "strange" else ""
 
     def iso(d):
         return d.isoformat() if isinstance(d, date) else d
@@ -162,3 +174,26 @@ def set_document(session: Session, user: User, key: str, document: str) -> dict:
     log_action(session, user.id, "wb.marking_document", MODULE_ID, key=key, document=document)
     session.commit()
     return {"key": key, "document": document}
+
+
+def import_codes(session: Session, user: User, list_: str, rows: list[tuple[str, str]]) -> dict:
+    """Коды, выведенные (возвращённые) вне хаба, из Excel: [(код, номер документа)]. Повтор кода — номер обновляется."""
+    if len(rows) > IMPORT_MAX_ROWS:
+        raise HTTPException(422, IMPORT_TOO_LARGE)
+    clean = {}
+    skipped = 0
+    for km, document in rows:
+        km, document = short_code(km), document.strip()
+        if len(km) <= CODE_PREFIX_LEN or not km.startswith("01") or not document or len(document) > 100 or len(km) > 200:
+            skipped += 1
+            continue
+        clean[km] = document  # в файле код повторяется — берём последний номер
+    if clean:
+        session.execute(text("""
+            INSERT INTO trendsetter_hub.wb_marking_imported (list, km, document, imported_by)
+            SELECT :list, km, document, :user_id FROM unnest(CAST(:codes AS text[]), CAST(:documents AS text[])) AS t(km, document)
+            ON CONFLICT (list, km) DO UPDATE SET document = EXCLUDED.document, imported_by = EXCLUDED.imported_by, imported_at = now()
+        """), {"list": list_, "codes": list(clean), "documents": list(clean.values()), "user_id": user.id})
+    log_action(session, user.id, "wb.marking_import", MODULE_ID, list=list_, saved=len(clean), skipped=skipped)
+    session.commit()
+    return {"saved": len(clean), "skipped": skipped}

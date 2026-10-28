@@ -48,6 +48,12 @@ def test_sold_again_after_return_is_fine():
     assert all(it["reason"] is None for it in service.reconcile(rows, None, None))
 
 
+def test_not_in_excise_only_inside_report_dates():
+    rows = [row("Продажа", KM1, "a", 18), row("Продажа", KM2, "b", 20)]
+    items = service.reconcile(rows, set(), date(2026, 10, 25), date(2026, 10, 19))
+    assert {it["srid"]: it["reason"] for it in items} == {"a": None, "b": "notInExcise"}
+
+
 def test_not_in_excise_only_up_to_report_date():
     rows = [row("Продажа", KM1, "a", 20), row("Продажа", KM2, "b", 20), row("Продажа", "0104610501234521zzzzzzzzzzzzz", "c", 25)]
     items = service.reconcile(rows, {(KM1, "a", 1)}, date(2026, 10, 22))
@@ -119,7 +125,7 @@ def test_marking_rights_and_validation(client, db, wb_reports):
     assert client.get(f"{BASE}/marking", params=period, headers=login(client, "other@example.com")).status_code == 403
     h = login(client, "wb@example.com")
     assert client.get(f"{BASE}/marking", params={"from": "2026-10-24", "to": "2026-10-19"}, headers=h).status_code == 422
-    assert client.get(f"{BASE}/marking", params={"from": "2026-09-01", "to": "2026-10-19"}, headers=h).status_code == 422
+    assert client.get(f"{BASE}/marking", params={"from": "2026-07-31", "to": "2026-08-05"}, headers=h).status_code == 422
     assert client.post(f"{BASE}/marking/document", json={"key": "strange:a:x", "document": "1"}, headers=h).status_code == 422
 
 
@@ -128,3 +134,24 @@ def test_marking_without_reports_connection_is_503(client, db, monkeypatch):
     make_user(db, "wb@example.com", "employee", [wb_department(db)])
     r = client.get(f"{BASE}/marking", params={"from": "2026-10-19", "to": "2026-10-24"}, headers=login(client, "wb@example.com"))
     assert r.status_code == 503
+
+
+def test_import_marks_rows_as_done_and_manual_wins(client, db, wb_reports):
+    make_user(db, "wb@example.com", "employee", [wb_department(db)])
+    make_user(db, "viewer@example.com", "viewer")
+    h = login(client, "wb@example.com")
+    rows = [
+        {"km": f"{KM1}\x1d91EE11", "document": " 12/20-10-26 "},
+        {"km": "мусор", "document": "1"},
+        {"km": KM2, "document": ""},
+    ]
+    body = {"list": "withdraw", "rows": rows}
+    assert client.post(f"{BASE}/marking/import", json=body, headers=login(client, "viewer@example.com")).status_code == 403
+    assert client.post(f"{BASE}/marking/import", json=body, headers=h).json() == {"saved": 1, "skipped": 2}
+
+    period = {"from": "2026-10-19", "to": "2026-10-24"}
+    items = client.get(f"{BASE}/marking", params=period, headers=h).json()["items"]
+    assert [(it["list"], it["document"]) for it in items] == [("withdraw", "12/20-10-26"), ("return", "")]
+    # код из файла не ставит номер возврату того же кода; номер по строке важнее загруженного
+    client.post(f"{BASE}/marking/document", json={"key": items[0]["key"], "document": "99/20-10-26"}, headers=h)
+    assert client.get(f"{BASE}/marking", params=period, headers=h).json()["items"][0]["document"] == "99/20-10-26"

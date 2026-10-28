@@ -30,7 +30,8 @@ test('период: дни только из периода и не позже �
   const out = await get('2026-10-24', '2026-10-30')
   assert.ok(out.items.every((it) => it.date >= '2026-10-24' && it.date <= '2026-10-26'))
   await assert.rejects(get('2026-10-24', '2026-10-19'), (e) => e.status === 422)
-  await assert.rejects(get('2026-09-01', '2026-10-19'), (e) => e.status === 422)
+  await assert.rejects(get('2026-07-31', '2026-08-05'), (e) => e.status === 422)
+  assert.ok((await get('2026-08-01', '2026-10-26')).items.length > 0)
 })
 
 test('документ сохраняется и снимается', async () => {
@@ -41,4 +42,14 @@ test('документ сохраняется и снимается', async () =
   await save({ key: item.key, document: '' })
   assert.equal((await find()).document, '')
   await assert.rejects(save({ key: 'strange:x:y', document: '1' }), (e) => e.status === 422)
+})
+
+test('загрузка из Excel: номер по коду, ручной номер важнее', async () => {
+  const item = (await get('2026-10-21', '2026-10-21')).items.find((it) => it.list === 'withdraw')
+  const res = await transport({ method: 'POST', path: '/modules/wb/marking/import', token: 'mock:run', body: { list: 'withdraw', rows: [{ km: item.km, document: '7/21-10-26' }, { km: 'x', document: '1' }] } })
+  assert.deepEqual(res, { saved: 1, skipped: 1 })
+  const find = async () => (await get('2026-10-21', '2026-10-21')).items.find((it) => it.key === item.key)
+  assert.equal((await find()).document, '7/21-10-26')
+  await save({ key: item.key, document: '8/21-10-26' })
+  assert.equal((await find()).document, '8/21-10-26')
 })

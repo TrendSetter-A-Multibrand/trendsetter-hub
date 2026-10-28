@@ -157,6 +157,10 @@ docker exec -u root trendsetter-hub-api rm -rf /tmp/team-import                 
 
 **Откат** (`alembic downgrade 0011`): удаляется только `wb_marking_documents`.
 
+**Ревизия 0013** — `modules/wb/002_wb_marking_imported.sql`: таблица `wb_marking_imported` — коды, выведенные (возвращённые) вне хаба, из Excel: список, короткий код, номер документа. Связь со строками сверки — по списку и коду; номер, внесённый по строке в хабе, важнее. Excel разбирается в браузере, сервер получает готовый список.
+
+**Выкат 0013:** под doadmin выполнить `db/modules/wb/002_wb_marking_imported.sql`, затем `deploy/stamp_alembic_0013.sql` (`0012` → `0013`); только после этого — merge в `main`. **Откат** (`alembic downgrade 0012`): удаляется только `wb_marking_imported`.
+
 ## Модуль «Склад»
 Листы Google Таблицы «Склад-приёмка» стали таблицами: Приемки → `warehouse_receipts`, Раскладки → `warehouse_receipt_plans`, Счётчики → `warehouse_box_counters` и `warehouse_pallet_pointers`, Сканы → `warehouse_scans`, Короба → `warehouse_boxes`, Хранение → `warehouse_storage_boxes`, Хранение — архив → `warehouse_storage_archive`, Секции → `warehouse_extra_sections`, Коды ЧЗ → `warehouse_marks`, Сводка → представление `warehouse_receipt_summary`. Условия, которые раньше защищал `LockService`, держит база: уникальность кода ЧЗ, одно место на короб, уникальное имя приёмки, номера коробов через функцию `warehouse_next_box_number()`, повтор отправки скана отсекается по id.
 

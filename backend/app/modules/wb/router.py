@@ -1,9 +1,9 @@
 """Маршруты модуля «Wildberries». Данные сверки — с правом view/run (viewer видит только интерфейс), запись документа — run."""
 from datetime import date
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, StringConstraints
+from pydantic import BaseModel, Field, StringConstraints
 from sqlalchemy.orm import Session
 
 from app.core import messages as m
@@ -41,3 +41,19 @@ class DocumentBody(BaseModel):
 @router.post("/marking/document")
 def set_document(body: DocumentBody, user: User = Run, session: Session = Db) -> dict:
     return service.set_document(session, user, body.key, body.document)
+
+
+class ImportRow(BaseModel):
+    km: Annotated[str, StringConstraints(max_length=300)]
+    document: Annotated[str, StringConstraints(max_length=200)] = ""
+
+
+class ImportBody(BaseModel):
+    list: Literal["withdraw", "return"]
+    rows: list[ImportRow] = Field(max_length=service.IMPORT_MAX_ROWS)
+
+
+@router.post("/marking/import")
+def import_codes(body: ImportBody, user: User = Run, session: Session = Db) -> dict:
+    """Строки уже разобраны в браузере (xlsx не парсим в HTTP-запросе): код маркировки и номер документа."""
+    return service.import_codes(session, user, body.list, [(r.km, r.document) for r in body.rows])
