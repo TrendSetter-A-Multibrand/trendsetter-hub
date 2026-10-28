@@ -15,6 +15,7 @@ class Settings:
     warehouse_pin: str | None
     timezone: str
     pii_key: str | None
+    wb_database_url: str | None
 
 
 def get_settings() -> Settings:
@@ -30,4 +31,5 @@ def get_settings() -> Settings:
         warehouse_pin=os.environ.get("HUB_WAREHOUSE_PIN") or None,
         timezone=os.environ.get("HUB_TIMEZONE", "Asia/Yerevan"),
         pii_key=os.environ.get("HUB_PII_KEY") or None,  # не обязателен: без него запись ПДн отвечает 503
+        wb_database_url=os.environ.get("HUB_WB_DATABASE_URL") or None,  # только чтение отчётов WB (public); не задан — 503
     )

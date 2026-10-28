@@ -22,6 +22,7 @@ import { createPlanHandlers } from './hr-plans.js'
 import { createHrStatsHandlers } from './hrStats.js'
 import { createHomeHandlers } from './home.js'
 import { createNewsHandlers } from './news.js'
+import { createWbHandlers } from './wb.js'
 
 const err = strings.errors
 
@@ -113,6 +114,8 @@ const news = createNewsHandlers({
   isEditor: (u) => isModuleResponsible(u, groupPermissionsOf(u, 'news')) || canManageUsers(u),
   errors: getModule('news').strings.errors,
 })
+// WB «Маркировка»: демо-данные сверки, права как у бэкенда (view/run — данные, run — запись документа)
+const wb = createWbHandlers({ userFromToken, accessTo })
 
 // Бейджи модулей из разных источников суммируются (hr: анкеты на проверку + заявки на отпуск, ждущие HR)
 function moduleBadges(user) {
@@ -359,4 +362,5 @@ export const handlers = {
   ...hrStats.handlers,
   ...home.handlers,
   ...news.handlers,
+  ...wb.handlers,
 }

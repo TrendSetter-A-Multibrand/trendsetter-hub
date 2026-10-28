@@ -59,6 +59,12 @@ a:hover { color: #7E1A1C; }
 }
 .nav-badge + .nav-idx { margin-left: 8px; }
 .nav-idx { margin-left: auto; font-size: 10px; color: rgba(255,255,255,.4); margin-top: 3px; }
+/* разделы модуля под пунктом меню: видны при наведении на группу и на странице модуля */
+.nav-sections { display: none; flex-direction: column; gap: 1px; padding: 2px 0 6px 26px; }
+.nav-group:hover .nav-sections, .nav-group:focus-within .nav-sections, .nav-group.open .nav-sections { display: flex; }
+.nav-section { padding: 6px 10px; border-radius: 6px; font-size: 13px; color: rgba(255,255,255,.7); transition: background .15s; }
+.nav-section:hover { background: rgba(255,255,255,.08); color: #fff; }
+.nav-section.active { color: #fff; background: rgba(255,255,255,.06); }
 .user-slot { margin-top: auto; }
 .user-box {
   display: flex; align-items: center; gap: 6px; padding: 12px 4px 0 10px;

@@ -48,7 +48,7 @@ export default function AppLayout() {
               const path = `/modules/${m.id}`
               const active = location.pathname === path
               const badge = me.module_badges?.[m.id] ?? 0
-              return (
+              const link = (
                 <Link key={m.id} to={path} className={`nav-item${m.Component && m.allowed ? ' live' : ' dim'}${active ? ' active' : ''}`}>
                   <span className="nav-dot" />
                   <span className="nav-text">
@@ -62,6 +62,25 @@ export default function AppLayout() {
                   )}
                   <span className="nav-idx mono">{m.idx}</span>
                 </Link>
+              )
+              // разделы модуля (sections в реестре) — раскрываются под пунктом при наведении и на странице модуля
+              if (!m.sections || !m.allowed || !m.Component) return link
+              const current = new URLSearchParams(location.search).get('section') ?? m.sections[0].key
+              return (
+                <div key={m.id} className={`nav-group${active ? ' open' : ''}`}>
+                  {link}
+                  <div className="nav-sections">
+                    {m.sections.map((sec) => (
+                      <Link
+                        key={sec.key}
+                        to={`${path}?section=${sec.key}`}
+                        className={`nav-section${active && current === sec.key ? ' active' : ''}`}
+                      >
+                        {sec.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
               )
             })}
           </div>
