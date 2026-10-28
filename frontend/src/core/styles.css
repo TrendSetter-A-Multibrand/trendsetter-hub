@@ -1,17 +1,35 @@
 :root {
-  --red: #A22325;
-  --red-hover: #861C1E;
-  --red-disabled: #C9A3A4;
-  --red-tint: #FBF3F3;
-  --ink: #252120;
-  --page: #F6F4F2;
-  --row-hover: #FAF9F8;
+  color-scheme: light;
+  /* Цвета — смысловые переменные; тёмная тема переопределяет их ниже ([data-theme='dark']) */
+  --page: #F6F4F2;          /* фон страницы (Paper) */
+  --surface: #FFFFFF;       /* карточки, таблицы, меню, окна */
+  --surface-2: #FAF9F8;     /* hover строки, раскрытая секция */
+  --ink: #252120;           /* основной текст, тёмные кнопки */
+  --ink-hover: #3A3534;
+  --on-ink: #FFFFFF;        /* текст на заливке ink */
+  --muted: #5B5552;
+  --faint: #8A827E;
   --border: #E6E1DE;
   --border-soft: #EFECEA;
   --border-input: #D9D3CF;
   --border-dashed: #C9C2BE;
-  --muted: #5B5552;
-  --faint: #8A827E;
+  --row-hover: var(--surface-2);
+  --red: #A22325;
+  --red-hover: #861C1E;
+  --red-disabled: #C9A3A4;
+  --red-tint: #FBF3F3;
+  --red-plane: #A22325;     /* красные плоскости (hero, срочная плашка): фирменный Red в обеих темах */
+  --forest: #005844;
+  --blue: #1D428A;
+  --warn-text: #9A6B00;
+  /* мягкие подложки: новости, статусы, кнопки «Иду / Думаю / Не иду» */
+  --tint-red: #F7E3E3;
+  --tint-green: #E3F3EA;
+  --tint-yellow: #FCF4CF;
+  --tint-blue: #EEF3FA;
+  --tint-pink: #FBF1FA;
+  --tint-sky: #EEF4F8;
+  --tint-sand: #FBF6E2;
   /* Шрифты: Inter — основной, JetBrains Mono — подписи и цифры (решение 2026-10-28: «обычное и минимальное») */
   --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
@@ -23,6 +41,37 @@
   --motion-bracket-ease: ease-in-out;
 }
 
+/* Тёмная тема: тёплый графит вместо Paper. Red светлее, чтобы читаться на тёмном (белый текст на нём — AA) */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --page: #141211;
+  --surface: #1E1B1A;
+  --surface-2: #272322;
+  --ink: #EEEAE7;
+  --ink-hover: #D6D0CC;
+  --on-ink: #141211;
+  --muted: #ADA5A1;
+  --faint: #868079;
+  --border: #36312F;
+  --border-soft: #2C2826;
+  --border-input: #4A4442;
+  --border-dashed: #5B5451;
+  --red: #D04446;
+  --red-hover: #DD5E60;
+  --red-disabled: #6B3536;
+  --red-tint: #2E1C1C;
+  --forest: #4FB58A;
+  --blue: #8FAEE8;
+  --warn-text: #E0B341;
+  --tint-red: #3A2223;
+  --tint-green: #18302A;
+  --tint-yellow: #352F17;
+  --tint-blue: #1C2638;
+  --tint-pink: #33213A;
+  --tint-sky: #1A2530;
+  --tint-sand: #2E2A1C;
+}
+
 /* Всё движение отключается при prefers-reduced-motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; animation-iteration-count: 1 !important; }
@@ -31,20 +80,21 @@
 body {
   margin: 0;
   background: var(--page);
+  transition: background var(--motion-enter) var(--motion-ease), color var(--motion-enter) var(--motion-ease);
   color: var(--ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
 * { box-sizing: border-box; }
 a { color: var(--red); text-decoration: none; }
-a:hover { color: #7E1A1C; }
+a:hover { color: var(--red-hover); }
 
 .mono { font-family: var(--font-mono); text-transform: uppercase; }
 
 /* ---- каркас ---- */
 .shell { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-height: 100vh; }
 .sidebar {
-  background: #fff; color: var(--ink); border-right: 1px solid var(--border); display: flex; flex-direction: column;
+  background: var(--surface); color: var(--ink); border-right: 1px solid var(--border); display: flex; flex-direction: column;
   position: sticky; top: 0; height: 100vh; padding: 28px 16px 20px; overflow-y: auto;
 }
 .brand { padding: 0 10px 32px; display: flex; flex-direction: column; gap: 10px; }
@@ -75,8 +125,8 @@ a:hover > .bracket::before, a:focus-visible > .bracket::before, a.active > .brac
 a:hover .nav-text > .bracket::before, a:focus-visible .nav-text > .bracket::before, a.active .nav-text > .bracket::before { opacity: 1; transform: translateX(-0.6em); }
 a:hover > .bracket::after, a:focus-visible > .bracket::after, a.active > .bracket::after,
 a:hover .nav-text > .bracket::after, a:focus-visible .nav-text > .bracket::after, a.active .nav-text > .bracket::after { opacity: 1; transform: translateX(0.6em); }
-.logout-btn.ant-btn-primary { background: #A22325; border-color: #A22325; color: #fff; }
-.logout-btn.ant-btn-primary:not(:disabled):hover { background: #7E1A1C; border-color: #7E1A1C; color: #fff; }
+.logout-btn.ant-btn-primary { background: var(--red); border-color: var(--red); color: #fff; }
+.logout-btn.ant-btn-primary:not(:disabled):hover { background: var(--red-hover); border-color: var(--red-hover); color: #fff; }
 .nav-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .nav-title { font-size: 15px; font-weight: 500; }
 .nav-dept { font-size: 10px; letter-spacing: .1em; color: var(--muted); }
@@ -115,8 +165,8 @@ a:hover .nav-text > .bracket::after, a:focus-visible .nav-text > .bracket::after
   display: flex; flex-direction: column; gap: 3px; text-align: left; padding: 10px 8px; border: 0; border-bottom: 1px solid var(--border);
   background: transparent; cursor: pointer; font: inherit; color: inherit;
 }
-.notif-item:hover { background: #f7f5f3; }
-.notif-item.unread { border-left: 3px solid var(--red); background: #fdf6f6; }
+.notif-item:hover { background: var(--surface-2); }
+.notif-item.unread { border-left: 3px solid var(--red); background: var(--red-tint); }
 .notif-title { font-weight: 500; font-size: 13px; }
 .notif-body { font-size: 13px; color: var(--ink); }
 .notif-date { font-size: 10px; letter-spacing: .08em; color: var(--muted); }
@@ -125,12 +175,13 @@ a:hover .nav-text > .bracket::after, a:focus-visible .nav-text > .bracket::after
   display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500;
 }
 .user-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.user-box .icon-btn { width: 36px; }
 .user-name { font-size: 14px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .user-role { font-size: 10px; letter-spacing: .1em; color: var(--muted); }
 
 .main { min-width: 0; display: flex; flex-direction: column; }
 .demo-banner {
-  display: flex; align-items: center; gap: 10px; padding: 10px 40px; background: #fff;
+  display: flex; align-items: center; gap: 10px; padding: 10px 40px; background: var(--surface);
   border-bottom: 1px solid var(--border); font-size: 11px; letter-spacing: .08em; color: var(--muted);
 }
 .demo-banner .dot { width: 6px; height: 6px; background: #FE5000; flex: none; }
@@ -180,7 +231,7 @@ a:hover .nav-text > .bracket::after, a:focus-visible .nav-text > .bracket::after
 
 /* ---- хаб ---- */
 .hero {
-  position: relative; background: var(--red); color: #fff; border-radius: 0; min-height: 260px;
+  position: relative; background: var(--red-plane); color: #fff; border-radius: 0; min-height: 260px;
   padding: 28px 32px; display: flex; align-items: center; justify-content: center; text-align: center;
 }
 .hero .corner { position: absolute; font-size: 44px; font-weight: 500; line-height: 1; }
@@ -193,7 +244,7 @@ a:hover .nav-text > .bracket::after, a:focus-visible .nav-text > .bracket::after
 
 .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
 .card {
-  background: #fff; border: 1px solid var(--border); border-radius: 0; padding: 20px; min-height: 220px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 0; padding: 20px; min-height: 220px;
   display: flex; flex-direction: column; gap: 10px; cursor: pointer; color: var(--ink);
   transition: border-color var(--motion-hover) var(--motion-ease);
 }
@@ -215,7 +266,7 @@ a:hover .nav-text > .bracket::after, a:focus-visible .nav-text > .bracket::after
 }
 .card.live .card-foot { color: var(--red); }
 
-.runs { background: #fff; border: 1px solid var(--border); border-radius: 0; }
+.runs { background: var(--surface); border: 1px solid var(--border); border-radius: 0; }
 .run-row {
   display: grid; grid-template-columns: 110px minmax(0, 1fr) 140px 130px; gap: 16px; align-items: center;
   padding: 14px 20px; border-bottom: 1px solid var(--border-soft);
@@ -233,7 +284,7 @@ a:hover .nav-text > .bracket::after, a:focus-visible .nav-text > .bracket::after
 .status-square { width: 5px; height: 5px; flex: none; }
 
 /* ---- таблица модуля ---- */
-.files { background: #fff; border: 1px solid var(--border); border-radius: 0; overflow-x: auto; }
+.files { background: var(--surface); border: 1px solid var(--border); border-radius: 0; overflow-x: auto; }
 .files-inner { min-width: 960px; }
 .files-row {
   display: grid; gap: 12px; align-items: center; padding: 14px 20px; border-bottom: 1px solid var(--border-soft); font-size: 14px;
@@ -253,11 +304,11 @@ a:hover .nav-text > .bracket::after, a:focus-visible .nav-text > .bracket::after
   justify-self: end; font-size: 11px; letter-spacing: .08em; padding: 7px 10px; background: transparent;
   border: 1px solid var(--ink); border-radius: 0; cursor: pointer; color: var(--ink); transition: background .15s, color .15s;
 }
-.btn-download:hover { background: var(--ink); color: #fff; }
+.btn-download:hover { background: var(--ink); color: var(--on-ink); }
 
 /* ---- заглушка модуля ---- */
 .stub {
-  position: relative; background: #fff; border: 1px dashed var(--border-dashed); border-radius: 0; min-height: 420px;
+  position: relative; background: var(--surface); border: 1px dashed var(--border-dashed); border-radius: 0; min-height: 420px;
   display: flex; align-items: center; justify-content: center; text-align: center; padding: 40px;
 }
 .stub .corner { position: absolute; font-size: 40px; font-weight: 500; color: var(--border); line-height: 1; }
@@ -275,9 +326,9 @@ a:hover .nav-text > .bracket::after, a:focus-visible .nav-text > .bracket::after
 .drawer-title { font-size: 24px; font-weight: 500; letter-spacing: -0.02em; }
 .drawer-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .ready { font-size: 10px; letter-spacing: .1em; color: var(--faint); }
-.ready.ok { color: #005844; }
+.ready.ok { color: var(--forest); }
 .field-label { font-size: 10px; letter-spacing: .12em; color: var(--muted); }
-.ant-collapse { border: 1px solid var(--border) !important; background: #fff !important; }
+.ant-collapse { border: 1px solid var(--border) !important; background: var(--surface) !important; }
 .ant-collapse > .ant-collapse-item { border-bottom: 1px solid var(--border) !important; }
 .ant-collapse > .ant-collapse-item:last-child { border-bottom: 0 !important; }
 .ant-collapse-header { font-size: 15px; font-weight: 500; }
@@ -294,11 +345,11 @@ a:hover .nav-text > .bracket::after, a:focus-visible .nav-text > .bracket::after
 .dropzone .picked.has { color: var(--ink); }
 .ant-radio-wrapper-checked, .ant-checkbox-wrapper-checked { color: var(--ink); }
 .demo-banner .switcher { text-transform: none; letter-spacing: normal; }
-.btn-pick.ant-btn { background: var(--ink); color: #fff; border-color: var(--ink); font-size: 11px; letter-spacing: .08em; border-radius: 0; }
-.btn-pick.ant-btn:hover { background: #3a3534 !important; color: #fff !important; border-color: #3a3534 !important; }
+.btn-pick.ant-btn { background: var(--ink); color: var(--on-ink); border-color: var(--ink); font-size: 11px; letter-spacing: .08em; border-radius: 0; }
+.btn-pick.ant-btn:hover { background: var(--ink-hover) !important; color: var(--on-ink) !important; border-color: var(--ink-hover) !important; }
 .card-options { display: flex; gap: 8px; flex-wrap: wrap; width: 100%; }
 .card-options .ant-radio-wrapper, .card-options .ant-checkbox-wrapper {
-  flex: 1; margin: 0; padding: 12px 14px; border: 1px solid var(--border-input); border-radius: 0; background: #fff; font-weight: 500;
+  flex: 1; margin: 0; padding: 12px 14px; border: 1px solid var(--border-input); border-radius: 0; background: var(--surface); font-weight: 500;
 }
 .card-options .ant-radio-wrapper-checked, .card-options .ant-checkbox-wrapper-checked { border-color: var(--red); background: var(--red-tint); }
 
@@ -329,7 +380,7 @@ a:hover .nav-text > .bracket::after, a:focus-visible .nav-text > .bracket::after
 @media (min-width: 1280px) {
   .home-layout.with-feed { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) minmax(280px, 340px); }
 }
-.home-card { background: #fff; border: 1px solid var(--border); border-radius: 0; padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; }
+.home-card { background: var(--surface); border: 1px solid var(--border); border-radius: 0; padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; }
 .home-card-head { font-size: 11px; letter-spacing: .1em; color: var(--muted); }
 
 .clocks { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 20px; }

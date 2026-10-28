@@ -11,8 +11,8 @@ const t = s.tab
 const STATUS_COLORS = { planned: '#4A7FB5', converted: '#6FA287' }
 const NAME_WIDTH = 220
 const TRACK_MIN = 720
-const LINE = '1px solid #F0ECEA'
-const OVERLOAD_BG = '#F7D9D3'
+const LINE = '1px solid var(--border-soft)'
+const OVERLOAD_BG = 'var(--tint-red)'
 
 function DirTag({ d }) {
   return (
@@ -36,7 +36,7 @@ function LoadTable({ rows }) {
             <tr>
               <th style={{ textAlign: 'left', padding: '6px 8px', width: 160 }}>{t.direction}</th>
               {t.months.map((m) => (
-                <th key={m} className="mono" style={{ padding: '6px 4px', fontSize: 11, fontWeight: 500, color: '#8A8381' }}>
+                <th key={m} className="mono" style={{ padding: '6px 4px', fontSize: 11, fontWeight: 500, color: 'var(--faint)' }}>
                   {m}
                 </th>
               ))}
@@ -46,13 +46,13 @@ function LoadTable({ rows }) {
             {rows.map(({ direction, size, months }) => (
               <tr key={direction.id} style={{ borderTop: LINE }}>
                 <td style={{ padding: '6px 8px' }}>
-                  <DirTag d={direction} /> <span style={{ color: '#8A8381' }}>{size}</span>
+                  <DirTag d={direction} /> <span style={{ color: 'var(--faint)' }}>{size}</span>
                 </td>
                 {months.map((m, i) => (
                   <td
                     key={i}
                     title={m.count > 0 ? t.loadCell(m.count, size) : undefined}
-                    style={{ textAlign: 'center', padding: '6px 4px', background: m.over ? OVERLOAD_BG : undefined, fontWeight: m.over ? 600 : 400, color: m.count ? undefined : '#C9C3C0' }}
+                    style={{ textAlign: 'center', padding: '6px 4px', background: m.over ? OVERLOAD_BG : undefined, fontWeight: m.over ? 500 : 400, color: m.count ? undefined : 'var(--border-dashed)' }}
                   >
                     {m.count ? `${Math.round(m.ratio * 100)}%` : t.noLoad}
                   </td>
@@ -75,13 +75,13 @@ function Timeline({ groups, year }) {
   const monthLines = cols.map((c) => <div key={c.month} style={{ position: 'absolute', top: 0, bottom: 0, left: `${c.left}%`, borderLeft: LINE }} />)
 
   return (
-    <div style={{ overflowX: 'auto', border: '1px solid #E6E1DE', borderRadius: 0, background: '#fff' }}>
+    <div style={{ overflowX: 'auto', border: '1px solid var(--border)', borderRadius: 0, background: 'var(--surface)' }}>
       <div style={{ minWidth: NAME_WIDTH + TRACK_MIN }}>
         <div style={{ display: 'flex' }}>
-          <div style={{ width: NAME_WIDTH, flex: 'none', position: 'sticky', left: 0, background: '#fff', zIndex: 3 }} />
+          <div style={{ width: NAME_WIDTH, flex: 'none', position: 'sticky', left: 0, background: 'var(--surface)', zIndex: 3 }} />
           <div style={{ ...track, minHeight: 32 }}>
             {cols.map((c) => (
-              <div key={c.month} className="mono" style={{ position: 'absolute', left: `${c.left}%`, width: `${c.width}%`, top: 8, textAlign: 'center', fontSize: 11, color: '#8A8381' }}>
+              <div key={c.month} className="mono" style={{ position: 'absolute', left: `${c.left}%`, width: `${c.width}%`, top: 8, textAlign: 'center', fontSize: 11, color: 'var(--faint)' }}>
                 {t.months[c.month - 1]}
               </div>
             ))}
@@ -89,14 +89,14 @@ function Timeline({ groups, year }) {
         </div>
         {groups.map(({ direction, rows }) => (
           <div key={direction.id}>
-            <div style={{ padding: '6px 10px', background: '#FAF8F7', borderTop: LINE, position: 'sticky', left: 0 }}>
-              <DirTag d={direction} /> <span style={{ color: '#8A8381', fontSize: 12 }}>{rows.length}</span>
+            <div style={{ padding: '6px 10px', background: 'var(--surface-2)', borderTop: LINE, position: 'sticky', left: 0 }}>
+              <DirTag d={direction} /> <span style={{ color: 'var(--faint)', fontSize: 12 }}>{rows.length}</span>
             </div>
             {rows.map(({ person, plans }) => (
               <div key={person.id} style={{ display: 'flex', borderTop: LINE }}>
                 <div
                   style={{
-                    width: NAME_WIDTH, flex: 'none', position: 'sticky', left: 0, zIndex: 3, background: '#fff', padding: '6px 10px',
+                    width: NAME_WIDTH, flex: 'none', position: 'sticky', left: 0, zIndex: 3, background: 'var(--surface)', padding: '6px 10px',
                     fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', borderRight: LINE,
                   }}
                   title={person.name}
@@ -105,7 +105,7 @@ function Timeline({ groups, year }) {
                 </div>
                 <div style={track}>
                   {monthLines}
-                  {todayPos && <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${todayPos.left}%`, borderLeft: '1.5px solid #A22325' }} />}
+                  {todayPos && <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${todayPos.left}%`, borderLeft: '1.5px solid var(--red)' }} />}
                   {plans.map((pl) => {
                     const pos = barPosition(pl.start, pl.end, year)
                     return (
@@ -168,7 +168,7 @@ export default function PlanTab() {
           onChange={(v) => setDirectionId(v ?? null)}
           options={directionOptions(directions ?? [])}
         />
-        <Space size={12} style={{ color: '#8A8381', fontSize: 12 }} aria-label={t.legend}>
+        <Space size={12} style={{ color: 'var(--faint)', fontSize: 12 }} aria-label={t.legend}>
           {Object.entries(STATUS_COLORS).map(([status, color]) => (
             <span key={status}>
               <i style={{ display: 'inline-block', width: 12, height: 12, borderRadius: 0, background: color, marginRight: 6, verticalAlign: -1 }} />

@@ -24,7 +24,8 @@ const strings = {
     employee: 'Запуск в модулях своих отделов, просмотр результатов остальных модулей.',
     viewer: 'Видит только структуру платформы, без файлов и результатов.',
   },
-  moduleStatuses: { mvp: 'MVP', roadmap: 'ROADMAP' },
+  moduleStatuses: { mvp: 'MVP', roadmap: 'ROADMAP' },
+
 
   login: {
     title: 'Вход в платформу',
@@ -50,6 +51,8 @@ const strings = {
     moreActions: 'Ещё',
     logout: 'Выйти',
     moduleBadge: (n) => `Требует внимания: ${n}`,
+    themeDark: 'Тёмная тема',
+    themeLight: 'Светлая тема',
   },
 
   notifications: {
@@ -73,7 +76,8 @@ const strings = {
       email: 'Почта',
       level: 'Уровень доступа',
       departments: 'Отделы',
-      passwordHint: 'Забыли пароль — его сбрасывает администратор.',
+      passwordHint: 'Забыли пароль — его сбрасывает администратор.',
+
       password: {
         title: 'Смена пароля',
         old: 'Текущий пароль',

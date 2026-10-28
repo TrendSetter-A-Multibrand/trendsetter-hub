@@ -192,7 +192,7 @@ export default function SubmissionDrawer({ sub, fields, people, directions, onCl
     })
     .filter((r) => r.next || r.cur)
 
-  const cell = (changed) => ({ style: { background: changed ? '#FFF7E6' : undefined, whiteSpace: 'pre-wrap' } })
+  const cell = (changed) => ({ style: { background: changed ? 'var(--tint-yellow)' : undefined, whiteSpace: 'pre-wrap' } })
   const columns = [
     { title: s.fieldCol, dataIndex: 'label', width: 180, onCell: (r) => cell(r.changed) },
     { title: s.currentCol, dataIndex: 'cur', render: (v) => v || strings.none, onCell: (r) => cell(r.changed) },

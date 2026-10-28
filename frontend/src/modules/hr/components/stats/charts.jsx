@@ -3,15 +3,15 @@ import strings from '../../strings.js'
 import { donutArcs, pct } from '../../lib/stats.js'
 
 const s = strings.stats
-const INK = '#252120'
-const INK_SECOND = '#5B5552'
-const INK_MUTED = '#8A837F'
-const TRACK = '#F0EDEB'
+const INK = 'var(--ink)'
+const INK_SECOND = 'var(--muted)'
+const INK_MUTED = 'var(--faint)'
+const TRACK = 'var(--border-soft)'
 
 // Карточка-число. hint — Tooltip на всю карточку
 export function Kpi({ title, value, sub, hint }) {
   const body = (
-    <div style={{ padding: '10px 14px', border: '1px solid #E6E1DE', background: '#fff', borderRadius: 0, height: '100%' }}>
+    <div style={{ padding: '10px 14px', border: '1px solid var(--border)', background: 'var(--surface)', borderRadius: 0, height: '100%' }}>
       <div style={{ fontSize: 13, color: INK_SECOND, marginBottom: 2 }}>{title}</div>
       <div style={{ fontSize: 28, fontWeight: 500, lineHeight: 1.15, color: INK }}>{value}</div>
       {sub && <div style={{ fontSize: 12, color: INK_MUTED, marginTop: 2 }}>{sub}</div>}
@@ -27,7 +27,7 @@ export function Donut({ items, center, size = 120 }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
       <svg width={size} height={size} style={{ flexShrink: 0, transform: 'rotate(-90deg)' }}>
-        <circle cx={size / 2} cy={size / 2} r={arcs[0]?.r ?? 0} fill="none" stroke={TRACK} strokeWidth={18} />
+        <circle cx={size / 2} cy={size / 2} r={arcs[0]?.r ?? 0} fill="none" style={{ stroke: TRACK }} strokeWidth={18} />
         {arcs.map((a) => (
           <Tooltip key={a.label} title={`${a.label}: ${a.value} ${s.unit} · ${pct(a.value, sum)}%`}>
             <circle

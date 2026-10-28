@@ -5,6 +5,7 @@ import { MODULES } from '../../modules/registry.js'
 import strings from '../strings.js'
 import DemoUserSwitcher from './DemoUserSwitcher.jsx'
 import NotificationsBell from './NotificationsBell.jsx'
+import ThemeToggle from './ThemeToggle.jsx'
 import logo from './logo.png'
 
 const s = strings.layout
@@ -98,6 +99,7 @@ export default function AppLayout() {
                 <span className="user-role mono">{strings.levels[me.access_level]}</span>
               </div>
             </Link>
+            <ThemeToggle />
             <NotificationsBell />
           </div>
         </div>
