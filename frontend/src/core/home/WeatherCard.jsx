@@ -11,7 +11,7 @@ function CityRow({ city }) {
     <div className="weather-city">
       <div className="weather-city-head">
         <span className="weather-city-name">{s.cities[city.id]}</span>
-        {city.stale && <span className="weather-stale mono">{s.stale}</span>}
+        {city.stale && <span className="weather-stale">{s.stale}</span>}
       </div>
       {city.days.length === 0 ? (
         <div className="weather-empty">{s.noData}</div>
@@ -53,7 +53,7 @@ export default function WeatherCard() {
 
   return (
     <section className="home-card">
-      <div className="home-card-head mono">{s.weatherTitle}</div>
+      <div className="home-card-head">{s.weatherTitle}</div>
       {state.loading ? (
         <Spin size="small" />
       ) : !available ? (
@@ -63,7 +63,7 @@ export default function WeatherCard() {
           {cities.map((c) => (
             <CityRow city={c} key={c.id} />
           ))}
-          <a className="weather-source mono" href="https://www.met.no/en" target="_blank" rel="noreferrer">
+          <a className="weather-source" href="https://www.met.no/en" target="_blank" rel="noreferrer">
             {s.weatherSource}
           </a>
         </>

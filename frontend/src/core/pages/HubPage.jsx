@@ -8,8 +8,7 @@ import WeatherCard from '../home/WeatherCard.jsx'
 import strings from '../strings.js'
 
 const s = strings.hub
-const formatToday = () =>
-  new Date().toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase()
+const formatToday = () => new Date().toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' })
 
 export default function HubPage() {
   const { me } = useAuth()
@@ -35,16 +34,10 @@ export default function HubPage() {
   return (
     <div className="stack home">
       {widgetsOf('banner')}
-      <div className="hero compact">
-        <span className="corner tl">T</span>
-        <span className="corner tr">R</span>
-        <span className="corner bl">S</span>
-        <span className="corner br">T</span>
-        <div className="hero-body">
-          <div className="hero-date mono">{today}</div>
-          <h1>{s.greeting(firstName, hour)}</h1>
-        </div>
-      </div>
+      <header className="greeting">
+        <div className="greeting-date">{today}</div>
+        <h1>{s.greeting(firstName, hour)}</h1>
+      </header>
 
       <div className={`home-layout${hasFeed ? ' with-feed' : ''}`}>
         {left.length > 0 && <div className="home-col">{left}</div>}

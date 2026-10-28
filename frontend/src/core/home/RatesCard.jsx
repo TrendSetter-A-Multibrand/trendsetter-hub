@@ -25,7 +25,7 @@ export default function RatesCard() {
 
   return (
     <section className="home-card">
-      <div className="home-card-head mono">{rows.length > 0 ? s.ratesTitle(formatDate(state.data.date)) : s.ratesHeading}</div>
+      <div className="home-card-head">{rows.length > 0 ? s.ratesTitle(formatDate(state.data.date)) : s.ratesHeading}</div>
       {state.loading ? (
         <Spin size="small" />
       ) : rows.length === 0 ? (
@@ -40,7 +40,7 @@ export default function RatesCard() {
               <span className={`rates-delta mono ${r.direction}`}>{r.delta}</span>
             </div>
           ))}
-          {state.data.stale && <div className="weather-stale mono">{s.stale}</div>}
+          {state.data.stale && <div className="weather-stale">{s.stale}</div>}
         </>
       )}
     </section>

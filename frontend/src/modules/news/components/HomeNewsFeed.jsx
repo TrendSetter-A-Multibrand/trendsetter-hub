@@ -17,7 +17,7 @@ export default function HomeNewsFeed({ me }) {
 
   return (
     <section className="home-panel news" aria-label={s.newsTitle}>
-      <div className="news-col-title mono">{s.newsTitle}</div>
+      <div className="news-col-title">{s.newsTitle}</div>
       {failed ? (
         <div className="news-empty">{s.loadError}</div>
       ) : feed === null ? (

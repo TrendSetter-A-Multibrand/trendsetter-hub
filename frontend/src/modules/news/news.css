@@ -1,68 +1,69 @@
-/* Модуль «Новости»: срочная плашка, колонки на главной, вкладка профиля. Только токены ядра (--red, --border, --muted, .mono, .home-card). */
+/* Модуль «Новости»: срочная плашка, колонки на главной, вкладка профиля. Только токены ядра (core/styles.css). */
 .news-banner {
-  display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
-  background: var(--red-plane); color: #fff; border-radius: 0; padding: 12px 16px;
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-16);
+  background: var(--accent-soft); color: var(--text-primary); box-shadow: inset 3px 0 0 var(--accent-fill);
+  padding: var(--space-12) var(--space-16) var(--space-12) var(--space-24);
 }
-.news-banner-text { flex: 1; min-width: 0; font-size: 15px; font-weight: 500; white-space: pre-wrap; overflow-wrap: anywhere; }
+.news-banner-text { flex: 1; min-width: 0; font-size: var(--fs-body); font-weight: var(--fw-medium); white-space: pre-wrap; overflow-wrap: anywhere; }
 .news-banner-hide {
-  flex: none; border: 1px solid rgba(255, 255, 255, .6); background: transparent; color: #fff; border-radius: 0;
-  padding: 4px 12px; font: inherit; font-size: 13px; cursor: pointer;
+  flex: none; border: 1px solid var(--border-input); background: transparent; color: var(--text-primary);
+  padding: 0 var(--space-12); height: 32px; font: inherit; font-size: var(--fs-small); cursor: pointer;
+  transition: border-color var(--motion-hover) var(--motion-ease);
 }
-.news-banner-hide:hover { background: rgba(255, 255, 255, .15); }
-.news-banner-hide:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.news-banner-hide:hover { border-color: var(--border-strong); }
 
-/* Колонки главной: свои панели с приглушённым фоном (новости — из синего, события — из жёлтого палитры) */
-.home-panel { display: flex; flex-direction: column; gap: 12px; min-width: 0; padding: 16px 20px; border: 1px solid var(--border); border-radius: 0; }
-.home-panel.news { background: var(--tint-sky); border-color: var(--border); }
-.home-panel.events { background: var(--tint-sand); border-color: var(--border); }
-.news-col-title { font-size: 11px; letter-spacing: .1em; color: var(--muted); }
-.news-empty { font-size: 13px; color: var(--muted); }
-/* Запись: белая карточка; цвет записи — фон-тинт и акцент слева полным цветом (по умолчанию нейтральный) */
+/* Колонки главной: общий вид панелей (.home-panel — в core/styles.css). Записи — строки через тонкие линии, без цветных заливок */
+.news-empty { font-size: var(--fs-body); color: var(--text-secondary); padding: var(--space-12) 0; }
 .news-row {
-  --row-bg: var(--surface); --row-accent: var(--border-input);
-  display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 12px 14px;
-  background: var(--row-bg); border: 1px solid var(--border); border-left: 4px solid var(--row-accent); border-radius: 0;
+  --row-accent: transparent;
+  display: flex; flex-direction: column; gap: var(--space-4); min-width: 0; padding: var(--space-12) 0;
+  border-bottom: 1px solid var(--border-subtle);
 }
-.news-row.color-red { --row-bg: var(--red-tint); --row-accent: var(--red); }
-.news-row.color-green { --row-bg: var(--tint-green); --row-accent: var(--forest); }
-.news-row.color-yellow { --row-bg: var(--tint-yellow); --row-accent: #F3D03E; }
-.news-row.color-blue { --row-bg: var(--tint-blue); --row-accent: var(--blue); }
-.news-row.color-pink { --row-bg: var(--tint-pink); --row-accent: #E59BDC; }
-.news-row.color-gray { --row-bg: var(--surface-2); --row-accent: #8A8380; }
-.news-when { font-size: 11px; letter-spacing: .08em; color: var(--muted); }
-.news-pin { font-size: 10px; letter-spacing: .1em; color: var(--red); }
+.news-row:last-child { border-bottom: 0; }
+/* Цвет, выбранный редактором, — квадрат 8 px у даты (не фон карточки) */
+.news-row.color-red { --row-accent: var(--accent-fill); }
+.news-row.color-green { --row-accent: var(--status-success); }
+.news-row.color-yellow { --row-accent: var(--marker); }
+.news-row.color-blue { --row-accent: var(--blue); }
+.news-row.color-pink { --row-accent: #E59BDC; }
+.news-row.color-gray { --row-accent: var(--text-tertiary); }
+.news-meta { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-8); min-height: 18px; }
+.news-dot { display: none; width: 8px; height: 8px; flex: none; background: var(--row-accent); }
+.news-row[class*='color-'] .news-dot { display: block; }
+.news-when { font-size: var(--fs-caption); color: var(--text-secondary); }
+.news-pin { font-size: var(--fs-caption); color: var(--accent-primary); padding: 0 6px; border: 1px solid currentColor; line-height: 16px; }
 .news-title {
-  align-self: flex-start; padding: 0; border: 0; background: none; font: inherit; font-size: 15px; font-weight: 500;
-  color: var(--ink); text-align: left; cursor: pointer; overflow-wrap: anywhere;
+  align-self: flex-start; padding: 0; border: 0; background: none; font: inherit; font-size: var(--fs-body-l); font-weight: var(--fw-medium);
+  line-height: 1.35; color: var(--text-primary); text-align: left; cursor: pointer; overflow-wrap: anywhere;
+  transition: color var(--motion-hover) var(--motion-ease);
 }
-.news-title:hover { color: var(--red); }
-.news-title:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
-.news-place { font-size: 13px; color: var(--muted); }
-.news-excerpt { font-size: 13px; color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere; }
-.news-counts { font-size: 12px; color: var(--muted); }
-.news-closed { font-size: 11px; letter-spacing: .08em; color: var(--muted); }
+.news-title:hover { color: var(--accent-primary); }
+.news-place { font-size: var(--fs-small); color: var(--text-secondary); }
+.news-excerpt { font-size: var(--fs-small); color: var(--text-secondary); white-space: pre-wrap; overflow-wrap: anywhere; }
+.news-counts { font-size: var(--fs-caption); color: var(--text-secondary); }
+.news-closed { font-size: var(--fs-caption); color: var(--text-tertiary); }
 
-/* «Кто пойдёт»: три кнопки в ряд на всю ширину. Обычное состояние приглушённое, выбранное — насыщенный цвет */
-.rsvp-buttons { display: flex; gap: 8px; width: 100%; margin-top: 4px; }
+/* «Кто пойдёт»: три равные нейтральные кнопки. Выбранная — рамка Sage, Paper и галочка; без ярких заливок */
+.rsvp-buttons { display: flex; gap: var(--space-8); width: 100%; margin-top: var(--space-4); }
 .rsvp-btn {
-  flex: 1; min-width: 0; height: 36px; padding: 0 8px; border: 1px solid; border-radius: 0; font: inherit; font-size: 14px; font-weight: 500;
-  cursor: pointer; transition: background .15s, color .15s;
+  flex: 1; min-width: 0; height: var(--control-s); padding: 0 var(--space-8);
+  border: 1px solid var(--border-input); background: var(--bg-surface); color: var(--text-secondary);
+  font: inherit; font-size: var(--fs-body); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  transition: border-color var(--motion-hover) var(--motion-ease), color var(--motion-hover) var(--motion-ease), background var(--motion-hover) var(--motion-ease);
 }
+.rsvp-btn:hover { border-color: var(--border-strong); color: var(--text-primary); }
 .rsvp-btn:disabled { cursor: progress; opacity: .7; }
-.rsvp-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-.rsvp-btn.yes { background: var(--tint-green); color: var(--forest); border-color: rgba(0, 88, 68, .35); }
-.rsvp-btn.maybe { background: var(--tint-yellow); color: var(--ink); border-color: rgba(243, 208, 62, .9); }
-.rsvp-btn.no { background: var(--tint-red); color: var(--red); border-color: rgba(162, 35, 37, .35); }
-.rsvp-btn.yes[aria-pressed='true'] { background: var(--forest); color: #fff; border-color: var(--forest); }
-.rsvp-btn.maybe[aria-pressed='true'] { background: #F3D03E; color: var(--ink); border-color: #F3D03E; }
-.rsvp-btn.no[aria-pressed='true'] { background: var(--red); color: #fff; border-color: var(--red); }
+.rsvp-btn[aria-pressed='true'] { border-color: var(--border-strong); background: var(--bg-surface-secondary); color: var(--text-primary); font-weight: var(--fw-medium); }
+.rsvp-btn[aria-pressed='true']::before { content: '✓'; font-size: 12px; }
+.rsvp-btn.no[aria-pressed='true'] { color: var(--accent-primary); border-color: var(--accent-primary); }
 .news-text { white-space: pre-wrap; overflow-wrap: anywhere; }
 .news-facts { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 12px 0; font-size: 13px; }
 .news-facts dt { color: var(--muted); }
 .news-facts dd { margin: 0; }
 .news-who { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
 .news-who-group { font-size: 13px; overflow-wrap: anywhere; }
-.news-who-title { font-size: 11px; letter-spacing: .1em; color: var(--muted); }
+.news-who-title { font-size: 11px; letter-spacing: .02em; color: var(--muted); }
 .news-note { font-size: 13px; color: var(--muted); }
 
 .news-admin { display: flex; flex-direction: column; gap: 24px; }
@@ -77,12 +78,12 @@
 .news-swatch[aria-checked='true'] { border-color: var(--ink); box-shadow: 0 0 0 2px var(--surface) inset; }
 .news-swatch:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .news-swatch.none { background: var(--surface); }
-.news-swatch.red { background: var(--red); }
+.news-swatch.red { background: var(--accent-fill); }
 .news-swatch.green { background: var(--forest); }
-.news-swatch.yellow { background: #F3D03E; }
+.news-swatch.yellow { background: var(--marker); }
 .news-swatch.blue { background: var(--blue); }
 .news-swatch.pink { background: #E59BDC; }
-.news-swatch.gray { background: #8A8380; }
+.news-swatch.gray { background: var(--text-tertiary); }
 .news-admin-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
 .news-admin-item { display: flex; flex-direction: column; gap: 6px; padding: 12px 0; border-top: 1px solid var(--border); min-width: 0; }
 .news-admin-item:first-of-type { border-top: 0; }

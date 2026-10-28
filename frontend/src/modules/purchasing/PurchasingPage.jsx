@@ -42,7 +42,7 @@ export default function PurchasingPage({ module, access }) {
     <div className="stack module">
       <div className="module-head">
         <div>
-          <div className="crumbs mono">
+          <div className="crumbs">
             <Link to="/">{coreStrings.layout.hub}</Link>
             <span>/</span>
             <span className="current">{s.dept}</span>

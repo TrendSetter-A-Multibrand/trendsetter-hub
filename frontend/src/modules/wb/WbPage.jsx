@@ -1,5 +1,4 @@
 import { Link, useSearchParams } from 'react-router-dom'
-import { Tabs } from 'antd'
 import coreStrings from '../../core/strings.js'
 import MarkingTab from './marking/MarkingTab.jsx'
 
@@ -13,47 +12,40 @@ const SECTIONS = [
   { key: 'pricing' },
 ]
 
-function SectionStub({ section, s }) {
+function SectionStub({ s }) {
   return (
     <div className="stub">
       <div className="stub-body">
-        <h2 className="h2">{section.label}</h2>
-        <div className="stub-text">
-          {section.description}. {s.sectionStub}
-        </div>
+        <div className="stub-text">{s.sectionStub}</div>
       </div>
     </div>
   )
 }
 
+// Разделы переключаются только боковым меню (пункты под «Wildberries», ?section=<key>): своей строки вкладок на странице нет.
 export default function WbPage({ module, access }) {
   const s = module.strings
-  // открытый раздел — в адресе (?section=), чтобы на него вёл пункт всплывающего меню
-  const [params, setParams] = useSearchParams()
-  const section = SECTIONS.some((x) => x.key === params.get('section')) ? params.get('section') : SECTIONS[0].key
+  const [params] = useSearchParams()
+  const key = SECTIONS.some((x) => x.key === params.get('section')) ? params.get('section') : SECTIONS[0].key
+  const { Component } = SECTIONS.find((x) => x.key === key)
+  const section = s.sections[key]
   return (
     <div className="stack module">
       <div className="module-head">
         <div>
-          <div className="crumbs mono">
+          <div className="crumbs">
             <Link to="/">{coreStrings.layout.hub}</Link>
             <span>/</span>
-            <span className="current">{s.dept}</span>
+            <Link to="/modules/wb">{s.pageTitle}</Link>
+            <span>/</span>
+            <span className="current">{section.label}</span>
           </div>
-          <h1 className="h1">{s.pageTitle}</h1>
-          <div className="subtitle">{s.pageSubtitle}</div>
+          <h1 className="h1">{section.label}</h1>
+          <div className="subtitle">{section.description}</div>
         </div>
       </div>
-      <Tabs
-        destroyOnHidden
-        activeKey={section}
-        onChange={(key) => setParams({ section: key })}
-        items={SECTIONS.map(({ key, Component }) => ({
-          key,
-          label: s.sections[key].label,
-          children: Component ? <Component module={module} access={access} /> : <SectionStub section={s.sections[key]} s={s} />,
-        }))}
-      />
+      {/* key: при смене раздела состояние предыдущего не переносится (как destroyOnHidden у вкладок) */}
+      {Component ? <Component key={key} module={module} access={access} /> : <SectionStub key={key} s={s} />}
     </div>
   )
 }

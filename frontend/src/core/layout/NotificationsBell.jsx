@@ -85,7 +85,7 @@ export default function NotificationsBell() {
 
   return (
     <Popover content={content} trigger="click" placement="topLeft" open={open} onOpenChange={setOpen} arrow={false}>
-      <button type="button" className="icon-btn" aria-label={unread > 0 ? `${s.open}. ${s.unread(unread)}` : s.open}>
+      <button type="button" className="icon-btn" aria-expanded={open} aria-label={unread > 0 ? `${s.open}. ${s.unread(unread)}` : s.open}>
         <BellOutlined />
         {unread > 0 && <span className="icon-badge mono">{unread > 99 ? '99+' : unread}</span>}
       </button>
