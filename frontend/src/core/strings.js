@@ -1,6 +1,6 @@
 // Общие строки ядра. Строки модулей лежат в modules/<id>/strings.js.
 const strings = {
-  brand: 'trendsetter',
+  brand: 'Trendsetter',
   brandSub: 'Хаб инструментов',
   appTitle: 'Платформа инструментов',
   demoBanner: 'Демо-версия · данные вымышленные, изменения сбрасываются при перезагрузке',
