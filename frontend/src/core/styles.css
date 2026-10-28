@@ -1,6 +1,6 @@
 /* =====================================================================================================
    Хаб TRENDSETTER — основа интерфейса: токены (светлая и тёмная темы), типографика, каркас, общие блоки.
-   Направление — Soft Minimalism: тёплый фон, белые карточки со скруглением, приглушённые цветовые зоны,
+   Направление — Soft Minimalism: светло-серый нейтральный фон, белые карточки со скруглением, деликатные цветовые зоны,
    фирменный Red как единственный яркий акцент. Шрифты — Inter Tight + Geist Mono (TRENDSETTER Design System v2.0).
    Модули используют только эти токены; свои цвета модулям не нужны.
    ===================================================================================================== */
@@ -9,34 +9,34 @@
   color-scheme: light;
 
   /* ---- Семантические токены (переключаются темой) ---- */
-  --bg-page: #F6F4F1;               /* Warm White — фон страницы */
-  --bg-sidebar: #EFECE7;            /* меню: на тон темнее страницы */
+  --bg-page: #F4F5F7;               /* almost white gray — фон страницы, без желтизны */
+  --bg-sidebar: #ECEEF1;            /* меню: на тон темнее страницы */
   --bg-surface: #FFFFFF;            /* карточки, таблицы, окна */
-  --bg-surface-secondary: #F6F4F1;  /* hover строки, плашки внутри карточки */
-  --bg-surface-tertiary: #ECE8E2;   /* нажатое / выбранное нейтральное */
+  --bg-surface-secondary: #F6F7F9;  /* hover строки, плашки внутри карточки */
+  --bg-surface-tertiary: #E9EBEF;   /* нажатое / выбранное нейтральное */
   /* Цветовые зоны (приглушённые, только как фон крупных блоков) */
-  --zone-mint: #E8F0EA;             /* события, «готово» */
-  --zone-blue: #EDF0F8;             /* информационные виджеты */
-  --zone-sand: #F5EBDD;             /* важные объявления */
-  --zone-mint-line: #D3E2D7;
-  --zone-blue-line: #DCE1EF;
-  --zone-sand-line: #EAD9C2;
-  --text-primary: #252120;          /* Sage */
-  --text-secondary: #4A4644;        /* Text-2: подписи, AA на белом */
-  --text-tertiary: #6B6561;         /* мелкие служебные подписи, AA на белом и тёплых зонах */
+  --zone-mint: #E9F3EE;             /* события, «готово» */
+  --zone-blue: #EDF1F8;             /* информационные виджеты */
+  --zone-sand: #FBF5E8;             /* важные объявления: светлый янтарь, не бежевый */
+  --zone-mint-line: #D3E7DC;
+  --zone-blue-line: #DAE1EE;
+  --zone-sand-line: #F0E2C4;
+  --text-primary: #1F2125;          /* почти чёрный, нейтральный */
+  --text-secondary: #4A4F57;        /* подписи, AA на белом и сером */
+  --text-tertiary: #5F656E;         /* мелкие служебные подписи, AA на белом и зонах */
   --text-on-accent: #FFFFFF;
   --text-on-inverse: #FFFFFF;       /* текст на заливке --bg-inverse */
-  --bg-inverse: #252120;            /* тёмная кнопка / выбранный чип */
-  --bg-inverse-hover: #3A3534;
-  --border-default: #E3DED7;        /* рамки карточек и полей (тёплый Line) */
-  --border-subtle: #EEEAE4;         /* линии между строками внутри карточки */
-  --border-strong: #252120;         /* Sage — каркас: outline-кнопки, фокус поля */
-  --border-input: #D6D0C8;
+  --bg-inverse: #1F2125;            /* тёмная кнопка / выбранный чип */
+  --bg-inverse-hover: #363A40;
+  --border-default: #E2E5EA;        /* рамки карточек */
+  --border-subtle: #EDEFF2;         /* линии между строками внутри карточки */
+  --border-strong: #1F2125;         /* каркас: фокус поля, выбранное */
+  --border-input: #D2D6DC;
   --accent-primary: #A22325;        /* Red: текст-акцент, активный пункт, ссылки */
   --accent-fill: #A22325;           /* Red: заливка главной кнопки, бейджи */
   --accent-fill-hover: #861C1E;
   --accent-disabled: #D9B8B8;
-  --accent-soft: #F7E9E7;           /* активный пункт меню и вкладка, мягкое выделение */
+  --accent-soft: #F8EAEA;           /* активный пункт меню и вкладка, мягкое выделение */
   --status-success: #005844;        /* Forest */
   --status-success-soft: var(--zone-mint);
   --status-warning: #9A5A00;
@@ -44,7 +44,7 @@
   --status-error: #A22325;
   --status-error-soft: #F7E3E1;
   --marker: #F3D03E;                /* Marker — жёлтая плашка, точечно */
-  --overlay: rgba(37, 33, 32, .55);
+  --overlay: rgba(20, 22, 26, .5);
   --focus-ring: #A22325;
 
   /* ---- Типографика ---- */
@@ -75,8 +75,8 @@
   --radius-tab: 10px;
   --radius-control: 8px;
   --radius-sm: 6px;
-  /* Тень одна, очень мягкая — только чтобы карточка «легла» на тёплый фон */
-  --shadow-card: 0 1px 2px rgba(37, 33, 32, .04), 0 2px 8px rgba(37, 33, 32, .03);
+  /* Тень одна, очень мягкая — только чтобы белая карточка отделилась от серого фона */
+  --shadow-card: 0 1px 2px rgba(20, 24, 31, .04), 0 2px 8px rgba(20, 24, 31, .04);
 
   /* ---- Движение (TS · Motion) ---- */
   --motion-hover: 150ms;
@@ -114,44 +114,44 @@
   --tint-sand: var(--zone-sand);
 }
 
-/* Тёмная тема: мягкий тёплый графит (от Sage), три уровня поверхностей, светлый текст без чистого белого.
+/* Тёмная тема: нейтральный графит без желтизны, три уровня поверхностей, светлый текст без чистого белого.
    Red для текста светлее (контраст AA на тёмном), для заливок — насыщенный с белым текстом. */
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg-page: #1A1817;
-  --bg-sidebar: #201E1C;
-  --bg-surface: #252220;
-  --bg-surface-secondary: #2D2A27;
-  --bg-surface-tertiary: #38342F;
-  --zone-mint: #1F2A23;
-  --zone-blue: #20242F;
-  --zone-sand: #2E2720;
-  --zone-mint-line: #2C3B31;
-  --zone-blue-line: #2D3342;
-  --zone-sand-line: #423729;
+  --bg-page: #17181B;
+  --bg-sidebar: #1C1D21;
+  --bg-surface: #222327;
+  --bg-surface-secondary: #292A2F;
+  --bg-surface-tertiary: #33353A;
+  --zone-mint: #1C2924;
+  --zone-blue: #1E2330;
+  --zone-sand: #2B271F;
+  --zone-mint-line: #2A3B33;
+  --zone-blue-line: #2C3344;
+  --zone-sand-line: #40382A;
   --shadow-card: 0 1px 2px rgba(0, 0, 0, .25);
-  --text-primary: #ECE9E6;
-  --text-secondary: #B8B2AE;
-  --text-tertiary: #969090;
+  --text-primary: #ECEDEF;
+  --text-secondary: #B4B8BF;
+  --text-tertiary: #9CA1A9;
   --text-on-accent: #FFFFFF;
-  --text-on-inverse: #1C1A19;
-  --bg-inverse: #ECE9E6;
-  --bg-inverse-hover: #D3CEC9;
-  --border-default: #37332F;
-  --border-subtle: #2F2B28;
-  --border-strong: #ECE9E6;
-  --border-input: #4B4744;
+  --text-on-inverse: #1A1B1E;
+  --bg-inverse: #ECEDEF;
+  --bg-inverse-hover: #D2D5DA;
+  --border-default: #33353A;
+  --border-subtle: #2B2D31;
+  --border-strong: #ECEDEF;
+  --border-input: #474A51;
   --accent-primary: #E8807E;
   --accent-fill: #B8302F;
   --accent-fill-hover: #C9403F;
   --accent-disabled: #5A3434;
-  --accent-soft: #3A2624;
+  --accent-soft: #3A2527;
   --status-success: #6FC49C;
   --status-success-soft: var(--zone-mint);
   --status-warning: #E2B04A;
   --status-warning-soft: var(--zone-sand);
   --status-error: #E8807E;
-  --status-error-soft: #3A2726;
+  --status-error-soft: #3A2628;
   --overlay: rgba(0, 0, 0, .6);
   --focus-ring: #E8807E;
   --blue: #8FAEE8;
@@ -231,8 +231,8 @@ a:hover { color: var(--accent-fill-hover); }
   min-height: var(--control-m); padding: var(--space-8) var(--space-12); color: var(--text-primary);
   transition: background var(--motion-hover) var(--motion-ease), color var(--motion-hover) var(--motion-ease);
 }
-/* Активный пункт — белая «таблетка» на тёплом меню, название Red */
-.nav-item:hover { background: rgba(37, 33, 32, .05); color: var(--text-primary); }
+/* Активный пункт — белая «таблетка» на сером меню, название Red */
+.nav-item:hover { background: rgba(20, 24, 31, .05); color: var(--text-primary); }
 :root[data-theme='dark'] .nav-item:hover { background: rgba(255, 255, 255, .05); }
 .nav-item.active { background: var(--bg-surface); color: var(--accent-primary); box-shadow: var(--shadow-card); }
 .nav-item.dim { color: var(--text-secondary); }
@@ -252,7 +252,7 @@ a:hover { color: var(--accent-fill-hover); }
   border-radius: var(--radius-control); font-size: var(--fs-body); color: var(--text-secondary);
   transition: color var(--motion-hover) var(--motion-ease), background var(--motion-hover) var(--motion-ease);
 }
-.nav-section:hover { color: var(--text-primary); background: rgba(37, 33, 32, .05); }
+.nav-section:hover { color: var(--text-primary); background: rgba(20, 24, 31, .05); }
 :root[data-theme='dark'] .nav-section:hover { background: rgba(255, 255, 255, .05); }
 .nav-section.active { color: var(--accent-primary); font-weight: var(--fw-medium); background: var(--accent-soft); }
 
@@ -477,7 +477,7 @@ a:hover { color: var(--accent-fill-hover); }
 }
 .home-panel.events { background: var(--zone-mint); border-color: var(--zone-mint-line); box-shadow: none; }
 .home-aside .home-card { background: var(--zone-blue); border-color: var(--zone-blue-line); box-shadow: none; }
-.home-panel.events .news-row, .home-aside .home-card .clock, .home-aside .home-card .rates-row { border-color: rgba(37, 33, 32, .08); }
+.home-panel.events .news-row, .home-aside .home-card .clock, .home-aside .home-card .rates-row { border-color: rgba(20, 24, 31, .08); }
 :root[data-theme='dark'] .home-panel.events .news-row, :root[data-theme='dark'] .home-aside .home-card .clock,
 :root[data-theme='dark'] .home-aside .home-card .rates-row { border-color: rgba(255, 255, 255, .07); }
 .home-card-head, .news-col-title {
@@ -492,7 +492,7 @@ a:hover { color: var(--accent-fill-hover); }
 .clock-city { font-family: var(--font-sans); font-size: var(--fs-small); color: var(--text-secondary); }
 .clock-time { font-family: var(--font-mono); font-size: 26px; font-weight: var(--fw-regular); line-height: 1.2; font-variant-numeric: tabular-nums; }
 
-.weather-city { display: flex; flex-direction: column; gap: var(--space-8); padding: var(--space-12) 0; border-top: 1px solid rgba(37, 33, 32, .08); }
+.weather-city { display: flex; flex-direction: column; gap: var(--space-8); padding: var(--space-12) 0; border-top: 1px solid rgba(20, 24, 31, .08); }
 :root[data-theme='dark'] .weather-city { border-top-color: rgba(255, 255, 255, .07); }
 .weather-city:first-of-type { border-top: 0; }
 .weather-city-head { display: flex; align-items: baseline; gap: var(--space-12); }
@@ -529,12 +529,12 @@ a:hover { color: var(--accent-fill-hover); }
 /* Всплывающие слои: мягкая тень вместо жёсткой рамки */
 .ant-popover-inner, .ant-dropdown-menu, .ant-select-dropdown, .ant-picker-dropdown .ant-picker-panel-container,
 .ant-modal-content, .ant-message-notice-content, .ant-notification-notice, .ant-dropdown .ant-dropdown-menu {
-  box-shadow: 0 8px 28px rgba(37, 33, 32, .12) !important; border: 1px solid var(--border-default);
+  box-shadow: 0 8px 28px rgba(20, 24, 31, .12) !important; border: 1px solid var(--border-default);
 }
 :root[data-theme='dark'] .ant-popover-inner, :root[data-theme='dark'] .ant-dropdown-menu, :root[data-theme='dark'] .ant-select-dropdown,
 :root[data-theme='dark'] .ant-picker-dropdown .ant-picker-panel-container, :root[data-theme='dark'] .ant-modal-content,
 :root[data-theme='dark'] .ant-message-notice-content { box-shadow: 0 8px 28px rgba(0, 0, 0, .45) !important; }
-.ant-drawer-content-wrapper { box-shadow: -8px 0 32px rgba(37, 33, 32, .12) !important; }
+.ant-drawer-content-wrapper { box-shadow: -8px 0 32px rgba(20, 24, 31, .12) !important; }
 /* Таблицы antd — внутри скруглённой карточки */
 .ant-table-wrapper .ant-table { border: 1px solid var(--border-default); border-radius: var(--radius-card); overflow: hidden; box-shadow: var(--shadow-card); }
 .ant-table-wrapper .ant-table-container { border-radius: var(--radius-card); }
@@ -583,7 +583,7 @@ a:hover { color: var(--accent-fill-hover); }
 .home-col > *, .home-aside > * { width: 100%; }
 .home-card-head + .weather-city { border-top: 0; }
 
-/* Вкладки разделов (.soft-tabs): сегменты на тёплой подложке, активная — белая карточка с Red-текстом */
+/* Вкладки разделов (.soft-tabs): сегменты на серой подложке, активная — белая карточка с Red-текстом */
 .soft-tabs > .ant-tabs-nav { margin-bottom: var(--space-24) !important; }
 .soft-tabs > .ant-tabs-nav::before { display: none; }
 .soft-tabs > .ant-tabs-nav .ant-tabs-nav-wrap { flex: 0 1 auto; min-width: 0; }

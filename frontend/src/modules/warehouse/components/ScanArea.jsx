@@ -49,7 +49,7 @@ export default function ScanArea() {
         ) : null}
       </div>
       <div className="wh-under">
-        <div className="wh-stats" style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}>
+        <div className="wh-stats">
           {stats.map((s) => (
             <div key={s.l} className={s.bad ? 'bad' : ''}>
               <b>{s.v}</b>
