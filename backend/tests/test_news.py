@@ -220,6 +220,43 @@ def test_patch_validation(client, h):
     assert r.status_code == 200 and r.json()["endsAt"] is None
 
 
+def test_color_validation_and_storage(client, h, db):
+    assert make_news(client, h.admin)["color"] is None
+    news = make_news(client, h.admin, color="blue")
+    assert news["color"] == "blue"
+    assert make_event(client, h.admin, color="pink")["color"] == "pink"
+    assert db.execute(text("SELECT color FROM trendsetter_hub.news_items WHERE id = :i"), {"i": news["id"]}).scalar_one() == "blue"
+    for bad in ("#A22325", "purple", "", 5):
+        assert post(client, "/items", h.admin, {"kind": "news", "title": "Т", "color": bad}).status_code == 422
+    url = f"{BASE}/items/{news['id']}"
+    assert client.patch(url, json={"color": "#fff"}, headers=h.admin).status_code == 422
+    r = client.patch(url, json={"color": "gray"}, headers=h.admin)
+    assert r.status_code == 200 and r.json()["color"] == "gray"
+    assert {i["color"] for i in feed(client, h.emp)["news"]} >= {"gray"}  # читатель получает поле
+    r = client.patch(url, json={"color": None}, headers=h.admin)
+    assert r.status_code == 200 and r.json()["color"] is None
+
+
+def test_color_change_is_logged_by_field_name_only(client, h, db):
+    news = make_news(client, h.admin)
+    r = client.patch(f"{BASE}/items/{news['id']}", json={"color": "green"}, headers=h.admin)
+    assert r.status_code == 200
+    action, module_id, details = audit(db)[-1]
+    assert (action, module_id) == ("news.update", "news") and details["fields"] == ["color"]
+    assert "green" not in json.dumps(details)
+    before = len(audit(db))
+    client.patch(f"{BASE}/items/{news['id']}", json={"color": "green"}, headers=h.admin)
+    assert len(audit(db)) == before
+
+
+def test_db_rejects_unknown_color(db):
+    from sqlalchemy.exc import IntegrityError
+
+    with pytest.raises(IntegrityError):
+        db.execute(text("INSERT INTO trendsetter_hub.news_items (kind, title, color) VALUES ('news', 'Т', 'purple')"))
+    db.rollback()
+
+
 @pytest.mark.parametrize("params", [{"tab": "x"}, {"tab": "current", "limit": 0}, {"tab": "current", "limit": 101}, {"tab": "current", "offset": -1}])
 def test_list_params_validation(client, h, params):
     assert client.get(BASE + "/items", params=params, headers=h.admin).status_code == 422

@@ -285,25 +285,23 @@ a:hover { color: #7E1A1C; }
 .forbidden .ant-btn { height: auto; padding: 10px 24px; font-size: clamp(14px, 1.2vw, 20px); }
 
 /* ---- главная: сводка ---- */
-.tools-strip { display: flex; flex-wrap: wrap; gap: 8px; }
-.tool-chip {
-  display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #fff; color: var(--ink);
-  border: 1px solid var(--border); border-radius: 4px; transition: border-color .15s;
-}
-.tool-chip:hover { border-color: var(--ink); color: var(--ink); }
-.tool-chip.dim { opacity: .55; }
-.tool-chip-dept { font-size: 10px; letter-spacing: .12em; color: var(--red); }
-.tool-chip-title { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; text-transform: lowercase; }
-.tool-chip .badge { margin: 0; }
-
-.stack.home { max-width: 1120px; margin: 0 auto; } .page:has(.stack.home) { margin: 0 auto; }
+.stack.home { max-width: 1360px; margin: 0 auto; } .page:has(.stack.home) { max-width: 1440px; margin: 0 auto; }
 .hero.compact { min-height: 150px; padding: 20px 32px; }
 .hero.compact .corner { font-size: 30px; }
 .hero.compact .corner.tl, .hero.compact .corner.tr { top: 14px; }
 .hero.compact .corner.bl, .hero.compact .corner.br { bottom: 14px; }
 .hero.compact h1 { font-size: 40px; }
-.home-grid { columns: 3 300px; column-gap: 24px; }
-.home-grid > * { break-inside: avoid; margin-bottom: 24px; }
+/* Новости | события | виджеты. Без колонок новостей (нет доступа) виджеты идут сеткой на всю ширину.
+   Брейкпоинт 1100px по ТЗ; при 1100px окна контента ~780px (меню 240px + поля) — колонки узкие, см. открытый вопрос в TZ-news.md. */
+.home-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; align-items: start; }
+.home-col { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+.home-aside { columns: 3 300px; column-gap: 24px; }
+.home-aside > * { break-inside: avoid; margin-bottom: 24px; }
+.home-layout.with-feed .home-aside { columns: auto; display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+.home-layout.with-feed .home-aside > * { margin-bottom: 0; }
+@media (min-width: 1280px) {
+  .home-layout.with-feed { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) minmax(280px, 340px); }
+}
 .home-card { background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; }
 .home-card-head { font-size: 11px; letter-spacing: .1em; color: var(--muted); }
 

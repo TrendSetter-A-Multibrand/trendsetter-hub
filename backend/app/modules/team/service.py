@@ -59,6 +59,7 @@ MSG_COMMENT = "Укажите причину отказа (до 500 символ
 MSG_FIELD_DUPLICATE = "Поле с таким ключом уже есть"
 MSG_KEY_INVALID = "Ключ: латиница в нижнем регистре, цифры и «_», от 2 до 41 символа, начинается с буквы"
 MSG_SYSTEM_HIDE = "Системное поле нельзя скрыть"
+MSG_GENDER_OPTIONS = "Варианты поля «Пол» изменить нельзя"
 MSG_PHOTO_FIELD = "Поле с фото — только системное"
 
 
@@ -218,6 +219,8 @@ def _clean_value(f, raw):
             _bad(label)
         if v and key == "email" and not EMAIL_RE.match(v):
             fail(422, m.EMAIL_INVALID)
+        if v and key == "gender" and v not in (f["options"] or []):
+            _bad(label)
         return v or None
     if kind == "chips":
         if not isinstance(raw, list) or len(raw) > 20:
@@ -862,6 +865,8 @@ def update_field(session: Session, hr: User, field_id: int, d: dict) -> dict:
     if "required" in d and d["required"] is not None:
         sets["required"] = bool(d["required"])
     if "options" in d:
+        if row["key"] == "gender":
+            fail(422, MSG_GENDER_OPTIONS)
         sets["options"] = json.dumps(_clean_options(d["options"]), ensure_ascii=False)
     if "sort" in d and d["sort"] is not None:
         sets["sort"] = d["sort"]

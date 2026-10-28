@@ -13,7 +13,7 @@ from app.core.access import can_manage_users
 from app.core.deps import get_current_user
 from app.core.models import User
 from app.db.database import get_session
-from app.modules.hr import audit_view, checklists, equipment, exports, history, plans, service
+from app.modules.hr import audit_view, checklists, equipment, exports, history, plans, service, stats
 from app.modules.team.router import team_viewer
 
 router = APIRouter(prefix="/modules/hr", tags=["hr"])
@@ -256,6 +256,11 @@ def leave_calendar(
 
 
 # ---------- HR ----------
+
+
+@router.get("/stats")
+def people_stats(_: User = Hr, session: Session = Db) -> dict:
+    return stats.get_stats(session)
 
 
 @router.get("/people/{person_id}/file")

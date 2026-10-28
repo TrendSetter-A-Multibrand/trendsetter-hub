@@ -44,6 +44,7 @@ FIELDS = {
     "rsvpEnabled": "rsvp_enabled",
     "rsvpDeadline": "rsvp_deadline",
     "rsvpNamesPublic": "rsvp_names_public",
+    "color": "color",
 }
 NEWS_NULL_FIELDS = ("place", "starts_at", "ends_at", "rsvp_deadline")
 NEWS_FALSE_FIELDS = ("rsvp_enabled", "rsvp_names_public")
@@ -151,6 +152,7 @@ def _items(session: Session, rows: list, user: User, editor: bool, now: datetime
                 "startsAt": _iso(r["starts_at"]),
                 "endsAt": _iso(r["ends_at"]),
                 "pinned": r["pinned"],
+                "color": r["color"],
                 "status": r["status"],
                 "archived": r["archived"],
                 "publishedAt": _iso(r["published_at"]),
@@ -228,9 +230,9 @@ def create_item(session: Session, user: User, data: dict) -> dict:
     _validate_state(state)
     row = session.execute(
         text(
-            f"INSERT INTO {N}items (kind, title, body, place, starts_at, ends_at, pinned, status, rsvp_enabled, rsvp_deadline, rsvp_names_public, "
+            f"INSERT INTO {N}items (kind, title, body, place, starts_at, ends_at, pinned, color, status, rsvp_enabled, rsvp_deadline, rsvp_names_public, "
             "published_at, created_by, created_at, updated_by, updated_at) "
-            "VALUES (:kind, :title, :body, :place, :starts_at, :ends_at, :pinned, :status, :rsvp_enabled, :rsvp_deadline, :rsvp_names_public, "
+            "VALUES (:kind, :title, :body, :place, :starts_at, :ends_at, :pinned, :color, :status, :rsvp_enabled, :rsvp_deadline, :rsvp_names_public, "
             ":published_at, :uid, :now, :uid, :now) RETURNING *"
         ),
         {**state, "published_at": now if state["status"] == "published" else None, "uid": user.id, "now": now},
@@ -261,7 +263,7 @@ def update_item(session: Session, user: User, item_id: int, data: dict) -> dict:
     row = session.execute(
         text(
             f"UPDATE {N}items SET title = :title, body = :body, place = :place, starts_at = :starts_at, ends_at = :ends_at, pinned = :pinned, "
-            "status = :status, archived = :archived, rsvp_enabled = :rsvp_enabled, rsvp_deadline = :rsvp_deadline, "
+            "color = :color, status = :status, archived = :archived, rsvp_enabled = :rsvp_enabled, rsvp_deadline = :rsvp_deadline, "
             "rsvp_names_public = :rsvp_names_public, published_at = :published_at, updated_by = :uid, updated_at = :now WHERE id = :id RETURNING *"
         ),
         {**state, "published_at": published_at, "uid": user.id, "now": now, "id": item_id},

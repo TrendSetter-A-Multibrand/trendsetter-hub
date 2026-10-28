@@ -124,15 +124,32 @@ docker exec -u root trendsetter-hub-api rm -rf /tmp/team-import                 
 
 **Откат** (`alembic downgrade 0008`): удаляются только таблицы `news_rsvp`, `news_items`, `news_banners`. Строки `module_id='news'` в `user_module_permissions` и `access_group_permissions` не удаляются (безвредны: интерфейс перечисляет только модули из реестра; при повторном upgrade редакторы сохраняются).
 
+## Новости: цвет записи (ревизия 0010)
+`10_news_color.sql`: столбец `news_items.color` (`text`, `NULL` = нейтральный) и ограничение `news_items_color_check` (ключи `red`, `green`, `yellow`, `blue`, `pink`, `gray`; хранится ключ, не hex). Скрипт идемпотентен.
+
+**Выкат 0010** (как у `0009`; `deploy.sh` миграции не выполняет):
+1. Под doadmin в `defaultdb` выполнить `db/10_news_color.sql` (после `09_news.sql`).
+2. Под doadmin выполнить `deploy/stamp_alembic_0010.sql` (версия миграции `0009` → `0010`).
+3. Только после этого — merge в `main`. Иначе `/modules/news/*` отвечает 500 (в запросах есть столбец `color`).
+
+**Откат** (`alembic downgrade 0009`): удаляются ограничение `news_items_color_check` и столбец `color` (цвета записей теряются).
+
+## Анкета: поле «Пол» (ревизия 0011)
+`11_gender_field.sql`: строка `team_form_fields` с ключом `gender` (`select`, обязательное, системное, опции «Мужской» / «Женский», `sort` 85). В `answers.gender` хранится текст опции; сводка HR приводит его к `male` / `female` (значения `male` / `female` тоже принимаются). Обязательность проверяется только при новых отправках; утверждённые анкеты не затрагиваются. В карту, профиль и экспорт карты пол не попадает, сотрудник заполняет его в своей анкете, видит и правит у карточки только HR. Скрипт идемпотентен.
+
+**Выкат 0011** (как у `0010`; `deploy.sh` миграции не выполняет):
+1. Под doadmin в `defaultdb` выполнить `db/11_gender_field.sql` (после `10_news_color.sql`).
+2. Под doadmin выполнить `deploy/stamp_alembic_0011.sql` (версия миграции `0010` → `0011`).
+3. Только после этого — merge в `main`.
+
 ## WB, раздел «Маркировка» (ревизия 0012)
 `modules/wb/001_wb_marking.sql`: таблица `wb_marking_documents` — номер документа «Честного ЗНАКа», внесённый в хабе по строке сверки (`item_key` = `<withdraw|return>:<srid>:<код маркировки>`). Сами отчёты WB (`api_wb_FinanceReport`, `api_wb_Orders_FBS`, `api_wb_ExciseReport`) остаются в схеме `public`, хаб их только читает отдельным подключением `HUB_WB_DATABASE_URL`.
 
 **Выкат 0012**:
-1. Под doadmin в `defaultdb` выполнить `db/modules/wb/001_wb_marking.sql`, затем `deploy/stamp_alembic_0012.sql` (`0011` → `0012`).
-2. Пользователь только для чтения отчётов (не `doadmin` и не общий `claude_ro`), например:
-   `CREATE ROLE hub_wb_ro LOGIN PASSWORD '<пароль>'; GRANT USAGE ON SCHEMA public TO hub_wb_ro;`
-   `GRANT SELECT ON public."api_wb_FinanceReport", public."api_wb_Orders_FBS", public."api_wb_ExciseReport" TO hub_wb_ro;`
-   (последняя таблица — после первого запуска загрузчика api_wb_ExciseReport).
+1. Под doadmin в `defaultdb` (после `11_gender_field.sql`) выполнить `db/modules/wb/001_wb_marking.sql`, затем `deploy/stamp_alembic_0012.sql` (`0011` → `0012`).
+2. Читает отчёты существующий пользователь только для чтения `claude_ro` (решение 2026-10-28; при смене его пароля обновить и `HUB_WB_DATABASE_URL`):
+   `GRANT SELECT ON public."api_wb_FinanceReport", public."api_wb_Orders_FBS" TO claude_ro;`
+   `GRANT SELECT ON public."api_wb_ExciseReport" TO claude_ro;` — после первого запуска загрузчика api_wb_ExciseReport.
 3. Индекс по дате продажи — без него запрос сверки упирается в таймаут:
    `CREATE INDEX CONCURRENTLY IF NOT EXISTS "api_wb_FinanceReport_sale_dt_idx" ON public."api_wb_FinanceReport" (sale_dt);`
 4. В окружении сервера задать `HUB_WB_DATABASE_URL` (см. `backend/.env.example`). Без него «Маркировка» отвечает 503.

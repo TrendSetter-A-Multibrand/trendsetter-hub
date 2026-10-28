@@ -1,6 +1,14 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { HIDDEN_BANNER_KEY, canReadNews, excerpt, fromLocalInput, hideBanner, isBannerHidden, isNewsEditor, toLocalInput } from './news.js'
+import { HIDDEN_BANNER_KEY, NEWS_COLORS, canReadNews, colorClass, excerpt, fromLocalInput, hideBanner, isBannerHidden, isNewsEditor, toLocalInput } from './news.js'
+
+test('colorClass: известные ключи дают модификатор, null и мусор — пусто', () => {
+  assert.deepEqual(NEWS_COLORS, ['red', 'green', 'yellow', 'blue', 'pink', 'gray'])
+  assert.equal(colorClass('blue'), ' color-blue')
+  assert.equal(colorClass(null), '')
+  assert.equal(colorClass(undefined), '')
+  assert.equal(colorClass('#fff'), '')
+})
 
 test('isNewsEditor: ответственный и админ — да; superuser без права и сотрудник — нет', () => {
   assert.equal(isNewsEditor({ module_responsible: { news: true }, can_manage_users: false }), true)

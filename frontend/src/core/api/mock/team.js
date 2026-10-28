@@ -126,6 +126,7 @@ function seed() {
     f(12, 'socials', 'Соцсети', 'links', { isSystem: false }),
     f(13, 'photo', 'Фото', 'photo', { required: true, sort: 14 }),
     f(14, 'video_link', 'Видеосвязь: Zoom / Яндекс Телемост', 'links', { isSystem: false, sort: 13 }),
+    f(15, 'gender', 'Пол', 'select', { required: true, hint: 'Видит только HR, в карту не попадает', options: ['Мужской', 'Женский'], sort: 8.5 }),
   ]
 
   const submissions = [
@@ -157,7 +158,7 @@ function seed() {
     },
   ]
 
-  return { directions, people, photos, fields, submissions, nextId: { person: 17, field: 15, submission: 4 } }
+  return { directions, people, photos, fields, submissions, nextId: { person: 17, field: 16, submission: 4 } }
 }
 
 function bytesOf(dataUrl) {
@@ -678,6 +679,7 @@ export function createTeamHandlers({ userFromToken, accessTo }) {
       if (field.isSystem && b.active === false) throw deny(422, err.fieldSystemHide)
       if (has(b, 'label') && (typeof b.label !== 'string' || !b.label.trim())) throw deny(422, err.fieldLabelRequired)
       if (has(b, 'sort') && !Number.isInteger(b.sort)) throw deny(422, err.invalid)
+      if (field.key === 'gender' && has(b, 'options')) throw deny(422, err.invalid)
       if (has(b, 'options') && !(Array.isArray(b.options) && b.options.every((o) => typeof o === 'string'))) throw deny(422, err.invalid)
       if (has(b, 'label')) field.label = b.label.trim()
       if (has(b, 'hint')) field.hint = strOrNull(b.hint)

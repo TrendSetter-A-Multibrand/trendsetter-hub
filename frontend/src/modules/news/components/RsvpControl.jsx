@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import { App, Segmented } from 'antd'
+import { App } from 'antd'
 import { api } from '../../../core/api/index.js'
 import strings from '../strings.js'
+import '../news.css'
 
 const s = strings.rsvp
-const OPTIONS = ['yes', 'maybe', 'no'].map((value) => ({ value, label: s[value] }))
+const ANSWERS = ['yes', 'maybe', 'no']
 
-// Компактный выбор «Иду / Думаю / Не иду». item.rsvp.open должен быть true. onChange(updatedItem) — запись из ответа сервера.
+// Три кнопки «Иду / Думаю / Не иду» в ряд на всю ширину. item.rsvp.open должен быть true. onChange(updatedItem) — запись из ответа сервера.
 export default function RsvpControl({ item, onChange }) {
   const { message } = App.useApp()
   const [busy, setBusy] = useState(false)
@@ -22,6 +23,21 @@ export default function RsvpControl({ item, onChange }) {
     }
   }
 
-  // null, а не undefined: без ответа ни один вариант не выделен
-  return <Segmented size="small" aria-label={s.label} disabled={busy} value={item.rsvp.myAnswer ?? null} options={OPTIONS} onChange={choose} />
+  // Без ответа ни одна кнопка не нажата; цвет выбранной — насыщенный (news.css)
+  return (
+    <div className="rsvp-buttons" role="group" aria-label={s.label}>
+      {ANSWERS.map((answer) => (
+        <button
+          key={answer}
+          type="button"
+          className={`rsvp-btn ${answer}`}
+          aria-pressed={item.rsvp.myAnswer === answer}
+          disabled={busy}
+          onClick={() => choose(answer)}
+        >
+          {s[answer]}
+        </button>
+      ))}
+    </div>
+  )
 }

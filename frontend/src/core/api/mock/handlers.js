@@ -19,6 +19,7 @@ import { createNotificationHandlers } from './notifications.js'
 import { createHrHandlers } from './hr.js'
 import { createHrOpsHandlers } from './hrOps.js'
 import { createPlanHandlers } from './hr-plans.js'
+import { createHrStatsHandlers } from './hrStats.js'
 import { createHomeHandlers } from './home.js'
 import { createNewsHandlers } from './news.js'
 import { createWbHandlers } from './wb.js'
@@ -103,6 +104,8 @@ const hr = createHrHandlers({
 const hrOps = createHrOpsHandlers({ userFromToken, accessTo, isResponsible: isHrResponsible, team, notify: notifications.notify, hr, audit })
 // График отпусков, дни рождения, свои документы (часть «Б»): читают хранилище hr и создают заявки его обработчиком
 const hrPlans = createPlanHandlers({ userFromToken, accessTo, team, hr })
+// Сводка над таблицей «Сотрудники»: считается из тех же хранилищ; создаётся после hrPlans (дописывает демо-даты рождения поверх его)
+const hrStats = createHrStatsHandlers({ userFromToken, accessTo, team, hr })
 const home = createHomeHandlers({ userFromToken })
 // Новости: редактор — ответственный за news или администратор (как бэкенд is_editor)
 const news = createNewsHandlers({
@@ -356,6 +359,7 @@ export const handlers = {
   ...hr.handlers,
   ...hrOps.handlers,
   ...hrPlans.handlers,
+  ...hrStats.handlers,
   ...home.handlers,
   ...news.handlers,
   ...wb.handlers,
