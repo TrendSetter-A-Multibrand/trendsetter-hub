@@ -40,7 +40,7 @@ export default function AppLayout() {
         <nav aria-label={strings.mainNav}>
           <Link to="/" className={`nav-item live${location.pathname === '/' ? ' active' : ''}`}>
             <span className="nav-dot" />
-            <span className="nav-title">{s.home}</span>
+            <span className="nav-title bracket">{s.home}</span>
           </Link>
           <div className="nav-label mono">{s.departmentsLabel}</div>
           <div className="nav-list">
@@ -52,7 +52,7 @@ export default function AppLayout() {
                 <Link key={m.id} to={path} className={`nav-item${m.Component && m.allowed ? ' live' : ' dim'}${active ? ' active' : ''}`}>
                   <span className="nav-dot" />
                   <span className="nav-text">
-                    <span className="nav-title">{m.strings.tool}</span>
+                    <span className="nav-title bracket">{m.strings.tool}</span>
                     <span className="nav-dept mono">{m.strings.dept}</span>
                   </span>
                   {badge > 0 && (
@@ -76,7 +76,7 @@ export default function AppLayout() {
                         to={`${path}?section=${sec.key}`}
                         className={`nav-section${active && current === sec.key ? ' active' : ''}`}
                       >
-                        {sec.label}
+                        <span className="bracket">{sec.label}</span>
                       </Link>
                     ))}
                   </div>

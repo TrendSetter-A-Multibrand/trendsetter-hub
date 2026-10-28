@@ -25,7 +25,7 @@ export default function LeaveBalance({ balance, policy }) {
               title={i.title}
               value={i.value}
               precision={Number.isInteger(i.value) ? 0 : 2}
-              styles={i.strong ? { content: { fontWeight: 600 } } : undefined}
+              styles={i.strong ? { content: { fontWeight: 500 } } : undefined}
             />
           ))}
         </Space>

@@ -9,7 +9,7 @@ const s = strings.stats
 const OPEN_KEY = 'hr.people.stats'
 const GRID = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }
 const GRID_WIDE = { ...GRID, gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }
-const PANEL = { border: '1px solid #E6E1DE', background: '#fff', borderRadius: 4, padding: '12px 14px' }
+const PANEL = { border: '1px solid #E6E1DE', background: '#fff', borderRadius: 0, padding: '12px 14px' }
 
 const loadOpen = () => {
   try {
@@ -37,7 +37,7 @@ function DirTag({ d }) {
 function Panel({ title, source, children }) {
   return (
     <div style={PANEL}>
-      <div style={{ fontWeight: 600, marginBottom: 2 }}>{title}</div>
+      <div style={{ fontWeight: 500, marginBottom: 2 }}>{title}</div>
       {source && <div style={{ fontSize: 12, color: '#8A837F', marginBottom: 8 }}>{source}</div>}
       {children}
     </div>
@@ -182,7 +182,7 @@ function Body({ stats, directions }) {
 
 export default function PeopleStats({ stats, error, directions }) {
   const [open, setOpen] = useState(loadOpen)
-  let content = <Skeleton active />
+  let content = <Skeleton />
   if (stats) content = <Body stats={stats} directions={directions} />
   else if (error) content = <Alert type="error" showIcon title={s.loadFailed} description={error} />
   return (

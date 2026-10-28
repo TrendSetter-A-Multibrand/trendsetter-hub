@@ -46,7 +46,7 @@ export default function DossierTab({ person, file, reload }) {
           <Typography.Text type="secondary">{strings.dossier.birthdayHiddenHint}</Typography.Text>
         </div>
       </Space>
-      <section style={{ border: `1px solid ${DANGER}`, background: '#FBF0F0', borderRadius: 10, padding: '12px 14px 2px', margin: '8px 0 18px' }}>
+      <section style={{ border: `1px solid ${DANGER}`, background: '#FBF0F0', borderRadius: 0, padding: '12px 14px 2px', margin: '8px 0 18px' }}>
         <Typography.Title level={5} style={{ margin: 0, color: DANGER }}>
           {strings.dossier.dismissalTitle}
         </Typography.Title>

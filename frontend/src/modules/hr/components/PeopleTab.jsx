@@ -321,12 +321,12 @@ function PeopleTable({ people, directions, reload, stats, statsError }) {
         {rows.slice(0, shown).map((p) => (
           <div
             key={p.id}
-            style={{ border: '1px solid #e5e5e5', borderRadius: 8, padding: 12, display: 'flex', flexDirection: 'column', gap: 8, opacity: p.isArchived ? 0.75 : 1 }}
+            style={{ border: '1px solid #e5e5e5', borderRadius: 0, padding: 12, display: 'flex', flexDirection: 'column', gap: 8, opacity: p.isArchived ? 0.75 : 1 }}
           >
             <Space align="start">
               {avatar(p, 48)}
               <div>
-                <div style={{ fontWeight: 600 }}>{p.name}</div>
+                <div style={{ fontWeight: 500 }}>{p.name}</div>
                 <Typography.Text type="secondary">{p.title}</Typography.Text>
               </div>
             </Space>

@@ -11,9 +11,9 @@ const TRACK = '#F0EDEB'
 // Карточка-число. hint — Tooltip на всю карточку
 export function Kpi({ title, value, sub, hint }) {
   const body = (
-    <div style={{ padding: '10px 14px', border: '1px solid #E6E1DE', background: '#fff', borderRadius: 4, height: '100%' }}>
+    <div style={{ padding: '10px 14px', border: '1px solid #E6E1DE', background: '#fff', borderRadius: 0, height: '100%' }}>
       <div style={{ fontSize: 13, color: INK_SECOND, marginBottom: 2 }}>{title}</div>
-      <div style={{ fontSize: 28, fontWeight: 600, lineHeight: 1.15, color: INK }}>{value}</div>
+      <div style={{ fontSize: 28, fontWeight: 500, lineHeight: 1.15, color: INK }}>{value}</div>
       {sub && <div style={{ fontSize: 12, color: INK_MUTED, marginTop: 2 }}>{sub}</div>}
     </div>
   )
@@ -47,7 +47,7 @@ export function Donut({ items, center, size = 120 }) {
         {center && <div style={{ fontSize: 12, color: INK_MUTED, marginBottom: 2 }}>{center}</div>}
         {arcs.map((a) => (
           <div key={a.label} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13, minWidth: 0 }}>
-            <span style={{ width: 10, height: 10, borderRadius: 2, background: a.color, flexShrink: 0 }} />
+            <span style={{ width: 10, height: 10, borderRadius: 0, background: a.color, flexShrink: 0 }} />
             <span style={{ color: INK_SECOND, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }} title={a.label}>
               {a.label}
             </span>
@@ -69,8 +69,8 @@ export function BarList({ rows }) {
           <div style={{ width: 120, flexShrink: 0, fontSize: 13, color: INK_SECOND, textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.label}>
             {r.label}
           </div>
-          <div style={{ flex: 1, minWidth: 0, height: 16, background: TRACK, borderRadius: 4 }}>
-            <div style={{ height: '100%', background: r.color, borderRadius: '0 4px 4px 0', width: `${Math.max((r.value / max) * 100, r.value > 0 ? 1.5 : 0)}%` }} />
+          <div style={{ flex: 1, minWidth: 0, height: 16, background: TRACK, borderRadius: 0 }}>
+            <div style={{ height: '100%', background: r.color, borderRadius: 0, width: `${Math.max((r.value / max) * 100, r.value > 0 ? 1.5 : 0)}%` }} />
           </div>
           <div style={{ width: 80, flexShrink: 0, fontSize: 13, fontVariantNumeric: 'tabular-nums', textAlign: 'right', color: INK }}>
             {r.value} · {pct(r.value, r.total)}%

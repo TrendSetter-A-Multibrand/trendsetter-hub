@@ -14,7 +14,7 @@ export default function AutoChecklistOption({ auto }) {
     )
   }
   return (
-    <div style={{ marginBottom: 14, padding: 12, border: '1px solid #e5e5e5', borderRadius: 8 }}>
+    <div style={{ marginBottom: 14, padding: 12, border: '1px solid #e5e5e5', borderRadius: 0 }}>
       <Checkbox checked={auto.enabled} onChange={(e) => auto.setEnabled(e.target.checked)}>
         {s.label[auto.kind](auto.template.title)}
       </Checkbox>
