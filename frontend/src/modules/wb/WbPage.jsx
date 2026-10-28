@@ -1,5 +1,4 @@
 import { Link, useSearchParams } from 'react-router-dom'
-import { Tabs } from 'antd'
 import coreStrings from '../../core/strings.js'
 import MarkingTab from './marking/MarkingTab.jsx'
 
@@ -27,11 +26,12 @@ function SectionStub({ section, s }) {
   )
 }
 
-// Разделы — вкладки на странице и пункты под «Wildberries» в меню. Оба ведут на ?section=<key>, поэтому активный раздел всегда совпадает.
+// Разделы переключаются только в левом меню (пункты под «Wildberries» ведут на ?section=<key>); на странице — выбранный раздел.
 export default function WbPage({ module, access }) {
   const s = module.strings
-  const [params, setParams] = useSearchParams()
-  const key = SECTIONS.some((x) => x.key === params.get('section')) ? params.get('section') : SECTIONS[0].key
+  const [params] = useSearchParams()
+  const current = SECTIONS.find((x) => x.key === params.get('section')) ?? SECTIONS[0]
+  const { Component } = current
   return (
     <div className="stack module">
       <div className="module-head">
@@ -39,23 +39,15 @@ export default function WbPage({ module, access }) {
           <div className="crumbs">
             <Link to="/">{coreStrings.layout.hub}</Link>
             <span>/</span>
-            <span className="current">{s.dept}</span>
+            <Link to={`/modules/${module.id}`}>{s.dept}</Link>
+            <span>/</span>
+            <span className="current">{s.sections[current.key].label}</span>
           </div>
-          <h1 className="h1">{s.pageTitle}</h1>
-          <div className="subtitle">{s.pageSubtitle}</div>
+          <h1 className="h1">{s.sections[current.key].label}</h1>
+          <div className="subtitle">{s.sections[current.key].description}</div>
         </div>
       </div>
-      <Tabs
-        className="soft-tabs"
-        destroyOnHidden
-        activeKey={key}
-        onChange={(next) => setParams({ section: next })}
-        items={SECTIONS.map(({ key: k, Component }) => ({
-          key: k,
-          label: s.sections[k].label,
-          children: Component ? <Component module={module} access={access} /> : <SectionStub section={s.sections[k]} s={s} />,
-        }))}
-      />
+      {Component ? <Component key={current.key} module={module} access={access} /> : <SectionStub section={s.sections[current.key]} s={s} />}
     </div>
   )
 }

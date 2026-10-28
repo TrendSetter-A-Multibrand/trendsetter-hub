@@ -1,6 +1,6 @@
 /* =====================================================================================================
    Хаб TRENDSETTER — основа интерфейса: токены (светлая и тёмная темы), типографика, каркас, общие блоки.
-   Направление — Soft Minimalism: светло-серый нейтральный фон, белые карточки со скруглением, деликатные цветовые зоны,
+   Направление — Soft Minimalism + TRENDSETTER: фон Warm Off-White, белые карточки со скруглением, деликатные цветовые зоны,
    фирменный Red как единственный яркий акцент. Шрифты — Inter Tight + Geist Mono (TRENDSETTER Design System v2.0).
    Модули используют только эти токены; свои цвета модулям не нужны.
    ===================================================================================================== */
@@ -9,43 +9,45 @@
   color-scheme: light;
 
   /* ---- Семантические токены (переключаются темой) ---- */
-  --bg-page: #F4F5F7;               /* almost white gray — фон страницы, без желтизны */
-  --bg-sidebar: #ECEEF1;            /* меню: на тон темнее страницы */
+  --bg-page: #F6F3EE;               /* Warm Off-White — единый фон всех страниц (утверждён) */
+  --bg-sidebar: #F6F3EE;            /* меню на том же фоне, отделено тонкой линией: навигация лёгкая */
   --bg-surface: #FFFFFF;            /* карточки, таблицы, окна */
-  --bg-surface-secondary: #F6F7F9;  /* hover строки, плашки внутри карточки */
-  --bg-surface-tertiary: #E9EBEF;   /* нажатое / выбранное нейтральное */
+  --bg-surface-secondary: #FAF8F5;  /* hover строки, плашки внутри карточки */
+  --bg-surface-tertiary: #EFEBE5;   /* нажатое / выбранное нейтральное, подложка переключателей */
   /* Цветовые зоны (приглушённые, только как фон крупных блоков) */
-  --zone-mint: #E9F3EE;             /* события, «готово» */
-  --zone-blue: #EDF1F8;             /* информационные виджеты */
-  --zone-sand: #FBF5E8;             /* важные объявления: светлый янтарь, не бежевый */
-  --zone-mint-line: #D3E7DC;
-  --zone-blue-line: #DAE1EE;
-  --zone-sand-line: #F0E2C4;
-  --text-primary: #1F2125;          /* почти чёрный, нейтральный */
-  --text-secondary: #4A4F57;        /* подписи, AA на белом и сером */
-  --text-tertiary: #5F656E;         /* мелкие служебные подписи, AA на белом и зонах */
+  --zone-mint: #EAF2EC;             /* события, «готово» */
+  --zone-blue: #EDF0F6;             /* информационные виджеты */
+  --zone-sand: #F8EFDF;             /* важные объявления */
+  --zone-mint-line: #D5E5DA;
+  --zone-blue-line: #DCE1EC;
+  --zone-sand-line: #EEDDBF;
+  --text-primary: #232120;          /* Sage — основной текст */
+  --text-secondary: #4D4946;        /* подписи, AA на белом и фоне */
+  --text-tertiary: #635E5A;         /* мелкие служебные подписи, AA на белом, фоне и зонах */
   --text-on-accent: #FFFFFF;
   --text-on-inverse: #FFFFFF;       /* текст на заливке --bg-inverse */
-  --bg-inverse: #1F2125;            /* тёмная кнопка / выбранный чип */
-  --bg-inverse-hover: #363A40;
-  --border-default: #E2E5EA;        /* рамки карточек */
-  --border-subtle: #EDEFF2;         /* линии между строками внутри карточки */
-  --border-strong: #1F2125;         /* каркас: фокус поля, выбранное */
-  --border-input: #D2D6DC;
+  --bg-inverse: #232120;            /* тёмная кнопка / выбранный чип */
+  --bg-inverse-hover: #3A3735;
+  --border-default: #E5E2DD;        /* светло-серые деликатные рамки карточек */
+  --border-subtle: #EFECE8;         /* линии между строками внутри карточки */
+  --border-strong: #232120;         /* фокус поля, выбранное */
+  --border-input: #D5D1CB;
   --accent-primary: #A22325;        /* Red: текст-акцент, активный пункт, ссылки */
   --accent-fill: #A22325;           /* Red: заливка главной кнопки, бейджи */
   --accent-fill-hover: #861C1E;
   --accent-disabled: #D9B8B8;
-  --accent-soft: #F8EAEA;           /* активный пункт меню и вкладка, мягкое выделение */
-  --status-success: #005844;        /* Forest */
+  --accent-soft: #F6E7E6;           /* мягкое красное выделение */
+  --status-success: #2F6B52;        /* приглушённый Forest */
   --status-success-soft: var(--zone-mint);
-  --status-warning: #9A5A00;
+  --status-warning: #8F5A10;
   --status-warning-soft: var(--zone-sand);
   --status-error: #A22325;
-  --status-error-soft: #F7E3E1;
+  --status-error-soft: #F7E4E2;
   --marker: #F3D03E;                /* Marker — жёлтая плашка, точечно */
-  --overlay: rgba(20, 22, 26, .5);
+  --overlay: rgba(35, 33, 32, .5);
   --focus-ring: #A22325;
+  /* Палитра данных: диаграммы, направления, категории — приглушённая, различимая, без кислотных тонов */
+  --data-1: #4A6B9A; --data-2: #A85F33; --data-3: #3F7A5F; --data-4: #B57AA6; --data-5: #C9A443; --data-6: #3F7F7A; --data-7: #A9A39E;
 
   /* ---- Типографика ---- */
   --font-sans: 'Inter Tight', 'Inter', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
@@ -76,7 +78,7 @@
   --radius-control: 8px;
   --radius-sm: 6px;
   /* Тень одна, очень мягкая — только чтобы белая карточка отделилась от серого фона */
-  --shadow-card: 0 1px 2px rgba(20, 24, 31, .04), 0 2px 8px rgba(20, 24, 31, .04);
+  --shadow-card: 0 1px 2px rgba(35, 33, 32, .04), 0 2px 8px rgba(35, 33, 32, .04);
 
   /* ---- Движение (TS · Motion) ---- */
   --motion-hover: 150ms;
@@ -102,7 +104,7 @@
   --red-tint: var(--accent-soft);
   --red-plane: var(--accent-fill);
   --forest: var(--status-success);
-  --blue: #1D428A;
+  --blue: var(--data-1);
   --warn-text: var(--status-warning);
   /* мягкие подложки сведены к трём нейтрально-статусным: без пёстрых цветных карточек */
   --tint-red: var(--status-error-soft);
@@ -114,47 +116,48 @@
   --tint-sand: var(--zone-sand);
 }
 
-/* Тёмная тема: нейтральный графит без желтизны, три уровня поверхностей, светлый текст без чистого белого.
-   Red для текста светлее (контраст AA на тёмном), для заливок — насыщенный с белым текстом. */
+/* Тёмная тема: собственные токены — тёплый графит в тон Warm Off-White (не инверсия светлой),
+   три уровня поверхностей, светлый текст без чистого белого. Red для текста светлее (AA на тёмном), для заливок — насыщенный. */
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg-page: #17181B;
-  --bg-sidebar: #1C1D21;
-  --bg-surface: #222327;
-  --bg-surface-secondary: #292A2F;
-  --bg-surface-tertiary: #33353A;
-  --zone-mint: #1C2924;
-  --zone-blue: #1E2330;
-  --zone-sand: #2B271F;
-  --zone-mint-line: #2A3B33;
-  --zone-blue-line: #2C3344;
-  --zone-sand-line: #40382A;
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, .25);
-  --text-primary: #ECEDEF;
-  --text-secondary: #B4B8BF;
-  --text-tertiary: #9CA1A9;
+  --bg-page: #1A1918;
+  --bg-sidebar: #1A1918;
+  --bg-surface: #232120;
+  --bg-surface-secondary: #2A2826;
+  --bg-surface-tertiary: #34312F;
+  --zone-mint: #1D2722;
+  --zone-blue: #1F232C;
+  --zone-sand: #2C261E;
+  --zone-mint-line: #2B3A31;
+  --zone-blue-line: #2D3340;
+  --zone-sand-line: #413727;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, .3);
+  --text-primary: #EDEBE8;
+  --text-secondary: #B9B4AF;
+  --text-tertiary: #9E9893;
   --text-on-accent: #FFFFFF;
-  --text-on-inverse: #1A1B1E;
-  --bg-inverse: #ECEDEF;
-  --bg-inverse-hover: #D2D5DA;
-  --border-default: #33353A;
-  --border-subtle: #2B2D31;
-  --border-strong: #ECEDEF;
-  --border-input: #474A51;
+  --text-on-inverse: #1A1918;
+  --bg-inverse: #EDEBE8;
+  --bg-inverse-hover: #D4D0CB;
+  --border-default: #363331;
+  --border-subtle: #2D2B29;
+  --border-strong: #EDEBE8;
+  --border-input: #4A4643;
   --accent-primary: #E8807E;
   --accent-fill: #B8302F;
   --accent-fill-hover: #C9403F;
   --accent-disabled: #5A3434;
-  --accent-soft: #3A2527;
-  --status-success: #6FC49C;
+  --accent-soft: #3A2626;
+  --status-success: #7CC4A0;
   --status-success-soft: var(--zone-mint);
-  --status-warning: #E2B04A;
+  --status-warning: #E0B356;
   --status-warning-soft: var(--zone-sand);
   --status-error: #E8807E;
-  --status-error-soft: #3A2628;
+  --status-error-soft: #3A2727;
   --overlay: rgba(0, 0, 0, .6);
   --focus-ring: #E8807E;
-  --blue: #8FAEE8;
+  --blue: #9DB4DA;
+  --data-1: #7E9CC8; --data-2: #D28E5F; --data-3: #6FAE90; --data-4: #CC97C0; --data-5: #D9BA62; --data-6: #72B3AD; --data-7: #8F8984;
 }
 
 /* Всё движение отключается при prefers-reduced-motion */
@@ -213,48 +216,67 @@ a:hover { color: var(--accent-fill-hover); }
 
 /* =================================== Боковое меню =================================== */
 .sidebar {
-  background: var(--bg-sidebar); color: var(--text-primary);
+  background: var(--bg-sidebar); color: var(--text-primary); border-right: 1px solid var(--border-default);
   display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto;
   padding: var(--space-24) var(--space-12) var(--space-16);
 }
-.brand { padding: var(--space-4) var(--space-12) var(--space-24); display: flex; flex-direction: column; gap: var(--space-8); }
+.brand { padding: var(--space-4) var(--space-12) var(--space-24) 18px; display: flex; flex-direction: column; gap: var(--space-8); }
 .brand-logo { display: block; width: 168px; color: var(--accent-fill); }
 :root[data-theme='dark'] .brand-logo { color: #FFFFFF; } /* белый вариант логотипа на тёмном (DS: логотип White) */
 .brand-logo svg { display: block; width: 100%; height: auto; }
 .brand-sub { font-size: var(--fs-caption); color: var(--text-secondary); }
-.nav-label { font-size: var(--fs-caption); color: var(--text-tertiary); padding: var(--space-24) var(--space-12) var(--space-8); }
+.nav-label { font-size: 11px; color: var(--text-tertiary); letter-spacing: .08em; text-transform: uppercase; padding: var(--space-24) var(--space-4) var(--space-8) 18px; }
 .nav-list { display: flex; flex-direction: column; gap: 2px; }
 
-/* Пункт меню: название + отдел. Активный — Red и полоса слева, hover — Paper */
+/* Пункт меню — фирменный приём TRENDSETTER: [ НАЗВАНИЕ ]. Скобки — типографика, не бейдж:
+   у активного пункта они и название Red, у неактивных скобок нет (место под них зарезервировано, текст не прыгает),
+   при наведении скобки проявляются бледно. Без фонов и рамок — навигация остаётся лёгкой. */
 .nav-item {
-  position: relative; display: flex; align-items: center; gap: var(--space-12); border-radius: var(--radius-tab);
-  min-height: var(--control-m); padding: var(--space-8) var(--space-12); color: var(--text-primary);
-  transition: background var(--motion-hover) var(--motion-ease), color var(--motion-hover) var(--motion-ease);
+  position: relative; display: flex; align-items: center; gap: var(--space-8); border-radius: var(--radius-tab);
+  min-height: var(--control-m); padding: var(--space-8) var(--space-12) var(--space-8) var(--space-4); color: var(--text-primary);
+  transition: color var(--motion-hover) var(--motion-ease);
 }
-/* Активный пункт — белая «таблетка» на сером меню, название Red */
-.nav-item:hover { background: rgba(20, 24, 31, .05); color: var(--text-primary); }
-:root[data-theme='dark'] .nav-item:hover { background: rgba(255, 255, 255, .05); }
-.nav-item.active { background: var(--bg-surface); color: var(--accent-primary); box-shadow: var(--shadow-card); }
+.nav-item:hover { color: var(--accent-primary); }
+.nav-item.active { color: var(--accent-primary); }
 .nav-item.dim { color: var(--text-secondary); }
-.nav-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
-.nav-title { font-size: var(--fs-body); font-weight: var(--fw-medium); line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.nav-dept { font-family: var(--font-sans); font-size: var(--fs-caption); color: var(--text-tertiary); line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav-item.dim:hover { color: var(--accent-primary); }
+.nav-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.nav-title {
+  display: flex; align-items: baseline; min-width: 0;
+  font-size: var(--fs-small); font-weight: var(--fw-medium); line-height: 1.3; letter-spacing: .06em; text-transform: uppercase;
+}
+.nav-title-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.nav-title::before, .nav-title::after, .nav-section::before, .nav-section::after {
+  flex: none; display: inline-block; width: 14px; font-weight: var(--fw-regular); letter-spacing: 0;
+  opacity: 0; transition: opacity var(--motion-hover) var(--motion-ease), transform var(--motion-hover) var(--motion-ease);
+}
+.nav-title::before, .nav-section::before { content: '['; text-align: left; transform: translateX(3px); }
+.nav-title::after, .nav-section::after { content: ']'; text-align: right; transform: translateX(-3px); }
+.nav-item:hover .nav-title::before, .nav-item:hover .nav-title::after,
+.nav-section:hover::before, .nav-section:hover::after { opacity: .4; transform: none; }
+.nav-item.active .nav-title::before, .nav-item.active .nav-title::after,
+.nav-section.active::before, .nav-section.active::after { opacity: 1; transform: none; }
+.nav-dept { font-family: var(--font-sans); font-size: var(--fs-caption); color: var(--text-tertiary); line-height: 1.3; padding-left: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nav-item.active .nav-dept { color: var(--text-secondary); }
+/* Стрелка у пунктов с разделами: поворачивается, когда разделы раскрыты */
+.nav-chevron { flex: none; font-size: 10px; color: var(--text-tertiary); transition: transform var(--motion-enter) var(--motion-ease), color var(--motion-hover) var(--motion-ease); }
+.nav-item:hover .nav-chevron, .nav-item.active .nav-chevron { color: currentColor; }
+.nav-group:hover .nav-chevron, .nav-group:focus-within .nav-chevron, .nav-group.open .nav-chevron { transform: rotate(180deg); }
 .nav-badge {
   flex: none; min-width: 20px; height: 20px; padding: 0 6px; border-radius: var(--radius-sm); background: var(--accent-fill); color: var(--text-on-accent);
   font-family: var(--font-mono); font-size: var(--fs-caption); display: inline-flex; align-items: center; justify-content: center;
 }
-/* Разделы модуля: раскрыты на странице модуля, при наведении и фокусе */
-.nav-sections { display: none; flex-direction: column; gap: 2px; margin: var(--space-4) 0 var(--space-8) var(--space-12); padding-left: var(--space-8); border-left: 1px solid var(--border-default); }
+/* Разделы модуля: раскрыты на странице модуля, при наведении и фокусе. Тот же приём со скобками, без капса */
+.nav-sections { display: none; flex-direction: column; gap: 0; margin: 0 0 var(--space-8) var(--space-16); }
 .nav-group:hover .nav-sections, .nav-group:focus-within .nav-sections, .nav-group.open .nav-sections { display: flex; }
 .nav-section {
-  position: relative; display: flex; align-items: center; min-height: var(--control-s); padding: 0 var(--space-12);
+  position: relative; display: flex; align-items: center; min-height: var(--control-s); padding: 0 var(--space-8) 0 var(--space-4);
   border-radius: var(--radius-control); font-size: var(--fs-body); color: var(--text-secondary);
-  transition: color var(--motion-hover) var(--motion-ease), background var(--motion-hover) var(--motion-ease);
+  transition: color var(--motion-hover) var(--motion-ease);
 }
-.nav-section:hover { color: var(--text-primary); background: rgba(20, 24, 31, .05); }
-:root[data-theme='dark'] .nav-section:hover { background: rgba(255, 255, 255, .05); }
-.nav-section.active { color: var(--accent-primary); font-weight: var(--fw-medium); background: var(--accent-soft); }
+.nav-section::after { margin-left: 2px; }
+.nav-section:hover { color: var(--accent-primary); }
+.nav-section.active { color: var(--accent-primary); font-weight: var(--fw-medium); }
 
 /* ---- Профиль внизу меню: аватар-маскот, имя, роль; справа — тема и уведомления ---- */
 .user-slot { margin-top: auto; padding-top: var(--space-16); }
@@ -450,11 +472,18 @@ a:hover { color: var(--accent-fill-hover); }
 .page:has(.stack.home) { max-width: 1440px; margin: 0 auto; }
 
 /* Приветствие: дата-плашка и крупный персональный заголовок; тонкая красная черта — фирменный акцент */
-.greeting { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-12); padding: var(--space-8) 0 var(--space-8); }
+.greeting { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-12); padding: var(--space-16) 0 var(--space-8); animation: greeting-in var(--motion-enter) var(--motion-ease) both; }
 .greeting-date { font-size: var(--fs-small); color: var(--text-secondary); padding: 4px 10px; border-radius: var(--radius-sm); background: var(--bg-surface); box-shadow: var(--shadow-card); }
 .greeting-date::first-letter { text-transform: uppercase; }
-.greeting h1 { margin: 0; font-size: 40px; font-weight: var(--fw-medium); letter-spacing: -0.025em; line-height: 1.1; text-wrap: balance; }
-.greeting h1::after { content: ''; display: block; width: 40px; height: 3px; margin-top: var(--space-16); border-radius: 2px; background: var(--accent-fill); }
+.greeting-row { display: flex; align-items: center; gap: var(--space-16); }
+.greeting-mascot { width: 52px; height: 52px; flex: none; border-radius: 50%; overflow: hidden; box-shadow: var(--shadow-card); }
+.greeting-mascot img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.greeting h1 { margin: 0; font-size: 48px; font-weight: var(--fw-medium); letter-spacing: -0.03em; line-height: 1.08; text-wrap: balance; }
+.greeting h1 .accent { color: var(--accent-primary); }
+.greeting h1::after { content: ''; display: block; width: 48px; height: 3px; margin-top: var(--space-16); border-radius: 2px; background: var(--accent-fill); animation: greeting-bar 500ms var(--motion-ease) 150ms both; }
+@keyframes greeting-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes greeting-bar { from { width: 0; } to { width: 48px; } }
+@media (prefers-reduced-motion: reduce) { .greeting, .greeting h1::after { animation: none; } }
 
 /* Новости | события | виджеты. Без колонок новостей (нет доступа) виджеты идут сеткой на всю ширину. */
 .home-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-24); align-items: start; }
@@ -477,7 +506,7 @@ a:hover { color: var(--accent-fill-hover); }
 }
 .home-panel.events { background: var(--zone-mint); border-color: var(--zone-mint-line); box-shadow: none; }
 .home-aside .home-card { background: var(--zone-blue); border-color: var(--zone-blue-line); box-shadow: none; }
-.home-panel.events .news-row, .home-aside .home-card .clock, .home-aside .home-card .rates-row { border-color: rgba(20, 24, 31, .08); }
+.home-panel.events .news-row, .home-aside .home-card .clock, .home-aside .home-card .rates-row { border-color: rgba(35, 33, 32, .08); }
 :root[data-theme='dark'] .home-panel.events .news-row, :root[data-theme='dark'] .home-aside .home-card .clock,
 :root[data-theme='dark'] .home-aside .home-card .rates-row { border-color: rgba(255, 255, 255, .07); }
 .home-card-head, .news-col-title {
@@ -492,7 +521,7 @@ a:hover { color: var(--accent-fill-hover); }
 .clock-city { font-family: var(--font-sans); font-size: var(--fs-small); color: var(--text-secondary); }
 .clock-time { font-family: var(--font-mono); font-size: 26px; font-weight: var(--fw-regular); line-height: 1.2; font-variant-numeric: tabular-nums; }
 
-.weather-city { display: flex; flex-direction: column; gap: var(--space-8); padding: var(--space-12) 0; border-top: 1px solid rgba(20, 24, 31, .08); }
+.weather-city { display: flex; flex-direction: column; gap: var(--space-8); padding: var(--space-12) 0; border-top: 1px solid rgba(35, 33, 32, .08); }
 :root[data-theme='dark'] .weather-city { border-top-color: rgba(255, 255, 255, .07); }
 .weather-city:first-of-type { border-top: 0; }
 .weather-city-head { display: flex; align-items: baseline; gap: var(--space-12); }
@@ -529,12 +558,12 @@ a:hover { color: var(--accent-fill-hover); }
 /* Всплывающие слои: мягкая тень вместо жёсткой рамки */
 .ant-popover-inner, .ant-dropdown-menu, .ant-select-dropdown, .ant-picker-dropdown .ant-picker-panel-container,
 .ant-modal-content, .ant-message-notice-content, .ant-notification-notice, .ant-dropdown .ant-dropdown-menu {
-  box-shadow: 0 8px 28px rgba(20, 24, 31, .12) !important; border: 1px solid var(--border-default);
+  box-shadow: 0 8px 28px rgba(35, 33, 32, .12) !important; border: 1px solid var(--border-default);
 }
 :root[data-theme='dark'] .ant-popover-inner, :root[data-theme='dark'] .ant-dropdown-menu, :root[data-theme='dark'] .ant-select-dropdown,
 :root[data-theme='dark'] .ant-picker-dropdown .ant-picker-panel-container, :root[data-theme='dark'] .ant-modal-content,
 :root[data-theme='dark'] .ant-message-notice-content { box-shadow: 0 8px 28px rgba(0, 0, 0, .45) !important; }
-.ant-drawer-content-wrapper { box-shadow: -8px 0 32px rgba(20, 24, 31, .12) !important; }
+.ant-drawer-content-wrapper { box-shadow: -8px 0 32px rgba(35, 33, 32, .12) !important; }
 /* Таблицы antd — внутри скруглённой карточки */
 .ant-table-wrapper .ant-table { border: 1px solid var(--border-default); border-radius: var(--radius-card); overflow: hidden; box-shadow: var(--shadow-card); }
 .ant-table-wrapper .ant-table-container { border-radius: var(--radius-card); }
@@ -583,20 +612,19 @@ a:hover { color: var(--accent-fill-hover); }
 .home-col > *, .home-aside > * { width: 100%; }
 .home-card-head + .weather-city { border-top: 0; }
 
-/* Вкладки разделов (.soft-tabs): сегменты на серой подложке, активная — белая карточка с Red-текстом */
-.soft-tabs > .ant-tabs-nav { margin-bottom: var(--space-24) !important; }
-.soft-tabs > .ant-tabs-nav::before { display: none; }
-.soft-tabs > .ant-tabs-nav .ant-tabs-nav-wrap { flex: 0 1 auto; min-width: 0; }
-.soft-tabs > .ant-tabs-nav .ant-tabs-nav-more { border-radius: var(--radius-control); }
-.soft-tabs > .ant-tabs-nav .ant-tabs-nav-list {
-  gap: 2px; padding: 4px; border-radius: calc(var(--radius-tab) + 4px); background: var(--bg-surface-tertiary);
+/* Вкладки страниц (HR, профиль, админка) — навигация, поэтому тот же фирменный приём: активная [ Вкладка ] Red,
+   неактивные тёмные без скобок, место под скобки зарезервировано. Линия-подчёркивание antd скрыта. */
+.ant-tabs-top > .ant-tabs-nav .ant-tabs-ink-bar { display: none; }
+.ant-tabs-top > .ant-tabs-nav .ant-tabs-tab { padding: 10px 0; }
+.ant-tabs-top > .ant-tabs-nav .ant-tabs-tab + .ant-tabs-tab { margin-left: var(--space-12); }
+.ant-tabs-top > .ant-tabs-nav .ant-tabs-tab-btn { display: inline-flex; align-items: baseline; color: var(--text-primary); transition: color var(--motion-hover) var(--motion-ease); }
+.ant-tabs-top > .ant-tabs-nav .ant-tabs-tab-btn::before, .ant-tabs-top > .ant-tabs-nav .ant-tabs-tab-btn::after {
+  display: inline-block; width: 12px; font-weight: var(--fw-regular); opacity: 0;
+  transition: opacity var(--motion-hover) var(--motion-ease), transform var(--motion-hover) var(--motion-ease);
 }
-.soft-tabs > .ant-tabs-nav .ant-tabs-tab {
-  margin: 0 !important; padding: 8px 16px; border-radius: var(--radius-tab); font-size: var(--fs-body); color: var(--text-secondary);
-  transition: background var(--motion-hover) var(--motion-ease), color var(--motion-hover) var(--motion-ease);
-}
-.soft-tabs > .ant-tabs-nav .ant-tabs-tab:hover { color: var(--text-primary); }
-.soft-tabs > .ant-tabs-nav .ant-tabs-tab-active { background: var(--bg-surface); box-shadow: var(--shadow-card); }
-.soft-tabs > .ant-tabs-nav .ant-tabs-tab-active .ant-tabs-tab-btn { color: var(--accent-primary) !important; font-weight: var(--fw-medium); }
-.soft-tabs > .ant-tabs-nav .ant-tabs-ink-bar { display: none; }
-:root[data-theme='dark'] .nav-item.active { background: var(--bg-surface-tertiary); box-shadow: none; }
+.ant-tabs-top > .ant-tabs-nav .ant-tabs-tab-btn::before { content: '['; text-align: left; transform: translateX(3px); }
+.ant-tabs-top > .ant-tabs-nav .ant-tabs-tab-btn::after { content: ']'; text-align: right; transform: translateX(-3px); }
+.ant-tabs-top > .ant-tabs-nav .ant-tabs-tab:hover .ant-tabs-tab-btn { color: var(--accent-primary); }
+.ant-tabs-top > .ant-tabs-nav .ant-tabs-tab:hover .ant-tabs-tab-btn::before, .ant-tabs-top > .ant-tabs-nav .ant-tabs-tab:hover .ant-tabs-tab-btn::after { opacity: .4; transform: none; }
+.ant-tabs-top > .ant-tabs-nav .ant-tabs-tab-active .ant-tabs-tab-btn { color: var(--accent-primary) !important; font-weight: var(--fw-medium); }
+.ant-tabs-top > .ant-tabs-nav .ant-tabs-tab-active .ant-tabs-tab-btn::before, .ant-tabs-top > .ant-tabs-nav .ant-tabs-tab-active .ant-tabs-tab-btn::after { opacity: 1; transform: none; }

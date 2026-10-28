@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Alert, Input, Select, Space, Spin, Tag, Typography } from 'antd'
 import { formatDate, todayIso } from '../../../core/dates.js'
+import { DATA_COLORS, softDirections } from '../../../core/palette.js'
 import strings from '../strings.js'
 import { useLoad } from '../lib/useLoad.js'
 import { directionOptions } from '../lib/options.js'
@@ -8,7 +9,7 @@ import { barPosition, monthColumns, monthLoad, OVERLOAD_THRESHOLD, planRows } fr
 
 const s = strings.plan
 const t = s.tab
-const STATUS_COLORS = { planned: '#4A7FB5', converted: '#6FA287' }
+const STATUS_COLORS = { planned: DATA_COLORS.blue, converted: DATA_COLORS.green }
 const NAME_WIDTH = 220
 const TRACK_MIN = 720
 const LINE = '1px solid var(--border-soft)'
@@ -139,7 +140,8 @@ export default function PlanTab() {
   const [directionId, setDirectionId] = useState(null)
   const { data: plans, error } = useLoad(`/modules/hr/leave/plan?year=${year}`)
   const { data: people, error: peopleError } = useLoad('/modules/team/hr/people')
-  const { data: directions, error: directionsError } = useLoad('/modules/team/hr/directions')
+  const { data: rawDirections, error: directionsError } = useLoad('/modules/team/hr/directions')
+  const directions = useMemo(() => softDirections(rawDirections), [rawDirections])
 
   const ready = plans && people && directions
   const visibleDirections = useMemo(() => (directions ?? []).filter((d) => !directionId || d.id === directionId), [directions, directionId])

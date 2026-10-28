@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Alert, App, Avatar, Button, Collapse, Dropdown, Input, Modal,Segmented, Select, Space, Spin, Switch, Table, Tag, Typography } from 'antd'
 import { api } from '../../../core/api/index.js'
 import coreStrings from '../../../core/strings.js'
+import { softDirections } from '../../../core/palette.js'
 import strings from '../strings.js'
 import { useLoad } from '../lib/useLoad.js'
 import { managerOptions, personName } from '../lib/options.js'
@@ -489,7 +490,8 @@ function PeopleTable({ people, directions, reload, stats, statsError }) {
 
 export default function PeopleTab() {
   const { data: people, error, reload } = useLoad(`${BASE}/people`)
-  const { data: directions, error: dirError } = useLoad(`${BASE}/directions`)
+  const { data: rawDirections, error: dirError } = useLoad(`${BASE}/directions`)
+  const directions = useMemo(() => softDirections(rawDirections), [rawDirections])
   const { data: stats, error: statsError, reload: reloadStats } = useLoad('/modules/hr/stats')
   if (error || dirError) return <Alert type="error" showIcon title={strings.loadFailed} description={error ?? dirError} />
   if (!people || !directions) return <Spin />

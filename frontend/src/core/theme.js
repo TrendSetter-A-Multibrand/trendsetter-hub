@@ -1,4 +1,4 @@
-// Тема antd: Soft Minimalism — светло-серые нейтральные поверхности, скругления 8/14, Inter Tight Regular/Medium, TS · Motion.
+// Тема antd: Soft Minimalism + TRENDSETTER — фон Warm Off-White, белые поверхности, скругления 8/14, Inter Tight Regular/Medium, TS · Motion.
 // Две палитры — светлая и тёмная; значения совпадают с переменными в styles.css (:root и [data-theme='dark']).
 // antd считает оттенки hover/active сам, поэтому здесь конкретные цвета, а не var(--…).
 import { theme as antdTheme } from 'antd'
@@ -7,16 +7,24 @@ const PALETTE = {
   // fill — заливка главной кнопки (белый текст), link — красный текст на фоне темы
   light: {
     fill: '#A22325', fillHover: '#861C1E', fillActive: '#7E1A1C', link: '#A22325', linkHover: '#861C1E',
-    ink: '#1F2125', muted: '#4A4F57', page: '#F4F5F7', surface: '#FFFFFF', surface2: '#F6F7F9',
-    border: '#D2D6DC', borderSoft: '#E2E5EA', rowBorder: '#EDEFF2', forest: '#005844', warn: '#9A5A00',
-    mask: 'rgba(20,22,26,.45)', track: '#E9EBEF',
+    ink: '#232120', muted: '#4D4946', page: '#F6F3EE', surface: '#FFFFFF', surface2: '#FAF8F5',
+    border: '#D5D1CB', borderSoft: '#E5E2DD', rowBorder: '#EFECE8', forest: '#2F6B52', warn: '#8F5A10',
+    mask: 'rgba(35,33,32,.45)', track: '#EFEBE5',
   },
   dark: {
     fill: '#B8302F', fillHover: '#C9403F', fillActive: '#A12827', link: '#E8807E', linkHover: '#F0A09E',
-    ink: '#ECEDEF', muted: '#B4B8BF', page: '#17181B', surface: '#222327', surface2: '#292A2F',
-    border: '#474A51', borderSoft: '#33353A', rowBorder: '#2B2D31', forest: '#6FC49C', warn: '#E2B04A',
-    mask: 'rgba(0,0,0,.6)', track: '#33353A',
+    ink: '#EDEBE8', muted: '#B9B4AF', page: '#1A1918', surface: '#232120', surface2: '#2A2826',
+    border: '#4A4643', borderSoft: '#363331', rowBorder: '#2D2B29', forest: '#7CC4A0', warn: '#E0B356',
+    mask: 'rgba(0,0,0,.6)', track: '#34312F',
   },
+}
+
+// Приглушённые базовые цвета antd: из них строятся пресеты Tag (color="blue", "green", …) и индикаторы.
+// Те же тона, что --data-* в styles.css, — бейджи, диаграммы и проценты в одной палитре, без кислотных оттенков.
+const SEEDS = {
+  blue: '#4A6B9A', geekblue: '#55649A', cyan: '#3F7F7A', green: '#3F7A5F', lime: '#7A8F45',
+  gold: '#B48A2E', yellow: '#C9A443', orange: '#A85F33', volcano: '#A85A3A', red: '#A22325',
+  magenta: '#A0628F', pink: '#B57AA6', purple: '#76649C',
 }
 
 export function getTheme(mode) {
@@ -24,6 +32,8 @@ export function getTheme(mode) {
   return {
     algorithm: mode === 'dark' ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
     token: {
+      ...SEEDS,
+      colorInfo: SEEDS.blue,
       colorPrimary: c.fill,
       colorPrimaryHover: c.fillHover,
       colorPrimaryActive: c.fillActive,
@@ -73,6 +83,7 @@ export function getTheme(mode) {
       Menu: { itemSelectedColor: c.link },
       Badge: { colorError: c.fill },
       Segmented: { itemSelectedBg: c.surface, itemSelectedColor: c.link, trackBg: c.track, trackPadding: 4 },
+      Progress: { defaultColor: mode === 'dark' ? '#6FAE90' : SEEDS.green, remainingColor: c.track },
       Skeleton: { gradientFromColor: c.rowBorder, gradientToColor: c.rowBorder },
     },
   }

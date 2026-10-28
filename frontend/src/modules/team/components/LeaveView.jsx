@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Alert } from 'antd'
 import { addDays, formatDate, todayIso } from '../../../core/dates.js'
+import { DATA_COLORS } from '../../../core/palette.js'
 import Avatar from './Avatar.jsx'
 import strings from '../strings.js'
 import { buildRows, cardState } from '../lib/tree.js'
@@ -12,7 +13,7 @@ import { dayByPerson, monthKey, UPCOMING_DAYS, upcomingBirthdays } from '../lib/
 const s = strings.leave
 const pn = strings.panel
 const bd = strings.birthdays
-const KIND_COLORS = { annual: '#6FA287', unpaid: '#C9A227', study: '#4A7FB5', other: '#8A8381', sick: '#B55A5A' }
+const KIND_COLORS = { annual: DATA_COLORS.green, unpaid: DATA_COLORS.ochre, study: DATA_COLORS.blue, other: DATA_COLORS.stone, sick: DATA_COLORS.terracotta }
 const LEGEND_KINDS = ['annual', 'unpaid', 'study', 'other']
 
 const monthTitle = (first) => `${s.months[Number(first.slice(5, 7)) - 1]} ${first.slice(0, 4)}`

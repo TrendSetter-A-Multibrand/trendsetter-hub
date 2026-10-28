@@ -24,9 +24,9 @@
 /* Цвет, выбранный редактором, — квадрат 8 px у даты (не фон карточки) */
 .news-row.color-red { --row-accent: var(--accent-fill); }
 .news-row.color-green { --row-accent: var(--status-success); }
-.news-row.color-yellow { --row-accent: var(--marker); }
+.news-row.color-yellow { --row-accent: var(--data-5); }
 .news-row.color-blue { --row-accent: var(--blue); }
-.news-row.color-pink { --row-accent: #E59BDC; }
+.news-row.color-pink { --row-accent: var(--data-4); }
 .news-row.color-gray { --row-accent: var(--text-tertiary); }
 .news-meta { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-8); min-height: 18px; }
 .news-dot { display: none; width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--row-accent); }
@@ -83,9 +83,9 @@
 .news-swatch.none { background: var(--surface); }
 .news-swatch.red { background: var(--accent-fill); }
 .news-swatch.green { background: var(--forest); }
-.news-swatch.yellow { background: var(--marker); }
+.news-swatch.yellow { background: var(--data-5); }
 .news-swatch.blue { background: var(--blue); }
-.news-swatch.pink { background: #E59BDC; }
+.news-swatch.pink { background: var(--data-4); }
 .news-swatch.gray { background: var(--text-tertiary); }
 .news-admin-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
 .news-admin-item { display: flex; flex-direction: column; gap: 6px; padding: 12px 0; border-top: 1px solid var(--border); min-width: 0; }

@@ -101,7 +101,7 @@ const strings = {
   hub: {
     greeting: (name, hour) => {
       const part = hour < 6 ? 'Доброй ночи' : hour < 12 ? 'Доброе утро' : hour < 18 ? 'Добрый день' : 'Добрый вечер'
-      return `${part}, ${name}`
+      return { part, name }
     },
     loadFailed: 'Не удалось загрузить запуски',
     // Главная: сводка (часы, погода, курсы). Строки виджетов модуля team — в modules/team/strings.js

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
-import { MenuOutlined, CloseOutlined } from '@ant-design/icons'
+import { CloseOutlined, DownOutlined, MenuOutlined } from '@ant-design/icons'
 import { useAuth } from '../auth/useAuth.js'
 import { DEMO_MODE } from '../config.js'
 import { MODULES } from '../../modules/registry.js'
@@ -60,7 +60,9 @@ export default function AppLayout() {
         <nav aria-label={strings.mainNav}>
           <Link to="/" className={`nav-item${location.pathname === '/' ? ' active' : ''}`} aria-current={location.pathname === '/' ? 'page' : undefined}>
             <span className="nav-text">
-              <span className="nav-title">{s.home}</span>
+              <span className="nav-title">
+                <span className="nav-title-text">{s.home}</span>
+              </span>
             </span>
           </Link>
           <div className="nav-label">{s.departmentsLabel}</div>
@@ -69,6 +71,7 @@ export default function AppLayout() {
               const path = `/modules/${m.id}`
               const active = location.pathname === path
               const badge = me.module_badges?.[m.id] ?? 0
+              const grouped = Boolean(m.sections && m.allowed && m.Component)
               const link = (
                 <Link
                   key={m.id}
@@ -77,7 +80,9 @@ export default function AppLayout() {
                   aria-current={active ? 'page' : undefined}
                 >
                   <span className="nav-text">
-                    <span className="nav-title">{m.strings.tool}</span>
+                    <span className="nav-title">
+                      <span className="nav-title-text">{m.strings.tool}</span>
+                    </span>
                     <span className="nav-dept">{m.strings.dept}</span>
                   </span>
                   {badge > 0 && (
@@ -85,10 +90,11 @@ export default function AppLayout() {
                       {badge}
                     </span>
                   )}
+                  {grouped && <DownOutlined className="nav-chevron" aria-hidden />}
                 </Link>
               )
               // разделы модуля (sections в реестре) — раскрыты на странице модуля, при наведении и на телефоне
-              if (!m.sections || !m.allowed || !m.Component) return link
+              if (!grouped) return link
               const current = new URLSearchParams(location.search).get('section') ?? m.sections[0].key
               return (
                 <div key={m.id} className={`nav-group${active ? ' open' : ''}`}>
