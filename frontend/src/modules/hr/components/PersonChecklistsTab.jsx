@@ -178,7 +178,7 @@ function ChecklistCard({ checklist, users, today, onChanged }) {
   ]
 
   return (
-    <section style={{ border: '1px solid var(--border)', borderRadius: 0, padding: 12, marginBottom: 16, opacity: active ? 1 : 0.85 }}>
+    <section style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-card)', padding: 12, marginBottom: 16, opacity: active ? 1 : 0.85 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
         <Space wrap size={6}>
           <Typography.Text strong>{checklist.title}</Typography.Text>

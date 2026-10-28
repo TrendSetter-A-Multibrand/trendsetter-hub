@@ -9,7 +9,7 @@ const s = strings.stats
 const OPEN_KEY = 'hr.people.stats'
 const GRID = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12 }
 const GRID_WIDE = { ...GRID, gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }
-const PANEL = { border: '1px solid var(--border)', background: 'var(--surface)', borderRadius: 0, padding: '12px 14px' }
+const PANEL = { border: '1px solid var(--border)', background: 'var(--surface)', borderRadius: 'var(--radius-card)', padding: '12px 14px' }
 
 const loadOpen = () => {
   try {

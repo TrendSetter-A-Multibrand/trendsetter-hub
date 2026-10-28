@@ -6,14 +6,18 @@
 .mk-actions { display: flex; gap: var(--space-8); flex-wrap: wrap; }
 .mk-sources { display: flex; gap: var(--space-24); flex-wrap: wrap; margin-top: calc(-1 * var(--space-12)); }
 .mk-source { display: inline-flex; align-items: center; gap: var(--space-8); font-family: var(--font-sans); font-size: var(--fs-caption); color: var(--text-secondary); cursor: default; }
-.mk-source-dot { width: 6px; height: 6px; background: var(--status-success); }
+.mk-source-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--status-success); }
 .mk-source.off { color: var(--text-tertiary); }
 .mk-source.off .mk-source-dot { background: var(--border-input); }
 
-/* Показатели: одна линия-рамка, акцент — только цвет числа */
-.mk-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); border: 1px solid var(--border-default); }
-.mk-kpi { background: var(--bg-surface); padding: var(--space-16) var(--space-24); display: flex; flex-direction: column; gap: var(--space-4); box-shadow: inset -1px 0 0 var(--border-subtle); }
-.mk-kpi:last-child { box-shadow: none; }
+/* Показатели: отдельные карточки. «Ждут вывода» — тёплая зона (действие нужно), «Странные» — мягкий красный */
+.mk-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--space-12); }
+.mk-kpi {
+  background: var(--bg-surface); border: 1px solid var(--border-default); border-radius: var(--radius-card); box-shadow: var(--shadow-card);
+  padding: var(--space-16) var(--space-24); display: flex; flex-direction: column; gap: var(--space-4);
+}
+.mk-kpi.accent { background: var(--zone-sand); border-color: var(--zone-sand-line); box-shadow: none; }
+.mk-kpi.accent:last-child { background: var(--status-error-soft); border-color: transparent; }
 .mk-kpi-label { font-family: var(--font-sans); font-size: var(--fs-small); color: var(--text-secondary); }
 .mk-kpi-value { font-family: var(--font-mono); font-size: var(--fs-h2); font-weight: var(--fw-regular); line-height: 1.15; }
 .mk-kpi-hint { font-size: var(--fs-caption); color: var(--text-secondary); }
@@ -22,16 +26,16 @@
 /* Лента дней */
 .mk-days { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(120px, 1fr); gap: var(--space-8); overflow-x: auto; padding-bottom: var(--space-4); }
 .mk-day {
-  background: var(--bg-surface); border: 1px solid var(--border-default); padding: var(--space-12) var(--space-16); text-align: left; cursor: pointer;
+  background: var(--bg-surface); border: 1px solid var(--border-default); border-radius: var(--radius-card); padding: var(--space-12) var(--space-16); text-align: left; cursor: pointer;
   display: flex; flex-direction: column; gap: var(--space-8); font: inherit; color: var(--text-primary);
   transition: border-color var(--motion-hover) var(--motion-ease);
 }
-.mk-day:hover { border-color: var(--border-strong); }
-.mk-day.active { border-color: var(--border-strong); box-shadow: inset 0 0 0 1px var(--border-strong); }
+.mk-day:hover { border-color: var(--border-input); }
+.mk-day.active { border-color: var(--accent-primary); box-shadow: inset 0 0 0 1px var(--accent-primary); }
 .mk-day-head { font-size: var(--fs-caption); color: var(--text-secondary); }
 .mk-day-count { font-family: var(--font-mono); font-size: var(--fs-h3); line-height: 1; }
-.mk-day-bar { height: 3px; background: var(--border-subtle); overflow: hidden; }
-.mk-day-bar > span { display: block; height: 100%; background: var(--text-primary); }
+.mk-day-bar { height: 4px; border-radius: 2px; background: var(--border-subtle); overflow: hidden; }
+.mk-day-bar > span { display: block; height: 100%; border-radius: 2px; background: var(--text-primary); }
 .mk-day-issues { font-family: var(--font-sans); font-size: var(--fs-caption); color: var(--text-tertiary); }
 .mk-day-issues.has { color: var(--accent-primary); }
 
@@ -45,7 +49,7 @@
 .mk-missing { font-size: var(--fs-caption); color: var(--accent-primary); }
 .mk-reason { font-size: var(--fs-small); color: var(--accent-primary); }
 .mk-status { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-small); white-space: nowrap; }
-.mk-status-dot { width: 6px; height: 6px; background: var(--status-success); }
+.mk-status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--status-success); }
 .mk-status.st-wait { color: var(--status-warning); }
 .mk-status.st-wait .mk-status-dot { background: var(--status-warning); }
 /* Подсвечены только «странные» коды; ожидающие видны по статусу */

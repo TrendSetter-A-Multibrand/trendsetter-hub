@@ -75,7 +75,7 @@ function Timeline({ groups, year }) {
   const monthLines = cols.map((c) => <div key={c.month} style={{ position: 'absolute', top: 0, bottom: 0, left: `${c.left}%`, borderLeft: LINE }} />)
 
   return (
-    <div style={{ overflowX: 'auto', border: '1px solid var(--border)', borderRadius: 0, background: 'var(--surface)' }}>
+    <div style={{ overflowX: 'auto', border: '1px solid var(--border)', borderRadius: 'var(--radius-card)', background: 'var(--surface)' }}>
       <div style={{ minWidth: NAME_WIDTH + TRACK_MIN }}>
         <div style={{ display: 'flex' }}>
           <div style={{ width: NAME_WIDTH, flex: 'none', position: 'sticky', left: 0, background: 'var(--surface)', zIndex: 3 }} />
@@ -114,7 +114,7 @@ function Timeline({ groups, year }) {
                           key={pl.id}
                           title={t.tip(person.name, formatDate(pl.start), formatDate(pl.end), pl.comment)}
                           style={{
-                            position: 'absolute', top: 6, height: 18, borderRadius: 0, minWidth: 3, left: `${pos.left}%`, width: `${pos.width}%`,
+                            position: 'absolute', top: 6, height: 18, borderRadius: 4, minWidth: 3, left: `${pos.left}%`, width: `${pos.width}%`,
                             background: STATUS_COLORS[pl.status] ?? STATUS_COLORS.planned, zIndex: 2,
                           }}
                         />
@@ -171,7 +171,7 @@ export default function PlanTab() {
         <Space size={12} style={{ color: 'var(--faint)', fontSize: 12 }} aria-label={t.legend}>
           {Object.entries(STATUS_COLORS).map(([status, color]) => (
             <span key={status}>
-              <i style={{ display: 'inline-block', width: 12, height: 12, borderRadius: 0, background: color, marginRight: 6, verticalAlign: -1 }} />
+              <i style={{ display: 'inline-block', width: 12, height: 12, borderRadius: 3, background: color, marginRight: 6, verticalAlign: -1 }} />
               {s.statuses[status].label}
             </span>
           ))}
