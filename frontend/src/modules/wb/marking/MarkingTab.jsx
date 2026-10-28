@@ -7,7 +7,7 @@ import { api } from '../../../core/api/index.js'
 import { formatPrice } from '../../../core/format.js'
 import strings from '../strings.js'
 import ImportModal from './ImportModal.jsx'
-import { exportSheets } from './xlsx.js'
+import { chzSheet, exportSheets } from './xlsx.js'
 import './marking.css'
 
 const s = strings.marking
@@ -72,6 +72,8 @@ export default function MarkingTab({ access }) {
   const [onlyPending, setOnlyPending] = useState(false)
   const [query, setQuery] = useState('')
   const [importOpen, setImportOpen] = useState(false)
+  const [bulkDocument, setBulkDocument] = useState('')
+  const [bulkBusy, setBulkBusy] = useState(false)
 
   const requestKey = `${period.from}|${period.to}|${version}`
   const loading = result.key !== requestKey
@@ -126,6 +128,32 @@ export default function MarkingTab({ access }) {
     const book = XLSX.utils.book_new()
     for (const { name, rows } of exportSheets(items, s)) XLSX.utils.book_append_sheet(book, XLSX.utils.aoa_to_sheet(rows), name)
     XLSX.writeFile(book, s.exportName(period.from, period.to))
+  }
+
+  // Неоформленные строки, которые сейчас в таблице: файл для загрузки в «Честный ЗНАК» и один номер документа на все
+  const pendingRows = () => rows.filter(pending)
+  const downloadChz = async () => {
+    const XLSX = await import('xlsx')
+    const { name, rows: sheet } = chzSheet(list, pendingRows())
+    const book = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(book, XLSX.utils.aoa_to_sheet(sheet), name)
+    XLSX.writeFile(book, s.chz.fileName(list, day === 'all' ? `${period.from}_${period.to}` : day))
+  }
+  const applyDocument = async () => {
+    const targets = pendingRows()
+    const document = bulkDocument.trim()
+    setBulkBusy(true)
+    try {
+      await api.post('/modules/wb/marking/documents', { keys: targets.map((it) => it.key), document })
+      const keys = new Set(targets.map((it) => it.key))
+      setResult((prev) => ({ ...prev, data: { ...prev.data, items: prev.data.items.map((x) => (keys.has(x.key) ? { ...x, document } : x)) } }))
+      setBulkDocument('')
+      message.success(s.chz.applied(targets.length, document))
+    } catch (e) {
+      message.error(e.message)
+    } finally {
+      setBulkBusy(false)
+    }
   }
 
   const q = query.trim().toLowerCase()
@@ -291,6 +319,29 @@ export default function MarkingTab({ access }) {
         )}
         <span className="counter mono">[{String(rows.length).padStart(2, '0')}]</span>
       </div>
+
+      {list !== 'strange' && rows.some(pending) && (
+        <div className="mk-chz">
+          <Tooltip title={s.chz.hint}>
+            <Button onClick={downloadChz}>{s.chz.download(rows.filter(pending).length)}</Button>
+          </Tooltip>
+          {canRun(access) && (
+            <>
+              <Input
+                className="mono"
+                placeholder={s.chz.documentPlaceholder}
+                value={bulkDocument}
+                onChange={(e) => setBulkDocument(e.target.value)}
+                onPressEnter={() => bulkDocument.trim() && applyDocument()}
+                style={{ width: 170 }}
+              />
+              <Button type="primary" ghost disabled={!bulkDocument.trim()} loading={bulkBusy} onClick={applyDocument}>
+                {s.chz.apply(rows.filter(pending).length)}
+              </Button>
+            </>
+          )}
+        </div>
+      )}
 
       <Table
         size="small"

@@ -43,6 +43,16 @@ def set_document(body: DocumentBody, user: User = Run, session: Session = Db) ->
     return service.set_document(session, user, body.key, body.document)
 
 
+class DocumentsBody(BaseModel):
+    keys: list[Annotated[str, StringConstraints(min_length=1, max_length=300)]] = Field(max_length=service.IMPORT_MAX_ROWS)
+    document: Annotated[str, StringConstraints(strip_whitespace=True, max_length=100)] = ""
+
+
+@router.post("/marking/documents")
+def set_documents(body: DocumentsBody, user: User = Run, session: Session = Db) -> dict:
+    return service.set_documents(session, user, body.keys, body.document)
+
+
 class ImportRow(BaseModel):
     km: Annotated[str, StringConstraints(max_length=300)]
     document: Annotated[str, StringConstraints(max_length=200)] = ""

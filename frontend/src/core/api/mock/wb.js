@@ -117,6 +117,14 @@ export function createWbHandlers({ userFromToken, accessTo, now = () => new Date
         documents[key] = document
         return { key, document }
       },
+      'POST /modules/wb/marking/documents': ({ body, token }) => {
+        requireAccess(token, canRun)
+        const keys = [...new Set(Array.isArray(body?.keys) ? body.keys.map(String) : [])]
+        if (keys.some((k) => !LISTS.includes(k.split(':')[0]))) throw new ApiError(422, defaultMessage(422))
+        const document = String(body?.document ?? '').trim()
+        for (const k of keys) documents[k] = document
+        return { saved: keys.length, document }
+      },
       'POST /modules/wb/marking/import': ({ body, token }) => {
         requireAccess(token, canRun)
         if (!LISTS.includes(body?.list) || !Array.isArray(body?.rows)) throw new ApiError(422, defaultMessage(422))

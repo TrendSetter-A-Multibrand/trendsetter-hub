@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { exportSheets, parseImport, shortCode } from './xlsx.js'
+import { chzSheet, exportSheets, importTemplate, parseImport, shortCode } from './xlsx.js'
 import strings from '../strings.js'
 
 const KM = '0104610503161830215YOP8E/EBAQGD'
@@ -46,4 +46,27 @@ test('выгрузка: три листа со статусами и причи�
   assert.deepEqual(sheets[1].rows[1].slice(-2), ['2/1-10-26', 'Возвращён'])
   assert.equal(sheets[2].rows[1].at(-1), strings.marking.reasons.soldTwice)
   assert.equal(sheets[0].rows[1][0], '19.10.2026')
+})
+
+test('список по заголовку колонки номера; номера вида back/31-08-26/О', () => {
+  const out = parseImport([{ name: 'Лист1', rows: [['Код идентификации', 'Номер возврата из оборота'], [KM, 'back/31-08-26/О']] }], 'withdraw')
+  assert.deepEqual(out.return, [{ km: KM, document: 'back/31-08-26/О' }])
+  const out2 = parseImport([{ name: 'Лист1', rows: [['Код идентификации', 'Цена', 'Номер вывода из оборота'], [KM, '519', '42/25-10-26/И']] }], 'return')
+  assert.deepEqual(out2.withdraw, [{ km: KM, document: '42/25-10-26/И' }])
+})
+
+test('файл для «Честного ЗНАКа»: как шаблоны отдела', () => {
+  const items = [{ km: KM, price: 288.42 }]
+  assert.deepEqual(chzSheet('withdraw', items).rows, [['Код идентификации', 'Цена за единицу товара с НДС'], [KM, 288.42]])
+  assert.deepEqual(chzSheet('return', items).rows, [[KM]])
+})
+
+test('заполненный шаблон загрузки разбирается по листам', () => {
+  const sheets = importTemplate()
+  assert.equal(parseImport(sheets, 'withdraw').skipped, 0)
+  sheets[0].rows.push([KM, 519, '42/25-10-26'])
+  sheets[1].rows.push([KM, 'back/31-08-26'])
+  const out = parseImport(sheets, 'withdraw')
+  assert.deepEqual(out.withdraw, [{ km: KM, document: '42/25-10-26' }])
+  assert.deepEqual(out.return, [{ km: KM, document: 'back/31-08-26' }])
 })

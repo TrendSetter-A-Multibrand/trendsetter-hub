@@ -158,22 +158,41 @@ def marking(session: Session, date_from: date, date_to: date) -> dict:
     }
 
 
-def set_document(session: Session, user: User, key: str, document: str) -> dict:
-    """Номер документа «Честного ЗНАКа» по строке сверки; пустой — снять отметку."""
+def _list_of_key(key: str) -> str:
     list_ = key.split(":", 1)[0]
     if list_ not in LISTS or key.count(":") < 2:
         raise HTTPException(422, KEY_INVALID)
+    return list_
+
+
+def _write_documents(session: Session, user: User, keys: list[str], document: str) -> None:
+    lists = [_list_of_key(k) for k in keys]
     if document:
         session.execute(text("""
             INSERT INTO trendsetter_hub.wb_marking_documents (item_key, list, document, updated_by)
-            VALUES (:key, :list, :document, :user_id)
+            SELECT key, list, :document, :user_id FROM unnest(CAST(:keys AS text[]), CAST(:lists AS text[])) AS t(key, list)
             ON CONFLICT (item_key) DO UPDATE SET document = EXCLUDED.document, updated_by = EXCLUDED.updated_by, updated_at = now()
-        """), {"key": key, "list": list_, "document": document, "user_id": user.id})
+        """), {"keys": keys, "lists": lists, "document": document, "user_id": user.id})
     else:
-        session.execute(text("DELETE FROM trendsetter_hub.wb_marking_documents WHERE item_key = :key"), {"key": key})
+        session.execute(text("DELETE FROM trendsetter_hub.wb_marking_documents WHERE item_key = ANY(:keys)"), {"keys": keys})
+
+
+def set_document(session: Session, user: User, key: str, document: str) -> dict:
+    """Номер документа «Честного ЗНАКа» по строке сверки; пустой — снять отметку."""
+    _write_documents(session, user, [key], document)
     log_action(session, user.id, "wb.marking_document", MODULE_ID, key=key, document=document)
     session.commit()
     return {"key": key, "document": document}
+
+
+def set_documents(session: Session, user: User, keys: list[str], document: str) -> dict:
+    """Один номер документа на несколько строк сверки (например, все неоформленные за день после вывода в «Честном ЗНАКе»)."""
+    keys = list(dict.fromkeys(keys))
+    if keys:
+        _write_documents(session, user, keys, document)
+    log_action(session, user.id, "wb.marking_documents", MODULE_ID, count=len(keys), document=document)
+    session.commit()
+    return {"saved": len(keys), "document": document}
 
 
 def import_codes(session: Session, user: User, list_: str, rows: list[tuple[str, str]]) -> dict:
