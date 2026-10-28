@@ -12,7 +12,9 @@
   --border-dashed: #C9C2BE;
   --muted: #5B5552;
   --faint: #8A827E;
-  --font-mono: 'Geist Mono', monospace;
+  /* Шрифты: Inter — основной, JetBrains Mono — подписи и цифры (решение 2026-10-28: «обычное и минимальное») */
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
   /* TS · Motion (дизайн-система v2.0): hover 150 · enter 250 · bracket 350 */
   --motion-hover: 150ms;
   --motion-enter: 250ms;
@@ -30,7 +32,7 @@ body {
   margin: 0;
   background: var(--page);
   color: var(--ink);
-  font-family: 'Inter Tight', Arial, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
 * { box-sizing: border-box; }
@@ -161,7 +163,7 @@ a:hover .nav-text > .bracket::after, a:focus-visible .nav-text > .bracket::after
 .subtitle { font-size: 15px; color: var(--muted); }
 
 .btn-primary {
-  font-family: var(--font-mono); font-size: 12px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase;
+  font-family: inherit; font-size: 14px; font-weight: 500;
   background: var(--red); color: #fff; border: 0; border-radius: 0; padding: 14px 22px; min-height: 44px; cursor: pointer;
   display: flex; align-items: center; gap: 10px; transition: background var(--motion-hover) var(--motion-ease);
 }
@@ -343,7 +345,7 @@ a:hover .nav-text > .bracket::after, a:focus-visible .nav-text > .bracket::after
 .weather-date { font-size: 10px; letter-spacing: .06em; color: var(--muted); }
 .weather-max { font-size: 16px; font-weight: 500; }
 .weather-min { font-size: 13px; color: var(--muted); }
-.weather-kind { font-size: 11px; color: var(--muted); overflow-wrap: anywhere; }
+.weather-kind { font-size: 11px; color: var(--muted); overflow-wrap: break-word; hyphens: auto; }
 .weather-empty { font-size: 14px; color: var(--muted); }
 .weather-stale { font-size: 10px; letter-spacing: .08em; color: var(--red); }
 .weather-source { font-size: 10px; letter-spacing: .08em; color: var(--muted); align-self: flex-start; }
@@ -361,10 +363,8 @@ a:hover .nav-text > .bracket::after, a:focus-visible .nav-text > .bracket::after
 
 
 /* ---- дизайн-система v2.0: плоско, капс только моно ---- */
-/* Кнопки antd — моно капсом (Button: .btn --primary/--secondary/--ghost) */
-.ant-btn { font-family: var(--font-mono); text-transform: uppercase; letter-spacing: .06em; font-size: 12px; }
-.ant-btn.ant-btn-sm { font-size: 11px; }
-.ant-btn-icon-only { letter-spacing: 0; }
+/* Кнопки antd — Inter Medium, как набраны */
+.ant-btn { font-weight: 500; }
 /* Заголовки таблиц — Label: моно капсом */
 .ant-table-thead > tr > th {
   font-family: var(--font-mono); font-weight: 400 !important; font-size: 11px; letter-spacing: .08em; text-transform: uppercase;

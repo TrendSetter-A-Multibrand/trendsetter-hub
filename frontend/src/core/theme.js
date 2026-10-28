@@ -1,4 +1,4 @@
-// Тема antd по дизайн-системе TRENDSETTER v2.0: плоско (углы 0, без теней), Inter Tight Regular/Medium, TS · Motion.
+// Тема antd по дизайн-системе TRENDSETTER v2.0: плоско (углы 0, без теней), Inter Regular/Medium, TS · Motion.
 // Остальные стили — в styles.css.
 const theme = {
   token: {
@@ -19,7 +19,7 @@ const theme = {
     borderRadiusSM: 0,
     borderRadiusXS: 0,
     borderRadiusOuter: 0,
-    fontFamily: "'Inter Tight', Arial, sans-serif",
+    fontFamily: "var(--font-sans)",
     fontSize: 14,
     fontWeightStrong: 500,
     boxShadow: 'none',

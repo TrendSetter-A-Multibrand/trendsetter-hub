@@ -1,5 +1,5 @@
 /* Модуль «Карта команды». Дизайн — design/…/design_handoff_team_map (README, токены).
-   Всё под .tm, чтобы стили не протекали в хаб. Шрифты Inter Tight / Geist Mono подключены в index.html. */
+   Всё под .tm, чтобы стили не протекали в хаб. Шрифты — переменные --font-sans / --font-mono из core/styles.css. */
 .tm {
   --red: #A22325;
   --red-hover: #7E1A1C;
@@ -12,7 +12,7 @@
   background: var(--bg);
   color: var(--ink);
   min-height: 100vh;
-  font-family: 'Inter Tight', system-ui, sans-serif;
+  font-family: var(--font-sans);
 }
 .tm *, .tm *::before, .tm *::after { box-sizing: border-box; }
 .tm button { font: inherit; color: inherit; }
