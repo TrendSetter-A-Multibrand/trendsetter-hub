@@ -1,5 +1,5 @@
--- Модуль «Wildberries», раздел «Маркировка» (ревизия Alembic 0010).
--- Выполнять под doadmin в базе defaultdb ПОСЛЕ 09_news.sql. Скрипт можно запускать повторно.
+-- Модуль «Wildberries», раздел «Маркировка» (ревизия Alembic 0012).
+-- Выполнять под doadmin в базе defaultdb ПОСЛЕ ревизии 0011. Скрипт можно запускать повторно.
 -- Права hub_app — автоматически (ALTER DEFAULT PRIVILEGES в 01_core_hub.sql). Привязка wb → отдел wb уже есть в 01_core_hub.sql.
 --
 -- Сами отчёты WB (api_wb_FinanceReport, api_wb_Orders_FBS, api_wb_ExciseReport) лежат в схеме public и хабом только читаются
