@@ -10,6 +10,7 @@ const SECTIONS = [
   { key: 'cards' },
   { key: 'seo' },
   { key: 'ads' },
+  { key: 'pricing' },
 ]
 
 function SectionStub({ section, s }) {

@@ -4,7 +4,7 @@
 import { ApiError, defaultMessage } from '../client.js'
 import { canRun, canSeeData } from '../../access.js'
 
-const MAX_DAYS = 31
+const MIN_DATE = '2026-08-01'
 const LISTS = ['withdraw', 'return']
 
 function rng(seed) {
@@ -75,6 +75,7 @@ function demoDay(date, today) {
 // deps: userFromToken(token); accessTo(user, moduleId); now — для тестов
 export function createWbHandlers({ userFromToken, accessTo, now = () => new Date() }) {
   const documents = {} // введённые в демо номера документов: key -> document
+  const imported = {} // загруженные из Excel: '<list>:<код>' -> document
 
   const today = () => iso(now())
   const requireAccess = (token, check) => {
@@ -89,7 +90,7 @@ export function createWbHandlers({ userFromToken, accessTo, now = () => new Date
         requireAccess(token, canSeeData)
         const { from, to } = query
         const valid = /^\d{4}-\d{2}-\d{2}$/
-        if (!valid.test(from ?? '') || !valid.test(to ?? '') || from > to || periodDays(from, to).length > MAX_DAYS) throw new ApiError(422, defaultMessage(422))
+        if (!valid.test(from ?? '') || !valid.test(to ?? '') || from > to || from < MIN_DATE) throw new ApiError(422, defaultMessage(422))
         const yesterday = shift(today(), -1)
         const items = periodDays(from, to <= yesterday ? to : yesterday).flatMap((d) => demoDay(d, today()))
         return {
@@ -100,7 +101,12 @@ export function createWbHandlers({ userFromToken, accessTo, now = () => new Date
             finance: { table: 'api_wb_FinanceReport', lastDate: yesterday },
             excise: { table: 'api_wb_ExciseReport', lastDate: null },
           },
-          items: items.map((it) => (it.key in documents ? { ...it, document: documents[it.key] } : it)),
+          items: items.map((it) => {
+            if (it.list === 'strange') return it
+            if (it.key in documents) return { ...it, document: documents[it.key] }
+            const doc = imported[`${it.list}:${it.km}`]
+            return doc ? { ...it, document: doc } : it
+          }),
         }
       },
       'POST /modules/wb/marking/document': ({ body, token }) => {
@@ -110,6 +116,22 @@ export function createWbHandlers({ userFromToken, accessTo, now = () => new Date
         const document = String(body?.document ?? '').trim()
         documents[key] = document
         return { key, document }
+      },
+      'POST /modules/wb/marking/import': ({ body, token }) => {
+        requireAccess(token, canRun)
+        if (!LISTS.includes(body?.list) || !Array.isArray(body?.rows)) throw new ApiError(422, defaultMessage(422))
+        let saved = 0
+        let skipped = 0
+        for (const { km, document } of body.rows) {
+          const code = String(km ?? '').trim().split('\x1d')[0]
+          const doc = String(document ?? '').trim()
+          if (!code.startsWith('01') || code.length <= 18 || !doc) skipped += 1
+          else {
+            imported[`${body.list}:${code}`] = doc
+            saved += 1
+          }
+        }
+        return { saved, skipped }
       },
     },
   }

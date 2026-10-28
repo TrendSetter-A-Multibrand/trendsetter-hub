@@ -6,12 +6,14 @@ import { canRun } from '../../../core/access.js'
 import { api } from '../../../core/api/index.js'
 import { formatPrice } from '../../../core/format.js'
 import strings from '../strings.js'
+import ImportModal from './ImportModal.jsx'
+import { exportSheets } from './xlsx.js'
 import './marking.css'
 
 const s = strings.marking
 const LISTS = ['withdraw', 'return', 'strange']
-// длиннее — тяжёлый запрос к отчёту о реализации и нечитаемая лента дней
-const MAX_DAYS = 31
+// раньше этой даты отчёты FBS и маркировки не сверяем (как на бэкенде)
+const MIN_DATE = '2026-08-01'
 const numberFormatter = new Intl.NumberFormat('ru-RU')
 const dayLabel = (iso) => new Date(`${iso}T00:00:00`).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' })
 const weekday = (iso) => s.weekdays[(new Date(`${iso}T00:00:00`).getDay() + 6) % 7]
@@ -20,6 +22,11 @@ const fullDate = (iso) => new Date(`${iso}T00:00:00`).toLocaleDateString('ru-RU'
 const LAST_DATE = dayjs().subtract(1, 'day').format('YYYY-MM-DD')
 const lastMonday = dayjs().subtract((dayjs().day() + 6) % 7 + 7, 'day')
 const DEFAULT_PERIOD = { from: lastMonday.format('YYYY-MM-DD'), to: lastMonday.add(5, 'day').format('YYYY-MM-DD') }
+const PRESETS = [
+  { label: s.presets.lastWeek, value: [lastMonday, lastMonday.add(5, 'day')] },
+  { label: s.presets.thisMonth, value: [dayjs().startOf('month'), dayjs(LAST_DATE)] },
+  { label: s.presets.sinceAugust, value: [dayjs(MIN_DATE), dayjs(LAST_DATE)] },
+]
 
 function periodDays(from, to) {
   const days = []
@@ -64,6 +71,7 @@ export default function MarkingTab({ access }) {
   const [day, setDay] = useState('all')
   const [onlyPending, setOnlyPending] = useState(false)
   const [query, setQuery] = useState('')
+  const [importOpen, setImportOpen] = useState(false)
 
   const requestKey = `${period.from}|${period.to}|${version}`
   const loading = result.key !== requestKey
@@ -106,9 +114,19 @@ export default function MarkingTab({ access }) {
     setPeriod({ from: range[0].format('YYYY-MM-DD'), to: range[1].format('YYYY-MM-DD') })
     setDay('all')
   }
-  // нельзя выбрать будущее и период длиннее MAX_DAYS
-  const disabledDate = (current, { from }) =>
-    current.format('YYYY-MM-DD') > LAST_DATE || Boolean(from && Math.abs(current.diff(from, 'day')) >= MAX_DAYS)
+  // нельзя выбрать будущее и даты раньше MIN_DATE
+  const disabledDate = (current) => {
+    const d = current.format('YYYY-MM-DD')
+    return d > LAST_DATE || d < MIN_DATE
+  }
+
+  // все строки периода тремя листами, как в прежней сводной таблице
+  const download = async () => {
+    const XLSX = await import('xlsx')
+    const book = XLSX.utils.book_new()
+    for (const { name, rows } of exportSheets(items, s)) XLSX.utils.book_append_sheet(book, XLSX.utils.aoa_to_sheet(rows), name)
+    XLSX.writeFile(book, s.exportName(period.from, period.to))
+  }
 
   const q = query.trim().toLowerCase()
   const rows = byList[list].filter(
@@ -186,6 +204,7 @@ export default function MarkingTab({ access }) {
             value={[dayjs(period.from), dayjs(period.to)]}
             onChange={pickPeriod}
             disabledDate={disabledDate}
+            presets={PRESETS}
             aria-label={s.pickPeriod}
           />
         </div>
@@ -193,11 +212,13 @@ export default function MarkingTab({ access }) {
           <Button onClick={() => setVersion((v) => v + 1)} loading={loading}>
             {s.refresh}
           </Button>
-          <Button type="primary" onClick={() => message.info(s.notYet)}>
+          {canRun(access) && <Button onClick={() => setImportOpen(true)}>↑ {s.upload}</Button>}
+          <Button type="primary" disabled={!data} onClick={download}>
             ↓ {s.download}
           </Button>
         </div>
       </div>
+      <ImportModal open={importOpen} onClose={() => setImportOpen(false)} onDone={() => setVersion((v) => v + 1)} />
       {error && <Alert type="error" showIcon message={error} />}
       {data && <Sources sources={data.sources} />}
 
