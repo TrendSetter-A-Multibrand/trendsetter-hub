@@ -155,3 +155,16 @@ def test_import_marks_rows_as_done_and_manual_wins(client, db, wb_reports):
     # код из файла не ставит номер возврату того же кода; номер по строке важнее загруженного
     client.post(f"{BASE}/marking/document", json={"key": items[0]["key"], "document": "99/20-10-26"}, headers=h)
     assert client.get(f"{BASE}/marking", params=period, headers=h).json()["items"][0]["document"] == "99/20-10-26"
+
+
+def test_one_document_for_many_rows(client, db, wb_reports):
+    make_user(db, "wb@example.com", "employee", [wb_department(db)])
+    h = login(client, "wb@example.com")
+    period = {"from": "2026-10-19", "to": "2026-10-24"}
+    keys = [it["key"] for it in client.get(f"{BASE}/marking", params=period, headers=h).json()["items"]]
+    r = client.post(f"{BASE}/marking/documents", json={"keys": keys + keys[:1], "document": "42/25-10-26"}, headers=h)
+    assert r.json() == {"saved": 2, "document": "42/25-10-26"}
+    assert [it["document"] for it in client.get(f"{BASE}/marking", params=period, headers=h).json()["items"]] == ["42/25-10-26"] * 2
+    client.post(f"{BASE}/marking/documents", json={"keys": keys, "document": ""}, headers=h)
+    assert db.execute(text("SELECT count(*) FROM trendsetter_hub.wb_marking_documents")).scalar() == 0
+    assert client.post(f"{BASE}/marking/documents", json={"keys": ["strange:a:b"], "document": "1"}, headers=h).status_code == 422

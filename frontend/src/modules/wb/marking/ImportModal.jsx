@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { App, Button, Input, Modal, Segmented } from 'antd'
 import { api } from '../../../core/api/index.js'
 import strings from '../strings.js'
-import { parseImport } from './xlsx.js'
+import { IMPORT_TEMPLATE_NAME, importTemplate, parseImport } from './xlsx.js'
 
 const s = strings.marking.import
 const LISTS = ['withdraw', 'return']
@@ -44,6 +44,17 @@ export default function ImportModal({ open, onClose, onDone }) {
     }
   }
 
+  const downloadTemplate = async () => {
+    const XLSX = await import('xlsx')
+    const book = XLSX.utils.book_new()
+    for (const { name, rows } of importTemplate()) {
+      const sheet = XLSX.utils.aoa_to_sheet(rows)
+      sheet['!cols'] = [{ wch: 36 }, { wch: 28 }, { wch: 28 }]
+      XLSX.utils.book_append_sheet(book, sheet, name)
+    }
+    XLSX.writeFile(book, IMPORT_TEMPLATE_NAME)
+  }
+
   const submit = async () => {
     setBusy(true)
     try {
@@ -79,6 +90,12 @@ export default function ImportModal({ open, onClose, onDone }) {
     >
       <div className="mk-import">
         <p className="mk-muted">{s.hint}</p>
+        <div className="mk-file">
+          <Button type="link" style={{ padding: 0 }} onClick={downloadTemplate}>
+            ↓ {s.template}
+          </Button>
+          <span className="mk-muted">{s.templateHint}</span>
+        </div>
         <Segmented value={list} onChange={setList} options={LISTS.map((l) => ({ value: l, label: strings.marking.lists[l] }))} />
         <div className="mk-file">
           <input ref={input} type="file" accept=".xlsx,.xls,.csv" hidden onChange={pickFile} />

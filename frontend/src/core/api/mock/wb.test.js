@@ -53,3 +53,11 @@ test('загрузка из Excel: номер по коду, ручной ном
   await save({ key: item.key, document: '8/21-10-26' })
   assert.equal((await find()).document, '8/21-10-26')
 })
+
+test('один номер на несколько строк', async () => {
+  const items = (await get('2026-10-22', '2026-10-22')).items.filter((it) => it.list === 'withdraw').slice(0, 3)
+  const res = await transport({ method: 'POST', path: '/modules/wb/marking/documents', token: 'mock:run', body: { keys: items.map((it) => it.key), document: '42/22-10-26' } })
+  assert.deepEqual(res, { saved: 3, document: '42/22-10-26' })
+  const after = (await get('2026-10-22', '2026-10-22')).items.filter((it) => items.some((x) => x.key === it.key))
+  assert.ok(after.every((it) => it.document === '42/22-10-26'))
+})

@@ -51,3 +51,4 @@
 .mk-file { display: flex; align-items: center; gap: 10px; }
 .mk-import-summary { display: flex; flex-direction: column; gap: 4px; }
 .mk-import-fallback { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.mk-chz { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: -8px; }
