@@ -89,7 +89,9 @@
   /* ---- Движение (TS · Motion) ---- */
   --motion-hover: 150ms;
   --motion-enter: 250ms;
+  --motion-bracket: 350ms;
   --motion-ease: ease-out;
+  --motion-bracket-ease: ease-in-out;
 
   /* ---- Совместимость: старые имена токенов, которыми пользуются модули ---- */
   --page: var(--bg-page);
@@ -263,7 +265,7 @@ a:hover { color: var(--accent-fill-hover); }
 .nav-title-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .nav-title::before, .nav-title::after, .nav-section::before, .nav-section::after {
   flex: none; display: inline-block; width: 14px; font-weight: var(--fw-regular); letter-spacing: 0;
-  opacity: 0; transition: opacity var(--motion-hover) var(--motion-ease), transform var(--motion-hover) var(--motion-ease);
+  opacity: 0; transition: opacity var(--motion-bracket) var(--motion-bracket-ease), transform var(--motion-bracket) var(--motion-bracket-ease);
 }
 .nav-title::before, .nav-section::before { content: '['; text-align: left; transform: translateX(3px); }
 .nav-title::after, .nav-section::after { content: ']'; text-align: right; transform: translateX(-3px); }
@@ -499,17 +501,36 @@ a:hover { color: var(--accent-fill-hover); }
 .greeting-mascot img { display: block; width: 100%; height: 100%; object-fit: cover; }
 /* Приветствие — отдельный «бабл»-шрифт (Comfortaa, круглый, жирный), заметно отличается от основного текста интерфейса */
 .greeting h1 { margin: 0; font-family: var(--font-display); font-size: 40px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.15; text-wrap: balance; }
-.greeting h1 .accent { color: var(--accent-primary); }
+/* Имя — маркер прорисовывается слева направо под текстом (TS · Motion: «Онбординг: маркер», 900ms, задержка 500ms) */
+.greeting h1 .accent {
+  color: var(--accent-primary); padding: 0 .04em;
+  background-image: linear-gradient(var(--zone-sand) 0 100%); background-repeat: no-repeat; background-position: 0 86%; background-size: 0% 40%;
+  animation: greeting-marker 900ms var(--motion-bracket-ease) 500ms both;
+}
 .greeting h1::after { content: ''; display: block; width: 48px; height: 3px; margin-top: var(--space-16); border-radius: 2px; background: var(--accent-fill); animation: greeting-bar 500ms var(--motion-ease) 150ms both; }
 @keyframes greeting-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @keyframes greeting-bar { from { width: 0; } to { width: 48px; } }
+@keyframes greeting-marker { from { background-size: 0% 40%; } to { background-size: 100% 40%; } }
 @keyframes home-logo-in { from { opacity: 0; transform: translateY(-10px) scale(.94); } to { opacity: 1; transform: none; } }
-@media (prefers-reduced-motion: reduce) { .greeting, .greeting h1::after, .home-logo.brand-logo { animation: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .greeting, .greeting h1::after, .home-logo.brand-logo, .greeting h1 .accent { animation: none; }
+  .greeting h1 .accent { background-size: 100% 40%; }
+}
 
 /* Новости | события | виджеты. Без колонок новостей (нет доступа) виджеты идут сеткой на всю ширину. */
 .home-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-24); align-items: start; }
 .home-col { display: flex; flex-direction: column; gap: var(--space-24); min-width: 0; }
 .home-aside { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--space-24); align-items: start; }
+/* Блоки главной появляются по очереди (TS · Motion: «Онбординг: появление блоков», 600ms, шаг 70ms) */
+.home-col > *, .home-aside > * { animation: block-in 600ms var(--motion-ease) both; }
+.home-col > *:nth-child(1), .home-aside > *:nth-child(1) { animation-delay: 70ms; }
+.home-col > *:nth-child(2), .home-aside > *:nth-child(2) { animation-delay: 140ms; }
+.home-col > *:nth-child(3), .home-aside > *:nth-child(3) { animation-delay: 210ms; }
+.home-col > *:nth-child(4), .home-aside > *:nth-child(4) { animation-delay: 280ms; }
+.home-col > *:nth-child(5), .home-aside > *:nth-child(5) { animation-delay: 350ms; }
+.home-col > *:nth-child(n + 6), .home-aside > *:nth-child(n + 6) { animation-delay: 420ms; }
+@keyframes block-in { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .home-col > *, .home-aside > * { animation: none; } }
 .home-layout.with-feed .home-aside { display: flex; flex-direction: column; gap: var(--space-24); min-width: 0; }
 @media (min-width: 1280px) {
   .home-layout.with-feed { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(280px, 320px); }
