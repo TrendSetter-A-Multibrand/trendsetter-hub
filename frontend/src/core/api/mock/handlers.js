@@ -23,6 +23,7 @@ import { createHrStatsHandlers } from './hrStats.js'
 import { createHomeHandlers } from './home.js'
 import { createNewsHandlers } from './news.js'
 import { createHolidaysHandlers } from './holidays.js'
+import { createFeedbackHandlers } from './feedback.js'
 import { createWbHandlers } from './wb.js'
 import {
   HR_LEVELS,
@@ -143,6 +144,16 @@ const holidays = createHolidaysHandlers({
   isEditor: (u) => isModuleResponsible(u, groupPermissionsOf(u, 'holidays')) || canManageUsers(u),
   errors: getModule('holidays').strings.errors,
 })
+// Обратная связь: читатель — ответственный за feedback или администратор (как бэкенд is_reader); уведомление получают все читатели
+const isFeedbackReader = (u) => isModuleResponsible(u, groupPermissionsOf(u, 'feedback')) || canManageUsers(u)
+const feedback = createFeedbackHandlers({
+  userFromToken,
+  accessTo,
+  isReader: isFeedbackReader,
+  readerIds: () => data.users.filter((u) => u.is_active && isFeedbackReader(u)).map((u) => u.id),
+  notify: (ids, n) => notifications.notify(ids, n),
+  errors: getModule('feedback').strings.errors,
+})
 // WB «Маркировка»: демо-данные сверки, права как у бэкенда (view/run — данные, run — запись документа)
 const wb = createWbHandlers({ userFromToken, accessTo })
 
@@ -151,6 +162,7 @@ function moduleBadges(user) {
   const badges = { ...team.moduleBadges(user) }
   for (const [id, n] of Object.entries(hr.moduleBadges(user))) badges[id] = (badges[id] ?? 0) + n
   for (const [id, n] of Object.entries(news.moduleBadges(user))) badges[id] = (badges[id] ?? 0) + n
+  for (const [id, n] of Object.entries(feedback.moduleBadges(user))) badges[id] = (badges[id] ?? 0) + n
   return badges
 }
 
@@ -526,6 +538,7 @@ const raw = {
   ...home.handlers,
   ...news.handlers,
   ...holidays.handlers,
+  ...feedback.handlers,
   ...wb.handlers,
 }
 

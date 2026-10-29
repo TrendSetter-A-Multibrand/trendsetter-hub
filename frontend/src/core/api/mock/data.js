@@ -40,7 +40,7 @@ export const data = {
   ],
 
   // Личные права на модули (поверх групповых; итог — максимум): { userId: { moduleId: 'view' | 'run' | 'responsible' } }
-  userModulePermissions: { 13: { hr: 'responsible' }, 9: { news: 'responsible', holidays: 'responsible' } },
+  userModulePermissions: { 13: { hr: 'responsible', feedback: 'responsible' }, 9: { news: 'responsible', holidays: 'responsible' } },
 
   groups: [{ id: 1, name: 'Ответственные склада', permissions: { warehouse: 'responsible' }, user_ids: [8] }],
 
