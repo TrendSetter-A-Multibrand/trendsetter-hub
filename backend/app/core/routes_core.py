@@ -1,12 +1,15 @@
 import logging
+from typing import Annotated
 
-from fastapi import APIRouter, Depends
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field, StringConstraints, field_validator
 from sqlalchemy import func, select, text, update
 from sqlalchemy.orm import Session
 
 from app.core import home
+from app.core import messages as m
 from app.core.access import can_manage_users
+from app.core.audit import log_action
 from app.core.deps import get_current_user, module_rights
 from app.core.models import Department, Notification, User, UserDepartment
 from app.core.notifications import unread_count
@@ -80,6 +83,54 @@ def home_weather(user: User = Depends(get_current_user)) -> dict:
 @router.get("/home/rates")
 def home_rates(user: User = Depends(get_current_user)) -> dict:
     return home.rates_payload()
+
+
+WIDGETS_MAX = 30
+WidgetId = Annotated[str, StringConstraints(pattern=r"^[a-z0-9-]{1,40}$")]
+
+
+class WidgetItem(BaseModel):
+    id: WidgetId
+    enabled: bool
+
+
+class WidgetsBody(BaseModel):
+    widgets: Annotated[list[WidgetItem], Field(min_length=1, max_length=WIDGETS_MAX)]
+
+    @field_validator("widgets")
+    @classmethod
+    def no_duplicates(cls, value: list[WidgetItem]) -> list[WidgetItem]:
+        if len({w.id for w in value}) != len(value):
+            raise ValueError("duplicate widget id")
+        return value
+
+
+def _widgets(session: Session) -> dict:
+    rows = session.execute(text("SELECT widget_id, enabled FROM trendsetter_hub.home_widgets ORDER BY position, widget_id")).all()
+    return {"widgets": [{"id": widget_id, "enabled": enabled} for widget_id, enabled in rows]}
+
+
+@router.get("/home/widgets")
+def home_widgets(user: User = Depends(get_current_user), session: Session = Depends(get_session)) -> dict:
+    # Пустой список = порядок по умолчанию, всё включено; каталог виджетов знает только фронт
+    return _widgets(session)
+
+
+@router.post("/home/widgets")
+def set_home_widgets(body: WidgetsBody, user: User = Depends(get_current_user), session: Session = Depends(get_session)) -> dict:
+    editors = [mod.id for mod in MODULES if mod.home_editor]
+    rights = module_rights(session, user, editors)
+    if not (can_manage_users(access_level=user.access_level, is_active=user.is_active) or any(responsible for _, responsible in rights.values())):
+        raise HTTPException(403, m.FORBIDDEN)
+    session.execute(text("DELETE FROM trendsetter_hub.home_widgets"))
+    for position, widget in enumerate(body.widgets):
+        session.execute(
+            text("INSERT INTO trendsetter_hub.home_widgets (widget_id, position, enabled, updated_by) VALUES (:w, :p, :e, :u)"),
+            {"w": widget.id, "p": position, "e": widget.enabled, "u": user.id},
+        )
+    log_action(session, user.id, "home.widgets_update", None, count=len(body.widgets), disabled=[w.id for w in body.widgets if not w.enabled])
+    session.commit()
+    return _widgets(session)
 
 
 @router.get("/notifications")

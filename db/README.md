@@ -171,6 +171,16 @@ docker exec -u root trendsetter-hub-api rm -rf /tmp/team-import                 
 
 **Откат** (`alembic downgrade 0013`): предложения (`pending`, `needs_changes`, `rejected`) становятся черновиками, комментарии и сведения о проверке теряются.
 
+## Виджеты главной и порядок закреплённых (ревизия 0015)
+`15_home_widgets.sql`: в `news_items` столбец `sort` (порядок среди закреплённых, у незакреплённых `NULL`) и таблица ядра `home_widgets` (`widget_id`, `position`, `enabled`, `updated_by`, `updated_at`) — порядок и включение виджетов правой колонки главной, одна настройка на всех. Пустая таблица = порядок по умолчанию, всё включено. Права hub_app — автоматически (`ALTER DEFAULT PRIVILEGES` из `01_core_hub.sql`). Скрипт идемпотентен.
+
+**Выкат 0015** (как у `0014`; `deploy.sh` миграции не выполняет):
+1. Под doadmin в `defaultdb` выполнить `db/15_home_widgets.sql` (после `db/14_news_moderation.sql`).
+2. Под doadmin выполнить `deploy/stamp_alembic_0015.sql` (версия миграции `0014` → `0015`).
+3. Только после этого — merge в `main`. Иначе `/modules/news/*` отвечает 500 (в запросах есть столбец `sort`), а `/core/home/widgets` — ошибку.
+
+**Откат** (`alembic downgrade 0014`): удаляются `home_widgets` и `news_items.sort` (ручной порядок закреплённых и настройки виджетов теряются).
+
 ## Модуль «Склад»
 Листы Google Таблицы «Склад-приёмка» стали таблицами: Приемки → `warehouse_receipts`, Раскладки → `warehouse_receipt_plans`, Счётчики → `warehouse_box_counters` и `warehouse_pallet_pointers`, Сканы → `warehouse_scans`, Короба → `warehouse_boxes`, Хранение → `warehouse_storage_boxes`, Хранение — архив → `warehouse_storage_archive`, Секции → `warehouse_extra_sections`, Коды ЧЗ → `warehouse_marks`, Сводка → представление `warehouse_receipt_summary`. Условия, которые раньше защищал `LockService`, держит база: уникальность кода ЧЗ, одно место на короб, уникальное имя приёмки, номера коробов через функцию `warehouse_next_box_number()`, повтор отправки скана отсекается по id.
 

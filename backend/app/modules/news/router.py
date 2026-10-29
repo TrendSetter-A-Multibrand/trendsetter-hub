@@ -121,6 +121,11 @@ class ReviewBody(ApproveBody):
     comment: ReviewComment
 
 
+class PinnedOrderBody(BaseModel):
+    kind: Literal["news", "event"]
+    ids: list[int]
+
+
 class RsvpBody(BaseModel):
     answer: Literal["yes", "maybe", "no"]
 
@@ -217,6 +222,11 @@ def return_item(item_id: int, body: ReviewBody, user: User = Editor, session: Se
 @router.post("/items/{item_id}/reject")
 def reject_item(item_id: int, body: ReviewBody, user: User = Editor, session: Session = Db):
     return service.review_item(session, user, item_id, "reject", body.comment, body.expectedUpdatedAt)
+
+
+@router.post("/pinned-order")
+def pinned_order(body: PinnedOrderBody, user: User = Editor, session: Session = Db):
+    return service.pinned_order(session, user, body.kind, body.ids)
 
 
 @router.post("/banner")

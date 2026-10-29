@@ -25,6 +25,7 @@ class ModuleManifest:
     for_all: bool = False  # True — виден всем активным сотрудникам независимо от отдела (просмотр)
     badge: Callable[[Session, User], int] | None = None  # число-бейдж у пункта меню (например, заявки на проверке); 0 — не показывается
     daily_job: Callable[[Session], None] | None = None  # ежедневная задача (напоминания); вызывается из /core/me, сама отмечает «уже запускалась сегодня»
+    home_editor: bool = False  # «Ответственный» этого модуля может настраивать виджеты главной
 
 
 MODULES: list[ModuleManifest] = [
@@ -35,5 +36,5 @@ MODULES: list[ModuleManifest] = [
     ModuleManifest("pricing", "Цены", "roadmap"),
     ModuleManifest("hr", "HR", "roadmap", hr_router, badge=hr_service.badge, daily_job=hr_reminders.run_daily),
     ModuleManifest("team", "Карта команды", "roadmap", team_router, for_all=True),
-    ModuleManifest("news", "Новости", "mvp", news_router, for_all=True, badge=news_service.badge),
+    ModuleManifest("news", "Новости", "mvp", news_router, for_all=True, badge=news_service.badge, home_editor=True),
 ]

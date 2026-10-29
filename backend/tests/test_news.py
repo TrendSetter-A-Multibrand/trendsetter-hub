@@ -108,6 +108,7 @@ ENDPOINTS = [
     ("post", "/items/1/delete", None),
     ("post", "/banner", {"text": "Т"}),
     ("post", "/banner/off", None),
+    ("post", "/pinned-order", {"kind": "news", "ids": []}),
 ]
 EDITOR_ENDPOINTS = ENDPOINTS[4:]
 
@@ -496,7 +497,7 @@ def test_banner_validation(client, h):
 # ---------- 9. журнал ----------
 
 SECRETS = ("СекретныйЗаголовок", "СекретныйТекст", "СекретноеМесто", "СекретнаяПлашка")
-ALLOWED_KEYS = {"news_id", "banner_id", "kind", "status", "fields"}
+ALLOWED_KEYS = {"news_id", "banner_id", "kind", "status", "fields", "count"}
 
 
 def test_audit_actions_and_no_texts(client, h, db):
@@ -819,3 +820,78 @@ def test_proposal_audit_actions_without_texts(client, h, db):
     for _, module_id, details in rows:
         assert module_id == "news" and set(details) <= ALLOWED_KEYS
         assert not any(secret in json.dumps(details, ensure_ascii=False) for secret in SECRETS)
+
+
+# ---------- PR 2: порядок закреплённых ----------
+
+
+def order(client, headers, kind, ids_):
+    return post(client, "/pinned-order", headers, {"kind": kind, "ids": ids_})
+
+
+def test_pinned_order_forbidden_for_employee_and_viewer(client, h):
+    for role in ("emp", "viewer", "sup"):
+        assert order(client, getattr(h, role), "news", []).status_code == 403
+
+
+def test_pinned_order_sets_feed_and_current_order(client, h):
+    n = [make_news(client, h.editor, title=f"Н{i}", pinned=True) for i in range(3)]
+    plain = make_news(client, h.editor, title="Обычная")
+    e = [make_event(client, h.editor, title=f"С{i}", pinned=True, startsAt=iso(48 + i)) for i in range(2)]
+    new_news = [n[2]["id"], n[0]["id"], n[1]["id"]]
+    assert order(client, h.editor, "news", new_news).status_code == 200
+    assert order(client, h.editor, "event", [e[1]["id"], e[0]["id"]]).status_code == 200
+    f = feed(client, h.emp)
+    assert ids(f["news"]) == new_news + [plain["id"]]
+    assert ids(f["events"]) == [e[1]["id"], e[0]["id"]]
+    current = ids(tab(client, h.editor, "current")["items"])
+    assert current == [e[1]["id"], e[0]["id"]] + new_news + [plain["id"]]
+
+
+def test_pinned_order_requires_exact_set(client, h):
+    a = make_news(client, h.editor, title="А", pinned=True)
+    b = make_news(client, h.editor, title="Б", pinned=True)
+    plain = make_news(client, h.editor, title="Обычная")
+    event = make_event(client, h.editor, pinned=True)
+    for bad in ([a["id"]], [a["id"], b["id"], plain["id"]], [a["id"], a["id"]], [a["id"], b["id"], event["id"]], []):
+        r = order(client, h.editor, "news", bad)
+        assert r.status_code == 409, bad
+    assert order(client, h.editor, "event", [a["id"]]).status_code == 409
+    assert order(client, h.editor, "news", [b["id"], a["id"]]).status_code == 200
+    assert ids(feed(client, h.emp)["news"])[:2] == [b["id"], a["id"]]
+
+
+def test_pinned_order_ignores_archived_and_unpublished(client, h):
+    a = make_news(client, h.editor, title="А", pinned=True)
+    b = make_news(client, h.editor, title="Б", pinned=True)
+    draft = make_news(client, h.editor, title="Ч", pinned=True, status="draft")
+    assert client.patch(f"{BASE}/items/{b['id']}", json={"archived": True}, headers=h.editor).status_code == 200
+    assert order(client, h.editor, "news", [a["id"]]).status_code == 200
+    assert order(client, h.editor, "news", [a["id"], draft["id"]]).status_code == 409
+
+
+def test_pinned_change_resets_sort(client, h, db):
+    a = make_news(client, h.editor, title="А", pinned=True)
+    b = make_news(client, h.editor, title="Б", pinned=True)
+    assert order(client, h.editor, "news", [b["id"], a["id"]]).status_code == 200
+
+    def sort_of(item):
+        return db.execute(text("SELECT sort FROM trendsetter_hub.news_items WHERE id = :i"), {"i": item["id"]}).scalar_one()
+
+    db.rollback()
+    assert (sort_of(b), sort_of(a)) == (0, 1)
+    assert client.patch(f"{BASE}/items/{b['id']}", json={"pinned": False}, headers=h.editor).status_code == 200
+    db.rollback()
+    assert sort_of(b) is None and sort_of(a) == 1
+    assert client.patch(f"{BASE}/items/{b['id']}", json={"pinned": True}, headers=h.editor).status_code == 200
+    db.rollback()
+    assert sort_of(b) is None
+    assert ids(feed(client, h.emp)["news"])[0] == a["id"]  # со sort — раньше закреплённой без sort
+
+
+def test_pinned_order_audit_without_texts(client, h, db):
+    a = make_news(client, h.editor, title=SECRETS[0], pinned=True)
+    b = make_news(client, h.editor, title=SECRETS[1], pinned=True)
+    assert order(client, h.editor, "news", [b["id"], a["id"]]).status_code == 200
+    rows = [r for r in audit(db) if r[0] == "news.reorder"]
+    assert rows == [("news.reorder", "news", {"kind": "news", "count": 2})]

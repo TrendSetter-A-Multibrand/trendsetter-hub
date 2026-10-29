@@ -55,11 +55,36 @@ def test_app_role_can_use_news_tables(db):
     db.rollback()
 
 
+def test_app_role_can_use_home_widgets(db):
+    """Права hub_app на home_widgets выданы автоматически (ALTER DEFAULT PRIVILEGES); сид-данных нет."""
+    assert db.execute(text("SELECT count(*) FROM trendsetter_hub.home_widgets")).scalar_one() == 0
+    db.execute(text("INSERT INTO trendsetter_hub.home_widgets (widget_id, position) VALUES ('birthdays', 0)"))
+    db.execute(text("UPDATE trendsetter_hub.home_widgets SET enabled = false WHERE widget_id = 'birthdays'"))
+    assert db.execute(text("SELECT enabled FROM trendsetter_hub.home_widgets WHERE widget_id = 'birthdays'")).scalar_one() is False
+    db.execute(text("DELETE FROM trendsetter_hub.home_widgets WHERE widget_id = 'birthdays'"))
+    db.rollback()
+
+
+def test_home_widgets_script_is_rerunnable(database):
+    """0015: повторный прогон SQL не падает; столбец sort и таблица на месте."""
+    import psycopg
+    from pathlib import Path
+
+    script = (Path(__file__).resolve().parents[2] / "db" / "15_home_widgets.sql").read_text(encoding="utf-8")
+    with psycopg.connect(database["db_dsn"], autocommit=True) as conn:
+        conn.execute(script)
+        conn.execute(script)
+        assert conn.execute("SELECT to_regclass('trendsetter_hub.home_widgets')").fetchone()[0] is not None
+        assert conn.execute(
+            "SELECT 1 FROM information_schema.columns WHERE table_name = 'news_items' AND column_name = 'sort'"
+        ).fetchone()
+
+
 def test_alembic_version_in_hub_schema(database):
     import psycopg
 
     with psycopg.connect(database["db_dsn"]) as conn:
-        assert conn.execute("SELECT version_num FROM trendsetter_hub.alembic_version").fetchone() == ("0014",)
+        assert conn.execute("SELECT version_num FROM trendsetter_hub.alembic_version").fetchone() == ("0015",)
         assert conn.execute("SELECT to_regclass('public.alembic_version')").fetchone() == (None,)
 
 
@@ -119,7 +144,7 @@ def test_news_moderation_downgrade_keeps_pending_as_draft(database):
         finally:
             alembic("upgrade", "head")
             conn.execute("DELETE FROM trendsetter_hub.news_items WHERE id = %s", (item_id,))
-        assert conn.execute("SELECT version_num FROM trendsetter_hub.alembic_version").fetchone() == ("0014",)
+        assert conn.execute("SELECT version_num FROM trendsetter_hub.alembic_version").fetchone() == ("0015",)
         assert "news_items_status_v2_check" in {name for name, _ in _status_checks(conn)}
 
 

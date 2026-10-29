@@ -44,6 +44,7 @@ MSG_AT_AUTHOR = "Запись у автора на доработке"
 MSG_USE_REVIEW = "Используйте кнопки проверки"
 MSG_OPEN_LIMIT = "Не больше 3 предложений на проверке одновременно — дождитесь решения редактора"
 MSG_DAILY_LIMIT = "Не больше 5 предложений в сутки — попробуйте завтра"
+MSG_PINNED_CHANGED = "Список изменился, обновите"
 
 PROPOSAL_OPEN_LIMIT = 3
 PROPOSAL_DAILY_LIMIT = 5
@@ -69,10 +70,11 @@ NEWS_FALSE_FIELDS = ("rsvp_enabled", "rsvp_names_public")
 CURRENT_EVENT = "(kind = 'event' AND NOT archived AND coalesce(ends_at, starts_at) >= :now)"
 CURRENT_NEWS = "(kind = 'news' AND NOT archived)"
 PAST = "(archived OR (kind = 'event' AND coalesce(ends_at, starts_at) < :now))"
+PINNED_SORT = "CASE WHEN pinned THEN sort END ASC NULLS LAST"  # ручной порядок только среди закреплённых
 TABS = {
     "current": (
         f"status = 'published' AND ({CURRENT_EVENT} OR {CURRENT_NEWS})",
-        "pinned DESC, (kind = 'news') ASC, starts_at ASC NULLS LAST, published_at DESC, id DESC",
+        f"pinned DESC, (kind = 'news') ASC, {PINNED_SORT}, starts_at ASC NULLS LAST, published_at DESC, id DESC",
     ),
     "past": (
         f"(status = 'published' AND {PAST}) OR status = 'rejected'",
@@ -222,7 +224,7 @@ def feed(session: Session, user: User, editor: bool) -> dict:
     events = session.execute(
         text(
             f"SELECT * FROM {N}items WHERE status = 'published' AND {CURRENT_EVENT} "
-            "ORDER BY pinned DESC, starts_at ASC, id ASC LIMIT :n"
+            f"ORDER BY pinned DESC, {PINNED_SORT}, starts_at ASC, id ASC LIMIT :n"
         ),
         {"now": now, "n": FEED_LIMIT},
     ).mappings().all()
@@ -230,7 +232,7 @@ def feed(session: Session, user: User, editor: bool) -> dict:
     news = session.execute(
         text(
             f"SELECT * FROM {N}items WHERE status = 'published' AND {CURRENT_NEWS} "
-            "ORDER BY pinned DESC, published_at DESC, id DESC LIMIT :n"
+            f"ORDER BY pinned DESC, {PINNED_SORT}, published_at DESC, id DESC LIMIT :n"
         ),
         {"n": FEED_LIMIT},
     ).mappings().all()
@@ -305,12 +307,14 @@ def update_item(session: Session, user: User, item_id: int, data: dict) -> dict:
     archive_changed = state["archived"] != current["archived"]
     if not (changed or status_changed or archive_changed):
         return _items(session, [current], user, True, now, review=True)[0]
+    if state["pinned"] != current["pinned"]:
+        state["sort"] = None  # смена закрепления в любую сторону сбрасывает ручной порядок
     published_at = current["published_at"]
     if state["status"] == "published" and published_at is None:
         published_at = now
     row = session.execute(
         text(
-            f"UPDATE {N}items SET title = :title, body = :body, place = :place, starts_at = :starts_at, ends_at = :ends_at, pinned = :pinned, "
+            f"UPDATE {N}items SET title = :title, body = :body, place = :place, starts_at = :starts_at, ends_at = :ends_at, pinned = :pinned, sort = :sort, "
             "color = :color, status = :status, archived = :archived, rsvp_enabled = :rsvp_enabled, rsvp_deadline = :rsvp_deadline, "
             "rsvp_names_public = :rsvp_names_public, published_at = :published_at, updated_by = :uid, updated_at = :now WHERE id = :id RETURNING *"
         ),
@@ -324,6 +328,23 @@ def update_item(session: Session, user: User, item_id: int, data: dict) -> dict:
         log_action(session, user.id, "news.archive" if state["archived"] else "news.unarchive", MODULE_ID, news_id=item_id)
     session.commit()
     return _items(session, [row], user, True, now, review=True)[0]
+
+
+def pinned_order(session: Session, user: User, kind: str, ids: list[int]) -> dict:
+    """Ручной порядок закреплённых одного типа: ids должен точно совпасть с текущим набором закреплённых; sort = индекс."""
+    where = CURRENT_EVENT if kind == "event" else CURRENT_NEWS
+    current = set(
+        session.scalars(
+            text(f"SELECT id FROM {N}items WHERE status = 'published' AND pinned AND {where} FOR UPDATE"), {"now": _now()}
+        ).all()
+    )
+    if len(ids) != len(set(ids)) or set(ids) != current:
+        fail(409, MSG_PINNED_CHANGED)
+    for index, item_id in enumerate(ids):
+        session.execute(text(f"UPDATE {N}items SET sort = :s WHERE id = :id"), {"s": index, "id": item_id})
+    log_action(session, user.id, "news.reorder", MODULE_ID, kind=kind, count=len(ids))
+    session.commit()
+    return {"ok": True}
 
 
 def delete_item(session: Session, user: User, item_id: int) -> dict:
