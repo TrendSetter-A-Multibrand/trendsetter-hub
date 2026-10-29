@@ -89,6 +89,7 @@ def clean(database):
         # напоминания (без FK на users) и шаблоны чек-листов возвращаются к стартовым (скрипт идемпотентен)
         conn.execute("TRUNCATE trendsetter_hub.hr_reminder_log, trendsetter_hub.hr_checklist_templates RESTART IDENTITY CASCADE")
         conn.execute((BACKEND.parent / "db" / "07_hr_people_ops.sql").read_text(encoding="utf-8"))
+        conn.execute((BACKEND.parent / "db" / "17_onboarding.sql").read_text(encoding="utf-8"))  # TRUNCATE users CASCADE опустошил onboarding_settings
         conn.execute("DELETE FROM trendsetter_hub.departments WHERE code NOT IN ('purchasing','warehouse','wb','analytics','pricing','hr')")
 
 

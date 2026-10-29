@@ -108,11 +108,71 @@ def test_holidays_script_is_rerunnable_and_checks(database):
                 conn.execute(stmt)
 
 
+def test_app_role_can_use_onboarding_settings(db):
+    """Права hub_app на onboarding_settings выданы автоматически (D12); строка одна, общий пароль не задан."""
+    row = db.execute(text("SELECT id, password_hash FROM trendsetter_hub.onboarding_settings")).all()
+    assert [tuple(r) for r in row] == [(1, None)]
+    db.execute(text("UPDATE trendsetter_hub.onboarding_settings SET updated_at = now() WHERE id = 1"))
+    db.rollback()
+
+
+def test_onboarding_script_is_rerunnable_and_checks(database):
+    """0017: повторный прогон SQL не падает; оба ограничения D9 на месте и действуют."""
+    import psycopg
+    from pathlib import Path
+
+    script = (Path(__file__).resolve().parents[2] / "db" / "17_onboarding.sql").read_text(encoding="utf-8")
+    with psycopg.connect(database["db_dsn"], autocommit=True) as conn:
+        conn.execute(script)
+        conn.execute(script)
+        names = {r[0] for r in conn.execute("SELECT conname FROM pg_constraint WHERE conrelid = 'trendsetter_hub.users'::regclass")}
+        assert {"users_level_or_onboarding_check", "users_must_change_password_check"} <= names
+        assert conn.execute("SELECT count(*) FROM trendsetter_hub.onboarding_settings").fetchone() == (1,)
+        for stmt in (
+            "INSERT INTO trendsetter_hub.users (email, full_name, password_hash, access_level, onboarding) VALUES ('ob1@example.com', 'А', 'x', NULL, false)",
+            "INSERT INTO trendsetter_hub.users (email, full_name, password_hash, access_level, must_change_password) VALUES ('ob2@example.com', 'Б', 'x', 'viewer', true)",
+        ):
+            with pytest.raises(psycopg.errors.CheckViolation):
+                conn.execute(stmt)
+
+
+def test_onboarding_downgrade_disables_unleveled_users(database):
+    """alembic downgrade 0016: учётка без уровня отключается и получает viewer; затем upgrade обратно."""
+    import os
+    import subprocess
+    import sys
+
+    import psycopg
+
+    from tests.conftest import BACKEND, _replace_db
+
+    env = {**os.environ, "HUB_MIGRATION_DATABASE_URL": _replace_db(database["admin_dsn"], database["name"]).replace("postgresql://", "postgresql+psycopg://", 1)}
+
+    def alembic(*args):
+        subprocess.run([sys.executable, "-m", "alembic", *args], cwd=BACKEND, env=env, check=True)
+
+    with psycopg.connect(database["db_dsn"], autocommit=True) as conn:
+        user_id = conn.execute(
+            "INSERT INTO trendsetter_hub.users (email, full_name, password_hash, access_level, onboarding, must_change_password) "
+            "VALUES ('down@example.com', 'Д', 'x', NULL, true, true) RETURNING id"
+        ).fetchone()[0]
+        try:
+            alembic("downgrade", "0016")
+            assert conn.execute("SELECT is_active, access_level FROM trendsetter_hub.users WHERE id = %s", (user_id,)).fetchone() == (False, "viewer")
+            assert conn.execute("SELECT version_num FROM trendsetter_hub.alembic_version").fetchone() == ("0016",)
+            assert conn.execute("SELECT to_regclass('trendsetter_hub.onboarding_settings')").fetchone()[0] is None
+        finally:
+            alembic("upgrade", "head")
+            conn.execute("DELETE FROM trendsetter_hub.users WHERE id = %s", (user_id,))
+        assert conn.execute("SELECT version_num FROM trendsetter_hub.alembic_version").fetchone() == ("0017",)
+        assert conn.execute("SELECT count(*) FROM trendsetter_hub.onboarding_settings").fetchone() == (1,)
+
+
 def test_alembic_version_in_hub_schema(database):
     import psycopg
 
     with psycopg.connect(database["db_dsn"]) as conn:
-        assert conn.execute("SELECT version_num FROM trendsetter_hub.alembic_version").fetchone() == ("0016",)
+        assert conn.execute("SELECT version_num FROM trendsetter_hub.alembic_version").fetchone() == ("0017",)
         assert conn.execute("SELECT to_regclass('public.alembic_version')").fetchone() == (None,)
 
 
@@ -172,7 +232,7 @@ def test_news_moderation_downgrade_keeps_pending_as_draft(database):
         finally:
             alembic("upgrade", "head")
             conn.execute("DELETE FROM trendsetter_hub.news_items WHERE id = %s", (item_id,))
-        assert conn.execute("SELECT version_num FROM trendsetter_hub.alembic_version").fetchone() == ("0016",)
+        assert conn.execute("SELECT version_num FROM trendsetter_hub.alembic_version").fetchone() == ("0017",)
         assert "news_items_status_v2_check" in {name for name, _ in _status_checks(conn)}
 
 

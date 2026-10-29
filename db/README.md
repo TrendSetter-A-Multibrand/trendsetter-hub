@@ -193,6 +193,19 @@ docker exec -u root trendsetter-hub-api rm -rf /tmp/team-import                 
 
 **Откат** (`alembic downgrade 0015`): таблица `holidays_days` и все внесённые дни удаляются.
 
+## Онбординг нового сотрудника (ревизия 0017)
+`17_onboarding.sql`: в `users` уровень доступа теперь может быть `NULL` (только на онбординге), добавлены `must_change_password`, `onboarding`, `onboarding_expires_at` и два ограничения: `users_level_or_onboarding_check` (`access_level IS NOT NULL OR onboarding`) и `users_must_change_password_check` (`NOT must_change_password OR onboarding`). Таблица `onboarding_settings` — ровно одна строка (`id = 1`): хэш общего стартового пароля, кто и когда его задал; пока `password_hash IS NULL`, самосоздание и вход общим паролем выключены. Права hub_app — автоматически (`ALTER DEFAULT PRIVILEGES` из `01_core_hub.sql`). Скрипт идемпотентен.
+
+**Новые столбцы модели `User` читаются на каждом запросе, включая `/auth/login`. Если код выкачен раньше SQL, весь хаб отвечает 500 и войти нельзя.**
+
+**Выкат 0017** (как у `0016`; `deploy.sh` миграции не выполняет):
+1. Под doadmin в `defaultdb` выполнить `db/17_onboarding.sql` (после `db/16_holidays.sql`; порядок выката БД: `0014` → `0015` → `0016` → `0017`).
+2. Под doadmin выполнить `deploy/stamp_alembic_0017.sql` (версия миграции `0016` → `0017`).
+3. Только после этого — merge в `main`.
+4. **Общий пароль не задавать до выката PR 2** (экран онбординга). Потом администратор задаёт его на вкладке «Онбординг»; до этого самосоздание выключено.
+
+**Откат** (`alembic downgrade 0016`): учётки без уровня отключаются и получают `viewer`; флаги, срок и общий пароль теряются.
+
 ## Модуль «Склад»
 Листы Google Таблицы «Склад-приёмка» стали таблицами: Приемки → `warehouse_receipts`, Раскладки → `warehouse_receipt_plans`, Счётчики → `warehouse_box_counters` и `warehouse_pallet_pointers`, Сканы → `warehouse_scans`, Короба → `warehouse_boxes`, Хранение → `warehouse_storage_boxes`, Хранение — архив → `warehouse_storage_archive`, Секции → `warehouse_extra_sections`, Коды ЧЗ → `warehouse_marks`, Сводка → представление `warehouse_receipt_summary`. Условия, которые раньше защищал `LockService`, держит база: уникальность кода ЧЗ, одно место на короб, уникальное имя приёмки, номера коробов через функцию `warehouse_next_box_number()`, повтор отправки скана отсекается по id.
 
