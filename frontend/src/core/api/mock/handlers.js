@@ -22,6 +22,7 @@ import { createPlanHandlers } from './hr-plans.js'
 import { createHrStatsHandlers } from './hrStats.js'
 import { createHomeHandlers } from './home.js'
 import { createNewsHandlers } from './news.js'
+import { createHolidaysHandlers } from './holidays.js'
 import { createWbHandlers } from './wb.js'
 
 const err = strings.errors
@@ -119,6 +120,13 @@ const news = createNewsHandlers({
   notify: notifications.notify,
   userById: (id) => data.users.find((u) => u.id === Number(id)) ?? null,
   errors: getModule('news').strings.errors,
+})
+// Производственный календарь: редактор — ответственный за holidays или администратор (как бэкенд is_editor)
+const holidays = createHolidaysHandlers({
+  userFromToken,
+  accessTo,
+  isEditor: (u) => isModuleResponsible(u, groupPermissionsOf(u, 'holidays')) || canManageUsers(u),
+  errors: getModule('holidays').strings.errors,
 })
 // WB «Маркировка»: демо-данные сверки, права как у бэкенда (view/run — данные, run — запись документа)
 const wb = createWbHandlers({ userFromToken, accessTo })
@@ -369,5 +377,6 @@ export const handlers = {
   ...hrStats.handlers,
   ...home.handlers,
   ...news.handlers,
+  ...holidays.handlers,
   ...wb.handlers,
 }
