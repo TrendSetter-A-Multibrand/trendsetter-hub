@@ -107,7 +107,7 @@ const strings = {
     // Главная: сводка (часы, погода, курсы). Строки виджетов модуля team — в modules/team/strings.js
     home: {
       clocksTitle: 'Время',
-      cities: { yerevan: 'Ереван', moscow: 'Москва', paris: 'Париж', newYork: 'Нью-Йорк' },
+      cities: { yerevan: 'Ереван', moscow: 'Москва' },
       weatherTitle: 'Погода на 7 дней',
       weatherUnavailable: 'Погода недоступна',
       noData: 'нет данных',

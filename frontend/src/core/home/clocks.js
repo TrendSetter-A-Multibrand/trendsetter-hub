@@ -2,8 +2,6 @@
 export const CLOCK_ZONES = [
   { id: 'yerevan', timeZone: 'Asia/Yerevan' },
   { id: 'moscow', timeZone: 'Europe/Moscow' },
-  { id: 'paris', timeZone: 'Europe/Paris' },
-  { id: 'newYork', timeZone: 'America/New_York' },
 ]
 
 // 'HH:MM' в часовом поясе зоны
