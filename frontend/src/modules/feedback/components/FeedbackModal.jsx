@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Alert, App, Button, Checkbox, Input, Modal, Segmented, Select, Space } from 'antd'
+import { Alert, App, Button, Checkbox, Input, Modal, Radio, Select, Space, Switch } from 'antd'
 import { api } from '../../../core/api/index.js'
 import { BODY_LIMIT, FEEDBACK_KINDS, buildPayload } from '../lib/feedback.js'
 import strings from '../strings.js'
@@ -64,10 +64,11 @@ export default function FeedbackModal({ onClose, onSent }) {
         {error && <Alert type="error" showIcon title={error} />}
         <div className="fb-field">
           <span className="fb-label">{s.kindLabel}</span>
-          <Segmented
+          <Radio.Group
+            className="card-options"
             aria-label={s.kindLabel}
             value={form.kind}
-            onChange={(kind) => patch({ kind, recipientId: kind === 'thanks' ? form.recipientId : null })}
+            onChange={(e) => patch({ kind: e.target.value, recipientId: e.target.value === 'thanks' ? form.recipientId : null })}
             options={FEEDBACK_KINDS.map((value) => ({ value, label: strings.kinds[value] }))}
           />
         </div>
@@ -99,14 +100,11 @@ export default function FeedbackModal({ onClose, onSent }) {
         </div>
         <div className="fb-field">
           <span className="fb-label">{s.authorLabel}</span>
-          <Segmented
+          <Switch
+            checked={form.anonymous}
+            onChange={(anonymous) => patch({ anonymous, contactOk: false })}
+            checkedChildren={s.anonymous}
             aria-label={s.authorLabel}
-            value={form.anonymous ? 'anonymous' : 'named'}
-            onChange={(value) => patch({ anonymous: value === 'anonymous', contactOk: false })}
-            options={[
-              { value: 'named', label: s.named },
-              { value: 'anonymous', label: s.anonymous },
-            ]}
           />
         </div>
         {form.anonymous ? (

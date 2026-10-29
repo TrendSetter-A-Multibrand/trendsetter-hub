@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Button } from 'antd'
+import SectionHead from '../../../core/layout/SectionHead.jsx'
 import strings from '../strings.js'
 import FeedbackModal from './FeedbackModal.jsx'
 import '../feedback.css'
@@ -10,8 +11,8 @@ const s = strings.home
 export default function HomeFeedbackCard() {
   const [open, setOpen] = useState(false)
   return (
-    <section className="home-card">
-      <div className="home-card-head">{s.title}</div>
+    <section className="home-block tight" aria-labelledby="home-feedback">
+      <SectionHead id="home-feedback" title={s.title} />
       <div className="fb-hint">{s.text}</div>
       <div className="fb-card-action">
         <Button type="primary" onClick={() => setOpen(true)}>

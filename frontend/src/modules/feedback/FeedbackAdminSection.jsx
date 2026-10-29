@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Alert, App, Button, Input, Pagination, Segmented, Select, Spin, Tag } from 'antd'
+import { Alert, App, Button, Input, Pagination, Select, Spin, Tag } from 'antd'
 import { api } from '../../core/api/index.js'
 import { useAuth } from '../../core/auth/useAuth.js'
 import { formatDateTime } from '../../core/format.js'
+import PageHead from '../../core/layout/PageHead.jsx'
+import SectionHead from '../../core/layout/SectionHead.jsx'
 import { FEEDBACK_KINDS, FEEDBACK_STATUSES, NOTE_LIMIT } from './lib/feedback.js'
 import strings from './strings.js'
 import './feedback.css'
@@ -32,7 +34,7 @@ function MessageCard({ item, onSaved }) {
     <div className="fb-item">
       <div className="fb-meta">
         <Tag>{strings.kinds[item.kind]}</Tag>
-        <span className="fb-when">{formatDateTime(item.createdAt)}</span>
+        <span className="fb-when mono">{formatDateTime(item.createdAt)}</span>
         <span className="fb-author">{item.anonymous ? s.anonymous : item.authorName}</span>
         {item.contactOk && <Tag color="green">{s.contactOk}</Tag>}
         {item.recipientName && <span className="fb-when">{s.to(item.recipientName)}</span>}
@@ -65,7 +67,7 @@ function MessageCard({ item, onSaved }) {
 }
 
 // Раздел «Обратная связь» (/modules/feedback, только читатель): вкладки по статусам со счётчиками, фильтр по типу, список с пагинацией.
-export default function FeedbackAdminSection() {
+export default function FeedbackAdminSection({ module }) {
   const { refreshMe } = useAuth()
   const [status, setStatus] = useState('new')
   const [kind, setKind] = useState(null)
@@ -94,22 +96,25 @@ export default function FeedbackAdminSection() {
   const tabLabel = (value) => `${strings.statuses[value]}${list ? ` ${list.counts[value]}` : ''}`
 
   return (
-    <div className="fb-admin">
-      <h1 className="h1">{s.pageTitle}</h1>
-      <div className="fb-bar">
-        <Segmented
-          aria-label={s.statusLabel}
-          value={status}
-          onChange={(value) => reset(() => setStatus(value))}
-          options={FEEDBACK_STATUSES.map((value) => ({ value, label: tabLabel(value) }))}
-        />
-        <Select
-          aria-label={s.kindFilterLabel}
-          value={kind ?? 'all'}
-          onChange={(value) => reset(() => setKind(value === 'all' ? null : value))}
-          options={[{ value: 'all', label: s.allKinds }, ...FEEDBACK_KINDS.map((value) => ({ value, label: strings.kinds[value] }))]}
-        />
-      </div>
+    <div className="stack module feedback">
+      <PageHead module={module} title={module.strings.tool} />
+      <section className="fb-admin" aria-labelledby="fb-messages">
+        <SectionHead id="fb-messages" title={s.pageTitle}>
+          <span className="seg" role="group" aria-label={s.statusLabel}>
+            {FEEDBACK_STATUSES.map((value) => (
+              <button key={value} type="button" className="seg-btn" aria-pressed={status === value} onClick={() => reset(() => setStatus(value))}>
+                {tabLabel(value)}
+              </button>
+            ))}
+          </span>
+        </SectionHead>
+        <span className="seg" role="group" aria-label={s.kindFilterLabel}>
+          {[null, ...FEEDBACK_KINDS].map((value) => (
+            <button key={value ?? 'all'} type="button" className="seg-btn" aria-pressed={kind === value} onClick={() => reset(() => setKind(value))}>
+              {value ? strings.kinds[value] : s.allKinds}
+            </button>
+          ))}
+        </span>
       {failed && <Alert type="error" showIcon title={s.loadError} />}
       {!list && !failed && <Spin size="small" />}
       {list && list.items.length === 0 && <div className="fb-empty">{s.empty}</div>}
@@ -124,6 +129,7 @@ export default function FeedbackAdminSection() {
         />
       ))}
       {list && <Pagination hideOnSinglePage showSizeChanger={false} current={page} pageSize={s.pageSize} total={list.total} onChange={setPage} />}
+      </section>
     </div>
   )
 }
