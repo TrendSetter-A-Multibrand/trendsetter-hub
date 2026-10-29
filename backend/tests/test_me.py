@@ -13,7 +13,7 @@ def test_me_for_admin(client, db):
     assert me["full_name"] == "Карен В."
     assert me["can_manage_users"] is True
     assert me["departments"] == []
-    assert me["module_access"] == {m: "run" for m in ("purchasing", "warehouse", "wb", "analytics", "pricing", "hr", "team", "news", "holidays")}
+    assert me["module_access"] == {m: "run" for m in ("purchasing", "warehouse", "wb", "analytics", "pricing", "hr", "team", "news", "holidays", "feedback")}
     assert me["module_badges"] == {}  # только ненулевые
 
 
