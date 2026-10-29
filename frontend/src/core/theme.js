@@ -8,7 +8,7 @@ const PALETTE = {
   // fill — заливка главной кнопки (белый текст), link — красный текст на фоне темы
   light: {
     fill: '#A22325', fillHover: '#861C1E', fillActive: '#7E1A1C', link: '#A22325', linkHover: '#861C1E',
-    ink: '#141413', muted: '#3D3D3A', page: '#FAF9F5', surface: '#FFFFFF', surface2: '#F5F4ED',
+    ink: '#141413', muted: '#3D3D3A', page: '#FFFCFC', surface: '#FFFFFF', surface2: '#F5F4ED',
     border: '#BCBCBB', borderSoft: '#DDDDDD', rowBorder: '#DDDDDD', forest: '#265B19', warn: '#5A4815',
     mask: 'rgba(20,20,19,.45)', track: '#E7E7E0',
   },
