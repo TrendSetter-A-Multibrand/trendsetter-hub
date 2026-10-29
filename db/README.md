@@ -181,6 +181,18 @@ docker exec -u root trendsetter-hub-api rm -rf /tmp/team-import                 
 
 **Откат** (`alembic downgrade 0014`): удаляются `home_widgets` и `news_items.sort` (ручной порядок закреплённых и настройки виджетов теряются).
 
+## Производственный календарь (ревизия 0016)
+`16_holidays.sql`: таблица `holidays_days` (`country` RU/AM, `day`, `kind` holiday/day_off/workday/short, `name`, `updated_by`, `updated_at`; ключ `(country, day)`) — праздники и переносы РФ и Армении, которые вручную ведёт ответственный за календарь. В БД только исключения: суббота и воскресенье без строки — выходной автоматически, пн–пт без строки — рабочий. Сидов и привязки к отделам нет (модуль `for_all`). Права hub_app — автоматически (`ALTER DEFAULT PRIVILEGES` из `01_core_hub.sql`). Скрипт идемпотентен. SQL лежит в корне `db/` по решению пользователя, вопреки конвенции `db/modules/<id>/`.
+
+**Выкат 0016** (как у `0015`; `deploy.sh` миграции не выполняет):
+1. Под doadmin в `defaultdb` выполнить `db/16_holidays.sql` (после `db/15_home_widgets.sql`).
+2. Под doadmin выполнить `deploy/stamp_alembic_0016.sql` (версия миграции `0015` → `0016`).
+3. Только после этого — merge в `main`. Иначе `/modules/holidays/*` отвечает 500.
+4. Администратор в «Особых правах» (или в группе) выдаёт Аревик право «Ответственный» на модуле «Производственный календарь».
+5. Аревик вносит праздники текущего и следующего года по обеим странам.
+
+**Откат** (`alembic downgrade 0015`): таблица `holidays_days` и все внесённые дни удаляются.
+
 ## Модуль «Склад»
 Листы Google Таблицы «Склад-приёмка» стали таблицами: Приемки → `warehouse_receipts`, Раскладки → `warehouse_receipt_plans`, Счётчики → `warehouse_box_counters` и `warehouse_pallet_pointers`, Сканы → `warehouse_scans`, Короба → `warehouse_boxes`, Хранение → `warehouse_storage_boxes`, Хранение — архив → `warehouse_storage_archive`, Секции → `warehouse_extra_sections`, Коды ЧЗ → `warehouse_marks`, Сводка → представление `warehouse_receipt_summary`. Условия, которые раньше защищал `LockService`, держит база: уникальность кода ЧЗ, одно место на короб, уникальное имя приёмки, номера коробов через функцию `warehouse_next_box_number()`, повтор отправки скана отсекается по id.
 

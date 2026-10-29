@@ -80,11 +80,39 @@ def test_home_widgets_script_is_rerunnable(database):
         ).fetchone()
 
 
+def test_app_role_can_use_holidays_days(db):
+    """Права hub_app на holidays_days выданы автоматически; сид-данных нет."""
+    assert db.execute(text("SELECT count(*) FROM trendsetter_hub.holidays_days")).scalar_one() == 0
+    db.execute(text("INSERT INTO trendsetter_hub.holidays_days (country, day, kind, name) VALUES ('RU', '2027-01-01', 'holiday', 'Новый год')"))
+    db.execute(text("UPDATE trendsetter_hub.holidays_days SET kind = 'day_off' WHERE country = 'RU' AND day = '2027-01-01'"))
+    assert db.execute(text("SELECT kind FROM trendsetter_hub.holidays_days WHERE country = 'RU'")).scalar_one() == "day_off"
+    db.execute(text("DELETE FROM trendsetter_hub.holidays_days WHERE country = 'RU'"))
+    db.rollback()
+
+
+def test_holidays_script_is_rerunnable_and_checks(database):
+    """0016: повторный прогон SQL не падает; workday на понедельник и holiday без названия отклоняются ограничениями БД."""
+    import psycopg
+    from pathlib import Path
+
+    script = (Path(__file__).resolve().parents[2] / "db" / "16_holidays.sql").read_text(encoding="utf-8")
+    with psycopg.connect(database["db_dsn"], autocommit=True) as conn:
+        conn.execute(script)
+        conn.execute(script)
+        assert conn.execute("SELECT to_regclass('trendsetter_hub.holidays_days')").fetchone()[0] is not None
+        for stmt in (
+            "INSERT INTO trendsetter_hub.holidays_days (country, day, kind) VALUES ('RU', '2027-01-04', 'workday')",  # понедельник
+            "INSERT INTO trendsetter_hub.holidays_days (country, day, kind) VALUES ('RU', '2027-01-01', 'holiday')",  # без названия
+        ):
+            with pytest.raises(psycopg.errors.CheckViolation):
+                conn.execute(stmt)
+
+
 def test_alembic_version_in_hub_schema(database):
     import psycopg
 
     with psycopg.connect(database["db_dsn"]) as conn:
-        assert conn.execute("SELECT version_num FROM trendsetter_hub.alembic_version").fetchone() == ("0015",)
+        assert conn.execute("SELECT version_num FROM trendsetter_hub.alembic_version").fetchone() == ("0016",)
         assert conn.execute("SELECT to_regclass('public.alembic_version')").fetchone() == (None,)
 
 
@@ -144,7 +172,7 @@ def test_news_moderation_downgrade_keeps_pending_as_draft(database):
         finally:
             alembic("upgrade", "head")
             conn.execute("DELETE FROM trendsetter_hub.news_items WHERE id = %s", (item_id,))
-        assert conn.execute("SELECT version_num FROM trendsetter_hub.alembic_version").fetchone() == ("0015",)
+        assert conn.execute("SELECT version_num FROM trendsetter_hub.alembic_version").fetchone() == ("0016",)
         assert "news_items_status_v2_check" in {name for name, _ in _status_checks(conn)}
 
 
