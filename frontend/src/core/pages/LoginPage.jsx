@@ -6,6 +6,7 @@ import { DEMO_MODE } from '../config.js'
 import { isValidEmail } from '../admin/validation.js'
 import { useAuth } from '../auth/useAuth.js'
 import strings from '../strings.js'
+import Logo from '../layout/Logo.jsx'
 
 const s = strings.login
 
@@ -40,6 +41,10 @@ export default function LoginPage() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <Card style={{ width: 400, maxWidth: '100%' }}>
+        <div className="login-brand">
+          <Logo />
+          <span className="login-brand-sub">{strings.brandSub}</span>
+        </div>
         <Typography.Title level={3} style={{ marginTop: 0 }}>
           {s.title}
         </Typography.Title>
