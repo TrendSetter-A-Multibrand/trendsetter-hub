@@ -15,6 +15,7 @@ from app.core.models import User
 from app.core.security import hash_password
 from tests.conftest import login, make_user
 from tests.test_me import dept_id
+from app.modules.team import service as team_service
 from tests.test_team import BASE, PHOTO, add_person, values
 
 SHARED = "Start-shared-2026"
@@ -405,12 +406,16 @@ def test_hr_approve_grants_access(client, db, shared, hr, tree):
         assert db.execute(text("SELECT count(*) FROM trendsetter_hub.team_photos")).scalar_one() == 0
         assert pending_submission(db)["status"] == "pending"
 
-    assert client.post(approve, json=org, headers=hr).status_code == 422  # нет уровня
+    r = client.post(approve, json=org, headers=hr)  # нет уровня
+    assert r.status_code == 422 and r.json()["detail"] == m.ONBOARDING_LEVEL_REQUIRED
     untouched()
-    assert client.post(approve, json={**org, "accessLevel": "admin"}, headers=hr).status_code == 422  # admin выдаёт только администратор
+    r = client.post(approve, json={**org, "accessLevel": "admin"}, headers=hr)  # admin выдаёт только администратор
+    assert r.status_code == 422 and r.json()["detail"] == m.UNKNOWN_LEVEL
     untouched()
-    assert client.post(approve, json={**org, "accessLevel": "employee", "departmentIds": [99999]}, headers=hr).status_code == 422
-    untouched()
+    for missing in (32000, 99999):  # в диапазоне smallint, но отдела нет / вне диапазона
+        r = client.post(approve, json={**org, "accessLevel": "employee", "departmentIds": [missing]}, headers=hr)
+        assert r.status_code == 422 and r.json()["detail"] == m.UNKNOWN_DEPARTMENT
+        untouched()
     r = client.post(approve, json={**org, "accessLevel": "employee", "departmentIds": [wh]}, headers=hr)
     assert r.status_code == 200, r.text
     u = user_row(db, "ivan.test@trendsettercrew.com")
@@ -467,9 +472,10 @@ def test_approve_links_card_by_email_and_refuses_taken_card(client, db, shared, 
     db.commit()
     sub2 = next(s for s in client.get(f"{BASE}/hr/submissions", headers=hr).json() if s["userEmail"] == "petr.test@trendsettercrew.com")
     r = client.post(f"{BASE}/hr/submissions/{sub2['id']}/approve", json={"accessLevel": "viewer"}, headers=hr)
-    assert r.status_code == 409
+    assert r.status_code == 409 and r.json()["detail"] == team_service.MSG_USER_LINKED  # не MSG_EMAIL_DUPLICATE из except IntegrityError
     u = user_row(db, "petr.test@trendsettercrew.com")
     assert u["onboarding"] is True and u["access_level"] is None
+    assert db.execute(text("SELECT status FROM trendsetter_hub.team_submissions WHERE id = :i"), {"i": sub2["id"]}).scalar_one() == "pending"
 
 
 def test_reject_keeps_onboarding_and_allows_resubmit(client, db, shared, hr):
