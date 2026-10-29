@@ -245,3 +245,12 @@ test('админ: общий пароль, очистка, продление, �
   await login('nb-del@example.com', 'Another-start-2026')
   assert.ok(userOf('nb-del@example.com'))
 })
+
+test('hr/users не содержит онбординг-учёток (D7)', async () => {
+  reset()
+  await login('nb-d7@example.com', SHARED)
+  const hr = (await login('hr@example.com', 'demo')).token
+  const list = await call(hr, 'GET', '/modules/team/hr/users')
+  assert.ok(list.length > 0)
+  assert.ok(!list.some((x) => x.email === 'nb-d7@example.com'))
+})

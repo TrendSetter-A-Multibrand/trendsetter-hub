@@ -174,10 +174,17 @@ function findOnboardingUser(id) {
 // team.js не меняется: онбординг-надстройка над его обработчиками (метка в списке заявок, справочник отделов, доступ при одобрении)
 const teamSubmissions = team.handlers['GET /modules/team/hr/submissions']
 const teamApprove = team.handlers['POST /modules/team/hr/submissions/:id/approve']
+const teamHrUsers = team.handlers['GET /modules/team/hr/users']
 const teamOverrides = {
   'GET /modules/team/hr/submissions': async (request) => {
     const list = await teamSubmissions(request)
     return list.map((x) => ({ ...x, userOnboarding: Boolean(data.users.find((u) => u.id === x.userId)?.onboarding) }))
+  },
+
+  // D7: онбординг-учётки в списке «привязать к пользователю» не показываются
+  'GET /modules/team/hr/users': async (request) => {
+    const list = await teamHrUsers(request)
+    return list.filter((x) => !data.users.find((u) => u.id === x.id)?.onboarding)
   },
 
   'GET /modules/team/hr/departments': ({ token }) => {
