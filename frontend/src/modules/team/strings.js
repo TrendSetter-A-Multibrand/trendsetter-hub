@@ -80,6 +80,7 @@ const strings = {
     until: (date) => `до ${date}`,
     from: (date) => `с ${date}`,
     more: (n) => `ещё ${n}`,
+    widgetLabel: 'Отпуска',
   },
 
   scheme: {

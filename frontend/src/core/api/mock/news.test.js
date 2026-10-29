@@ -382,3 +382,46 @@ test('бейдж меню: число pending только редактору', 
   decideCall(call, EDITOR, review(call).items[0], 'approve')
   assert.deepEqual(moduleBadges(userFromToken(EDITOR)), {})
 })
+
+// ---- порядок закреплённых ----
+
+const ORDER = 'POST /modules/news/pinned-order'
+const pinnedIds = (call, kind) => call('GET /modules/news/feed', { token: EMPLOYEE })[kind === 'event' ? 'events' : 'news'].filter((i) => i.pinned).map((i) => i.id)
+
+test('pinned-order: не редактор — 403, без токена — 401', () => {
+  const { call } = setup()
+  status(() => call(ORDER, { body: { kind: 'news', ids: [] } }), 401)
+  status(() => call(ORDER, { token: EMPLOYEE, body: { kind: 'news', ids: [] } }), 403)
+  status(() => call(ORDER, { token: VIEWER, body: { kind: 'news', ids: [] } }), 403)
+})
+
+test('pinned-order: порядок применяется в ленте и во вкладке «Актуальное»', () => {
+  const { call } = setup()
+  const before = pinnedIds(call, 'news')
+  assert.ok(before.length >= 2)
+  const reversed = [...before].reverse()
+  assert.deepEqual(call(ORDER, { token: EDITOR, body: { kind: 'news', ids: reversed } }), { ok: true })
+  assert.deepEqual(pinnedIds(call, 'news'), reversed)
+  const current = call('GET /modules/news/items', { token: EDITOR, query: { tab: 'current' } }).items
+  assert.deepEqual(current.filter((i) => i.pinned && i.kind === 'news').map((i) => i.id), reversed)
+  assert.ok(current.every((i) => !('sort' in i)))
+})
+
+test('pinned-order: несовпадение набора, повторы и чужой тип — 409', () => {
+  const { call } = setup()
+  const news = pinnedIds(call, 'news')
+  const events = pinnedIds(call, 'event')
+  for (const [kind, ids] of [['news', news.slice(1)], ['news', [...news, news[0]]], ['news', events], ['event', news], ['news', []]]) {
+    status(() => call(ORDER, { token: EDITOR, body: { kind, ids } }), 409)
+  }
+  status(() => call(ORDER, { token: EDITOR, body: { kind: 'x', ids: [] } }), 422)
+})
+
+test('смена закрепления сбрасывает ручной порядок', () => {
+  const { call } = setup()
+  const [first, second] = pinnedIds(call, 'news')
+  call(ORDER, { token: EDITOR, body: { kind: 'news', ids: [second, first] } })
+  call('PATCH /modules/news/items/:id', { token: EDITOR, params: { id: second }, body: { pinned: false } })
+  call('PATCH /modules/news/items/:id', { token: EDITOR, params: { id: second }, body: { pinned: true } })
+  assert.equal(pinnedIds(call, 'news')[0], first) // second снова закреплён без sort — после упорядоченного first
+})

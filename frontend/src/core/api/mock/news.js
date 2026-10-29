@@ -15,7 +15,7 @@ const PROPOSAL_DAILY_LIMIT = 5
 const PROPOSAL_LINK = '/profile?section=proposals'
 const MINE_LIMIT = 50
 // Служебные поля строки: наружу не отдаются, автор и сведения о проверке — в ключе review
-const INTERNAL_FIELDS = ['createdBy', 'createdAt', 'submittedAt', 'reviewComment', 'reviewedAt']
+const INTERNAL_FIELDS = ['createdBy', 'createdAt', 'submittedAt', 'reviewComment', 'reviewedAt', 'sort']
 // Поля предложения автора (без pinned, status, archived; kind — только при создании)
 const PROPOSAL_FIELDS = ['title', 'body', 'place', 'startsAt', 'endsAt', 'color', 'rsvpEnabled', 'rsvpDeadline', 'rsvpNamesPublic']
 const PATCH_FIELDS = ['title', 'body', 'place', 'startsAt', 'endsAt', 'pinned', 'color', 'rsvpEnabled', 'rsvpDeadline', 'rsvpNamesPublic', 'status', 'archived']
@@ -42,7 +42,7 @@ export function createNewsHandlers({ userFromToken, accessTo, isEditor, notify, 
     const row = {
       kind: 'news', body: '', place: null, startsAt: null, endsAt: null, pinned: false, color: null, status: 'published', archived: false,
       rsvpEnabled: false, rsvpDeadline: null, rsvpNamesPublic: false, publishedAt: null,
-      createdBy: null, submittedAt: null, reviewComment: null, reviewedAt: null, ...item,
+      createdBy: null, submittedAt: null, reviewComment: null, reviewedAt: null, sort: null, ...item,
     }
     row.id = nextItemId++
     row.updatedAt = row.updatedAt ?? row.publishedAt ?? at(0)
@@ -66,7 +66,7 @@ export function createNewsHandlers({ userFromToken, accessTo, isEditor, notify, 
   add({ kind: 'event', title: 'Командный завтрак', place: 'Кухня', publishedAt: at(-10 * 24), startsAt: at(-3 * 24), endsAt: at(-3 * 24 + 2) })
   add({ kind: 'news', title: 'Новая политика отпусков', pinned: true, color: 'yellow', publishedAt: at(-5 * 24), body: 'С ноября заявки на отпуск подаются через раздел «Отпуск» в профиле.' })
   add({ kind: 'news', title: 'Обновили карту команды', publishedAt: at(-2 * 24), body: 'В карте появились календарь отпусков и дни рождения.' })
-  add({ kind: 'news', title: 'Итоги месяца', color: 'pink', publishedAt: at(-24), body: 'Спасибо всем за работу! Подробности — на планёрке в понедельник.' })
+  add({ kind: 'news', title: 'Итоги месяца', pinned: true, color: 'pink', publishedAt: at(-24), body: 'Спасибо всем за работу! Подробности — на планёрке в понедельник.' })
   add({ kind: 'news', title: 'Черновик объявления', status: 'draft', body: 'Текст ещё не готов.' })
   add({ kind: 'news', title: 'Старая новость из архива', archived: true, publishedAt: at(-60 * 24), body: 'Эта запись убрана в архив.' })
   // Предложения сотрудников: на проверке, на доработке, отклонено, опубликовано (3 — «Ани С.», 10 — «Кравцов Денис»)
@@ -125,7 +125,9 @@ export function createNewsHandlers({ userFromToken, accessTo, isEditor, notify, 
   const current = (r, n) => r.status === 'published' && !r.archived && (r.kind === 'news' || time(r.endsAt ?? r.startsAt) >= n)
   const byStart = (a, b) => time(a.startsAt) - time(b.startsAt) || a.id - b.id
   const byPublished = (a, b) => time(b.publishedAt) - time(a.publishedAt) || b.id - a.id
-  const pinnedFirst = (cmp) => (a, b) => Number(b.pinned) - Number(a.pinned) || cmp(a, b)
+  // Ручной порядок — только среди закреплённых (sort; без него — после упорядоченных)
+  const bySort = (a, b) => (a.pinned && b.pinned ? (a.sort ?? Number.MAX_SAFE_INTEGER) - (b.sort ?? Number.MAX_SAFE_INTEGER) : 0)
+  const pinnedFirst = (cmp) => (a, b) => Number(b.pinned) - Number(a.pinned) || bySort(a, b) || cmp(a, b)
 
   const TAB_FILTERS = {
     current: (r, n) => current(r, n),
@@ -135,7 +137,7 @@ export function createNewsHandlers({ userFromToken, accessTo, isEditor, notify, 
   }
   const TAB_ORDER = {
     current: (a, b) =>
-      Number(b.pinned) - Number(a.pinned) || Number(a.kind === 'news') - Number(b.kind === 'news') ||
+      Number(b.pinned) - Number(a.pinned) || Number(a.kind === 'news') - Number(b.kind === 'news') || bySort(a, b) ||
       (a.startsAt && b.startsAt ? time(a.startsAt) - time(b.startsAt) : a.startsAt ? -1 : b.startsAt ? 1 : 0) || byPublished(a, b),
     past: (a, b) => time(b.startsAt ?? b.publishedAt ?? b.reviewedAt) - time(a.startsAt ?? a.publishedAt ?? a.reviewedAt) || b.id - a.id,
     drafts: (a, b) => time(b.updatedAt) - time(a.updatedAt) || b.id - a.id,
@@ -343,9 +345,27 @@ export function createNewsHandlers({ userFromToken, accessTo, isEditor, notify, 
       validateState(state)
       const changed = Object.keys(body).some((f) => state[f] !== r[f])
       if (!changed) return itemOut(r, user, true, now().getTime(), true)
+      if (state.pinned !== r.pinned) state.sort = null // смена закрепления сбрасывает ручной порядок
       if (state.status === 'published' && r.publishedAt === null) state.publishedAt = now().toISOString()
       Object.assign(r, state, { updatedAt: now().toISOString() })
       return itemOut(r, user, true, now().getTime(), true)
+    },
+
+    // Ручной порядок закреплённых одного типа: ids должен точно совпасть с текущим набором закреплённых
+    'POST /modules/news/pinned-order': ({ token, body }) => {
+      editorOf(token)
+      if (!isObject(body) || !['news', 'event'].includes(body.kind) || !Array.isArray(body.ids) || !body.ids.every(Number.isInteger)) {
+        throw new ApiError(422, err.invalid)
+      }
+      const n = now().getTime()
+      const pinned = items.filter((r) => r.pinned && r.kind === body.kind && current(r, n)).map((r) => r.id)
+      if (new Set(body.ids).size !== body.ids.length || body.ids.length !== pinned.length || !body.ids.every((id) => pinned.includes(id))) {
+        throw new ApiError(409, err.pinnedChanged)
+      }
+      body.ids.forEach((id, index) => {
+        findItem(id).sort = index
+      })
+      return { ok: true }
     },
 
     'POST /modules/news/items/:id/delete': ({ token, params }) => {

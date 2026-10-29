@@ -75,6 +75,10 @@
 .news-who-group { font-size: 13px; overflow-wrap: anywhere; }
 .news-who-title { font-size: 11px; letter-spacing: .02em; color: var(--muted); }
 .news-note { font-size: 13px; color: var(--muted); }
+.news-hint { font-size: 13px; color: var(--muted); }
+.widget-row { display: flex; align-items: center; gap: 12px; }
+.widget-label { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.news-move { display: inline-flex; gap: 4px; }
 
 .news-admin { display: flex; flex-direction: column; gap: 24px; }
 .news-panel { display: flex; flex-direction: column; gap: 12px; padding: 16px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card); }

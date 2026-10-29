@@ -106,7 +106,11 @@ const hrOps = createHrOpsHandlers({ userFromToken, accessTo, isResponsible: isHr
 const hrPlans = createPlanHandlers({ userFromToken, accessTo, team, hr })
 // Сводка над таблицей «Сотрудники»: считается из тех же хранилищ; создаётся после hrPlans (дописывает демо-даты рождения поверх его)
 const hrStats = createHrStatsHandlers({ userFromToken, accessTo, team, hr })
-const home = createHomeHandlers({ userFromToken })
+// Виджеты главной настраивают администраторы и ответственные модулей с флагом homeEditor (как бэкенд home_editor)
+const home = createHomeHandlers({
+  userFromToken,
+  canEditWidgets: (u) => canManageUsers(u) || MODULES.some((m) => m.homeEditor && isModuleResponsible(u, groupPermissionsOf(u, m.id))),
+})
 // Новости: редактор — ответственный за news или администратор (как бэкенд is_editor)
 const news = createNewsHandlers({
   userFromToken,

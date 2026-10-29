@@ -1,10 +1,13 @@
-import { Suspense, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { Spin } from 'antd'
 import { useAuth } from '../auth/useAuth.js'
 import { HOME_WIDGETS } from '../../modules/registry.js'
 import ClocksCard from '../home/ClocksCard.jsx'
 import RatesCard from '../home/RatesCard.jsx'
 import WeatherCard from '../home/WeatherCard.jsx'
+import { api } from '../api/index.js'
+import { ASIDE_WIDGETS } from '../home/asideWidgets.js'
+import { applyWidgetConfig } from '../home/widgetConfig.js'
 import strings from '../strings.js'
 import mascot from '../layout/mascot.svg'
 
@@ -15,12 +18,25 @@ export default function HubPage() {
   const { me } = useAuth()
   const [hour] = useState(() => new Date().getHours())
   const [today] = useState(formatToday)
+  // Настройка правой колонки (порядок и включение): undefined — грузится, null — не удалось (порядок по умолчанию)
+  const [config, setConfig] = useState(undefined)
+
+  useEffect(() => {
+    let alive = true
+    api
+      .get('/core/home/widgets')
+      .then((result) => alive && setConfig(result.widgets))
+      .catch(() => alive && setConfig(null))
+    return () => {
+      alive = false
+    }
+  }, [])
 
   // Блоки модулей (HOME_WIDGETS): ядро не знает, чьи они; невидимые не рендерятся и запросов не делают
-  // slot: 'banner' — над приветствием, 'left' — рядом с погодой (новости), 'center' — рядом с курсами (события),
-  // не указан — в правую колонку под курсами
+  // slot: 'banner' — над приветствием, 'left' — рядом с погодой (новости), 'center' — рядом с курсами (события);
+  // блоки без slot — в правую колонку под курсами, через ASIDE_WIDGETS с настройкой порядка и включения
   const widgetsOf = (slot) =>
-    HOME_WIDGETS.filter((w) => (w.slot ?? null) === slot && w.visible(me)).map(({ id, Component }) => (
+    HOME_WIDGETS.filter((w) => w.slot === slot && w.visible(me)).map(({ id, Component }) => (
       <Suspense key={id} fallback={slot === 'banner' ? null : <Spin size="small" />}>
         <Component me={me} />
       </Suspense>
@@ -59,7 +75,17 @@ export default function HubPage() {
         {center.length > 0 && <div className="home-main">{center}</div>}
         <div className="home-side">
           <RatesCard />
-          {widgetsOf(null)}
+          {config === undefined ? (
+            <Spin size="small" />
+          ) : (
+            applyWidgetConfig(ASIDE_WIDGETS, config)
+              .filter((w) => w.visible(me))
+              .map(({ id, Component }) => (
+                <Suspense key={id} fallback={<Spin size="small" />}>
+                  <Component me={me} />
+                </Suspense>
+              ))
+          )}
         </div>
       </div>
     </div>

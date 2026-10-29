@@ -38,3 +38,25 @@ test('курсы: порядок USD, EUR, AMD и номинал AMD', async () 
   assert.equal(out.rates[2].nominal, 100)
   assert.equal(out.rates[2].perUnit, 0.223011)
 })
+
+// ---- виджеты главной ----
+
+test('виджеты: GET без токена — 401, по умолчанию пусто; POST без права — 403', async () => {
+  const denied = createHomeHandlers({ userFromToken, canEditWidgets: () => false }).handlers
+  const run = (handlers, method, body, token = 'mock:1') => createMockTransport(handlers)({ method, path: '/core/home/widgets', token, body })
+  await assert.rejects(run(denied, 'GET', undefined, null), (e) => e.status === 401)
+  assert.deepEqual(await run(denied, 'GET'), { widgets: [] })
+  await assert.rejects(run(denied, 'POST', { widgets: [{ id: 'a', enabled: true }] }), (e) => e.status === 403)
+})
+
+test('виджеты: POST заменяет всё, GET отдаёт сохранённое, невалидное — 422', async () => {
+  const handlers = createHomeHandlers({ userFromToken, canEditWidgets: () => true }).handlers
+  const run = (method, body) => createMockTransport(handlers)({ method, path: '/core/home/widgets', token: 'mock:1', body })
+  const first = [{ id: 'weather', enabled: true }, { id: 'leave', enabled: false }]
+  assert.deepEqual(await run('POST', { widgets: first }), { widgets: first })
+  assert.deepEqual(await run('GET'), { widgets: first })
+  for (const bad of [[], [{ id: 'a', enabled: true }, { id: 'a', enabled: false }], [{ id: 'Bad', enabled: true }], [{ id: 'a' }], Array.from({ length: 31 }, (_, i) => ({ id: `w${i}`, enabled: true }))]) {
+    await assert.rejects(run('POST', { widgets: bad }), (e) => e.status === 422)
+  }
+  assert.deepEqual(await run('GET'), { widgets: first })
+})

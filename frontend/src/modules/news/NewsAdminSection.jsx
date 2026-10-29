@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
+import { ArrowDownOutlined, ArrowUpOutlined } from '@ant-design/icons'
 import { Alert, App, Button, Pagination, Popconfirm, Segmented, Spin, Tag } from 'antd'
 import { api } from '../../core/api/index.js'
 import { useAuth } from '../../core/auth/useAuth.js'
 import { formatDateTime } from '../../core/format.js'
 import strings from './strings.js'
 import BannerEditor from './components/BannerEditor.jsx'
+import HomeWidgetsEditor from './components/HomeWidgetsEditor.jsx'
 import NewsEditorDrawer from './components/NewsEditorDrawer.jsx'
 import ResponsesModal from './components/ResponsesModal.jsx'
 import './news.css'
@@ -16,7 +18,8 @@ const PROPOSAL_STATES = ['pending', 'needs_changes', 'rejected']
 
 const statusOf = (item) => (item.status !== 'published' ? item.status : item.archived ? 'archived' : 'published')
 
-function ItemRow({ item, onEdit, onReview, onResponses, onPatch, onRemove }) {
+// move: { up, down, onMove } — стрелки порядка у закреплённых записей вкладки «Актуальное»
+function ItemRow({ item, move, onEdit, onReview, onResponses, onPatch, onRemove }) {
   const state = statusOf(item)
   const isProposal = PROPOSAL_STATES.includes(item.status)
   const isDraft = item.status === 'draft'
@@ -26,6 +29,12 @@ function ItemRow({ item, onEdit, onReview, onResponses, onPatch, onRemove }) {
         <Tag>{s.kinds[item.kind]}</Tag>
         <Tag color={state === 'published' ? 'green' : undefined}>{s.status[state]}</Tag>
         {item.pinned && <span className="news-pin">{strings.home.pinned}</span>}
+        {move && (
+          <span className="news-move">
+            <Button size="small" icon={<ArrowUpOutlined />} disabled={!move.up} aria-label={s.moveUp(item.title)} onClick={() => move.onMove(item, -1)} />
+            <Button size="small" icon={<ArrowDownOutlined />} disabled={!move.down} aria-label={s.moveDown(item.title)} onClick={() => move.onMove(item, 1)} />
+          </span>
+        )}
         <span className="news-admin-title">{item.title}</span>
       </div>
       <div className="news-when mono">
@@ -124,6 +133,28 @@ export default function NewsAdminSection() {
     setList(null)
   }
 
+  // Порядок закреплённых — отдельно для событий и новостей; на сервер уходит полный список ids своего типа
+  const moveFor = (item) => {
+    if (tab !== 'current' || !item.pinned) return null
+    const same = list.items.filter((i) => i.pinned && i.kind === item.kind)
+    const index = same.findIndex((i) => i.id === item.id)
+    return {
+      up: index > 0,
+      down: index < same.length - 1,
+      onMove: async (it, delta) => {
+        const order = same.map((i) => i.id)
+        ;[order[index], order[index + delta]] = [order[index + delta], order[index]]
+        try {
+          await api.post('/modules/news/pinned-order', { kind: it.kind, ids: order })
+          message.success(s.moved)
+        } catch (e) {
+          message.error(e.message)
+        }
+        reload()
+      },
+    }
+  }
+
   const tabLabel = (value) => (value === 'review' && pending > 0 ? `${s.tabs.review} ${pending}` : s.tabs[value])
 
   return (
@@ -132,6 +163,10 @@ export default function NewsAdminSection() {
       <section className="news-admin">
         <h3 className="h2">{s.bannerTitle}</h3>
         <BannerEditor />
+      </section>
+      <section className="news-admin">
+        <h3 className="h2">{strings.widgets.title}</h3>
+        <HomeWidgetsEditor />
       </section>
       <section className="news-admin">
         <div className="news-admin-bar">
@@ -149,6 +184,7 @@ export default function NewsAdminSection() {
               <ItemRow
                 key={item.id}
                 item={item}
+                move={moveFor(item)}
                 onEdit={setEditing}
                 onReview={setReviewing}
                 onResponses={setResponsesOf}
