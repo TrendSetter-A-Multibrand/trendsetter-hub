@@ -7,7 +7,7 @@ import '../news.css'
 const s = strings.rsvp
 const ANSWERS = ['yes', 'maybe', 'no']
 
-// Три кнопки «Иду / Думаю / Не иду» в ряд на всю ширину. item.rsvp.open должен быть true. onChange(updatedItem) — запись из ответа сервера.
+// Сегменты «Иду / Думаю / Не иду»: кнопки вплотную, выбранная — заливка цветом текста. item.rsvp.open должен быть true. onChange(updatedItem) — запись из ответа сервера.
 export default function RsvpControl({ item, onChange }) {
   const { message } = App.useApp()
   const [busy, setBusy] = useState(false)
@@ -23,14 +23,13 @@ export default function RsvpControl({ item, onChange }) {
     }
   }
 
-  // Без ответа ни одна кнопка не нажата; цвет выбранной — насыщенный (news.css)
   return (
-    <div className="rsvp-buttons" role="group" aria-label={s.label}>
+    <div className="seg rsvp-buttons" role="group" aria-label={s.label}>
       {ANSWERS.map((answer) => (
         <button
           key={answer}
           type="button"
-          className={`rsvp-btn ${answer}`}
+          className={`seg-btn rsvp-btn ${answer}`}
           aria-pressed={item.rsvp.myAnswer === answer}
           disabled={busy}
           onClick={() => choose(answer)}

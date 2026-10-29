@@ -9,7 +9,7 @@ const strings = {
   profile: { title: 'Новости' },
 
   home: {
-    eventsTitle: 'Ближайшие события',
+    eventsTitle: 'События',
     newsTitle: 'Новости',
     noEvents: 'Ближайших событий нет',
     noNews: 'Новостей пока нет',
@@ -17,6 +17,7 @@ const strings = {
     manage: 'Управлять',
     loadError: 'Не удалось загрузить новости',
     openItem: (title) => `Открыть: ${title}`,
+    readMore: 'Читать →',
   },
 
   item: {
@@ -34,6 +35,7 @@ const strings = {
     no: 'Не иду',
     closed: 'Приём ответов закрыт',
     counts: (c) => `Иду ${c.yes} · Думаю ${c.maybe} · Не иду ${c.no}`,
+    summary: (c) => `идут ${c.yes}, думают ${c.maybe}`,
     deadline: (date) => `Ответить до ${date}`,
     whoTitle: 'Кто идёт',
     namesLoadError: 'Не удалось загрузить список',

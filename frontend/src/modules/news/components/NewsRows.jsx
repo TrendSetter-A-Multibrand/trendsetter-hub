@@ -1,5 +1,5 @@
-import { formatDateTime } from '../../../core/format.js'
-import { colorClass, excerpt } from '../lib/news.js'
+import { formatDate } from '../../../core/dates.js'
+import { colorClass, eventDateBadge, excerpt } from '../lib/news.js'
 import strings from '../strings.js'
 import RsvpControl from './RsvpControl.jsx'
 import '../news.css'
@@ -7,41 +7,70 @@ import '../news.css'
 const s = strings.home
 const r = strings.rsvp
 
-// Строки лент на главной: строки через тонкие линии. Цвет записи — маленький квадрат у даты (color-<ключ>, news.css),
-// закреплённая — компактная метка рядом с датой.
-function Meta({ when, pinned }) {
-  return (
-    <div className="news-meta">
-      <span className="news-dot" aria-hidden="true" />
-      <span className="news-when mono">{formatDateTime(when)}</span>
-      {pinned && <span className="news-pin">{s.pinned}</span>}
-    </div>
-  )
+// ISO с временем -> '28.10.2026' (дата публикации в ленте)
+const day = (iso) => {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  const pad = (n) => String(n).padStart(2, '0')
+  return formatDate(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`)
 }
 
+// Событие: крупная красная дата, название, место и итоги ответов, сегменты «Иду / Думаю / Не иду»
 export function EventRow({ item, onOpen, onChange }) {
+  const badge = eventDateBadge(item.startsAt)
+  const meta = [item.place, item.rsvp && r.summary(item.rsvp.counts)].filter(Boolean).join(' · ')
   return (
-    <div className={`news-row${colorClass(item.color)}`}>
-      <Meta when={item.startsAt} pinned={item.pinned} />
-      <button type="button" className="news-title" aria-label={s.openItem(item.title)} onClick={() => onOpen(item.id)}>
-        {item.title}
-      </button>
-      {item.place && <div className="news-place">{item.place}</div>}
-      {item.rsvp && <div className="news-counts">{r.counts(item.rsvp.counts)}</div>}
+    <article className={`event-row${colorClass(item.color)}`}>
+      {badge && (
+        <span className="event-date" aria-hidden="true">
+          <span className="event-day">{badge.day}</span>
+          <span className="event-month">
+            {badge.month} · {badge.weekday}
+          </span>
+        </span>
+      )}
+      <span className="event-body">
+        {item.pinned && <span className="news-pin">{s.pinned}</span>}
+        <button type="button" className="news-title" aria-label={s.openItem(item.title)} onClick={() => onOpen(item.id)}>
+          {item.title}
+        </button>
+        {meta && <span className="event-meta">{meta}</span>}
+      </span>
       {item.rsvp?.open && <RsvpControl item={item} onChange={onChange} />}
-      {item.rsvp && !item.rsvp.open && <div className="news-closed">{r.closed}</div>}
-    </div>
+      {item.rsvp && !item.rsvp.open && <span className="news-closed">{r.closed}</span>}
+    </article>
   )
 }
 
-export function NewsRow({ item, onOpen }) {
+// Первая новость — витрина на плашке; остальные — строки «дата | заголовок и текст» через линию
+export function NewsRow({ item, onOpen, featured }) {
+  if (featured) {
+    return (
+      <div className={`news-featured${colorClass(item.color)}`}>
+        <span className="news-meta">
+          {item.pinned && <span className="news-pin">{s.pinned}</span>}
+          <span>{day(item.publishedAt)}</span>
+        </span>
+        <button type="button" className="news-featured-title" aria-label={s.openItem(item.title)} onClick={() => onOpen(item.id)}>
+          {item.title}
+        </button>
+        {item.body && <span className="news-featured-text">{excerpt(item.body, 220)}</span>}
+        <button type="button" className="news-read-more" onClick={() => onOpen(item.id)}>
+          {s.readMore}
+        </button>
+      </div>
+    )
+  }
   return (
     <div className={`news-row${colorClass(item.color)}`}>
-      <Meta when={item.publishedAt} pinned={item.pinned} />
-      <button type="button" className="news-title" aria-label={s.openItem(item.title)} onClick={() => onOpen(item.id)}>
-        {item.title}
-      </button>
-      {item.body && <div className="news-excerpt">{excerpt(item.body, 160)}</div>}
+      <span className="news-when">{day(item.publishedAt)}</span>
+      <span className="news-row-body">
+        {item.pinned && <span className="news-pin">{s.pinned}</span>}
+        <button type="button" className="news-title" aria-label={s.openItem(item.title)} onClick={() => onOpen(item.id)}>
+          {item.title}
+        </button>
+        {item.body && <span className="news-excerpt">{excerpt(item.body, 160)}</span>}
+      </span>
     </div>
   )
 }

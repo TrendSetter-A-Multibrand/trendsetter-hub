@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { Alert, App, Avatar, Button, Collapse, Dropdown, Input, Modal,Segmented, Select, Space, Spin, Switch, Table, Tag, Typography } from 'antd'
+import { createPortal } from 'react-dom'
+import { Alert, App, Button, Collapse, Dropdown, Input, Modal, Select, Space, Spin, Table, Tag, Typography } from 'antd'
 import { api } from '../../../core/api/index.js'
 import coreStrings from '../../../core/strings.js'
 import { softDirections } from '../../../core/palette.js'
@@ -12,6 +13,7 @@ import AutoChecklistOption from './AutoChecklistOption.jsx'
 import PersonModal from './PersonModal.jsx'
 import PeopleStats from './stats/PeopleStats.jsx'
 import ExportButton from './ExportButton.jsx'
+import SectionHead from '../../../core/layout/SectionHead.jsx'
 
 const s = strings.people
 const BASE = '/modules/team/hr'
@@ -35,32 +37,31 @@ const saveMode = (v) => {
   }
 }
 
+// Направление: квадрат 8×8 цвета направления и короткое название моно-капсом
 function DirTag({ d }) {
   return d ? (
-    <Tag variant="solid" style={{ background: d.color, color: d.avatarInk, marginInlineEnd: 0 }}>
+    <span className="hr-dir">
+      <span className="hr-sq" style={{ background: d.color }} aria-hidden="true" />
       {d.shortName}
-    </Tag>
+    </span>
   ) : (
     strings.none
   )
 }
 
+const LEVEL_COLOR = { success: 'var(--status-success)', warning: '#C9A227', error: '#A22325', default: 'var(--text-secondary)' }
+
 // Процент заполненности; весь тег — кнопка. Уволенные — без цветового акцента.
 function FillTag({ fill, person, onOpen }) {
   if (!fill) return strings.none
-  const color = person.isArchived ? 'default' : levelOf(fill.percent)
+  const level = person.isArchived ? 'default' : levelOf(fill.percent)
   return (
-    <Tag
-      color={color}
-      variant="outlined"
-      style={{ cursor: 'pointer', marginInlineEnd: 0 }}
-      role="button"
-      tabIndex={0}
-      onClick={() => onOpen(person)}
-      onKeyDown={(e) => e.key === 'Enter' && onOpen(person)}
-    >
-      {fill.percent}%
-    </Tag>
+    <button type="button" className="hr-fill" aria-label={s.fillPercent(fill.percent)} onClick={() => onOpen(person)}>
+      <span className="hr-fill-track" aria-hidden="true">
+        <span style={{ width: `${fill.percent}%`, background: LEVEL_COLOR[level] ?? LEVEL_COLOR.default }} />
+      </span>
+      <span className="hr-fill-num">{fill.percent}%</span>
+    </button>
   )
 }
 
@@ -175,7 +176,7 @@ function ReassignModal({ person, people, initialAuto, onClose, onDone }) {
   )
 }
 
-function PeopleTable({ people, directions, reload, stats, statsError }) {
+function PeopleTable({ people, directions, reload, stats, statsError, actionsEl }) {
   const { message } = App.useApp()
   const { data: fields } = useLoad(`${BASE}/fields`)
   const { data: users } = useLoad(`${BASE}/users`)
@@ -255,17 +256,24 @@ function PeopleTable({ people, directions, reload, stats, statsError }) {
   }
 
   const mapSwitch = (p) => (
-    <Switch
-      size="small"
-      checked={p.showInMap}
+    <button
+      type="button"
+      role="switch"
+      className="sq-switch"
+      aria-checked={p.showInMap}
+      aria-label={`${s.showInMap}: ${p.name}`}
       disabled={p.isArchived}
-      onChange={(v) => patch(p, { showInMap: v }, v ? s.shownInMap : s.hiddenInMap)}
-    />
+      onClick={() => patch(p, { showInMap: !p.showInMap }, !p.showInMap ? s.shownInMap : s.hiddenInMap)}
+    >
+      <span className="sq-switch-track" aria-hidden="true">
+        <span className="sq-switch-knob" />
+      </span>
+    </button>
   )
 
   // опасное действие спрятано в меню «⋯», чтобы не нажать случайно
   const actionButtons = (p, short) => (
-    <Space size={4} wrap>
+    <Space.Compact>
       {p.isArchived && !short && <Tag>{s.archivedTag}</Tag>}
       <Button size="small" onClick={() => setModal({ person: p })}>
         {s.edit}
@@ -282,27 +290,28 @@ function PeopleTable({ people, directions, reload, stats, statsError }) {
           ⋯
         </Button>
       </Dropdown>
-    </Space>
+    </Space.Compact>
   )
 
   const fillTag = (p) => <FillTag fill={fills[p.id]} person={p} onOpen={setFillOf} />
-  const avatar = (p, size) => (
-    <Avatar size={size} src={p.thumb}>
-      {p.name.charAt(0)}
-    </Avatar>
+  // Квадрат с инициалами (или фото, если есть)
+  const avatar = (p, size = 36) => (
+    <span className="hr-avatar" style={{ width: size, height: size }} aria-hidden="true">
+      {p.thumb ? <img src={p.thumb} alt="" /> : p.name.split(' ').slice(0, 2).map((w) => w[0]).join('')}
+    </span>
   )
 
   const columns = [
     {
       title: s.name,
       render: (_, p) => (
-        <Space>
+        <span className="hr-person">
           {avatar(p)}
-          <div>
-            <div>{p.name}</div>
-            <Typography.Text type="secondary">{p.title}</Typography.Text>
-          </div>
-        </Space>
+          <span className="hr-person-text">
+            <span className="hr-person-name">{p.name}</span>
+            <span className="hr-person-role">{p.title}</span>
+          </span>
+        </span>
       ),
     },
     { title: s.direction, render: (_, p) => <DirTag d={dirById[p.directionId]} /> },
@@ -311,9 +320,9 @@ function PeopleTable({ people, directions, reload, stats, statsError }) {
       title: s.teamTag,
       render: (_, p) => [p.team, p.tag].filter(Boolean).join(' / ') || strings.none,
     },
-    { title: s.filled, align: 'center', render: (_, p) => fillTag(p) },
-    { title: s.showInMap, align: 'center', render: (_, p) => mapSwitch(p) },
-    { title: strings.actions, render: (_, p) => actionButtons(p) },
+    { title: s.filled, render: (_, p) => fillTag(p) },
+    { title: s.showInMap, render: (_, p) => mapSwitch(p) },
+    { title: <span className="sr-only">{strings.actions}</span>, align: 'right', render: (_, p) => actionButtons(p) },
   ]
 
   const cardGrid = (
@@ -384,47 +393,66 @@ function PeopleTable({ people, directions, reload, stats, statsError }) {
   const ready = fields && users
   return (
     <>
+      {actionsEl &&
+        createPortal(
+          <>
+            <ExportButton path="/modules/hr/export/people" />
+            <Button type="primary" disabled={!ready} onClick={() => setModal({})}>
+              + {s.add}
+            </Button>
+          </>,
+          actionsEl,
+        )}
       <PeopleStats stats={stats} error={statsError} directions={directions} />
-      <Space wrap style={{ marginBottom: 16 }}>
-        <Segmented value={mode} onChange={setMode} options={MODES.map((value) => ({ value, label: s.modes[value] }))} />
-        <Input.Search
-          allowClear
-          placeholder={s.search}
-          style={{ width: 280 }}
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value)
-            setShown(CARDS_STEP)
-          }}
-        />
-        <Select
-          allowClear
-          placeholder={s.directionFilter}
-          style={{ width: 200 }}
-          value={dirFilter}
-          onChange={(v) => {
-            setDirFilter(v ?? null)
-            setShown(CARDS_STEP)
-          }}
-          options={directions.map((d) => ({ value: d.id, label: d.shortName }))}
-        />
-        <Select
-          style={{ width: 200 }}
-          value={view}
-          onChange={(v) => {
-            setView(v)
-            setShown(CARDS_STEP)
-          }}
-          options={Object.entries(s.viewFilter).map(([value, label]) => ({ value, label }))}
-        />
-        <Button type="primary" disabled={!ready} onClick={() => setModal({})}>
-          {s.add}
-        </Button>
-        <Button disabled={!ready} onClick={() => setModal({ fromUser: true })}>
-          {s.addFromUser}
-        </Button>
-        <ExportButton path="/modules/hr/export/people" />
-      </Space>
+      <section className="section hr-people" aria-labelledby="hr-people">
+        <SectionHead id="hr-people" title={s.listTitle(rows.length)}>
+          <span className="seg" role="group" aria-label={s.modeLabel}>
+            {MODES.map((value) => (
+              <button key={value} type="button" className="seg-btn" aria-pressed={mode === value} onClick={() => setMode(value)}>
+                {s.modes[value]}
+              </button>
+            ))}
+          </span>
+        </SectionHead>
+        <div className="hr-filters">
+          <Input.Search
+            allowClear
+            placeholder={s.search}
+            aria-label={s.search}
+            style={{ flex: '1 1 240px', maxWidth: 340 }}
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value)
+              setShown(CARDS_STEP)
+            }}
+          />
+          <Select
+            allowClear
+            placeholder={s.directionFilter}
+            aria-label={s.directionFilter}
+            style={{ width: 200 }}
+            value={dirFilter}
+            onChange={(v) => {
+              setDirFilter(v ?? null)
+              setShown(CARDS_STEP)
+            }}
+            options={directions.map((d) => ({ value: d.id, label: d.shortName }))}
+          />
+          <Select
+            style={{ width: 200 }}
+            aria-label={s.viewLabel}
+            value={view}
+            onChange={(v) => {
+              setView(v)
+              setShown(CARDS_STEP)
+            }}
+            options={Object.entries(s.viewFilter).map(([value, label]) => ({ value, label }))}
+          />
+          <Button disabled={!ready} onClick={() => setModal({ fromUser: true })} style={{ marginLeft: 'auto' }}>
+            {s.addFromUser}
+          </Button>
+          {!actionsEl && <ExportButton path="/modules/hr/export/people" />}
+        </div>
       {mode === 'table' && (
         <Table
           rowKey="id"
@@ -436,6 +464,7 @@ function PeopleTable({ people, directions, reload, stats, statsError }) {
       {mode !== 'table' && rows.length === 0 && <Typography.Text type="secondary">{s.empty}</Typography.Text>}
       {mode === 'cards' && rows.length > 0 && cardGrid}
       {mode === 'groups' && rows.length > 0 && groupList}
+      </section>
       {fillOf && fills[fillOf.id] && (
         <FillModal
           person={fillOf}
@@ -488,7 +517,7 @@ function PeopleTable({ people, directions, reload, stats, statsError }) {
   )
 }
 
-export default function PeopleTab() {
+export default function PeopleTab({ actionsEl }) {
   const { data: people, error, reload } = useLoad(`${BASE}/people`)
   const { data: rawDirections, error: dirError } = useLoad(`${BASE}/directions`)
   const directions = useMemo(() => softDirections(rawDirections), [rawDirections])
@@ -499,5 +528,5 @@ export default function PeopleTab() {
     reload()
     reloadStats()
   }
-  return <PeopleTable people={people} directions={directions} reload={reloadAll} stats={stats} statsError={statsError} />
+  return <PeopleTable people={people} directions={directions} reload={reloadAll} stats={stats} statsError={statsError} actionsEl={actionsEl} />
 }

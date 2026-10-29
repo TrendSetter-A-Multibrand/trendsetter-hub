@@ -14,13 +14,12 @@ export default function DemoUserSwitcher() {
 
   return (
     <Select
-      size="small"
       style={{ width: 240 }}
-      prefix={`${strings.layout.loginAs}:`}
+      aria-label={strings.layout.loginAs}
       placeholder={strings.layout.loginAsPlaceholder}
       value={users.some((u) => u.id === me.id) ? me.id : undefined}
       onChange={(id) => demoLogin(id)}
-      options={users.map((u) => ({ value: u.id, label: `${u.full_name} (${strings.levels[u.access_level]})` }))}
+      options={users.map((u) => ({ value: u.id, label: `${u.full_name} · ${strings.levels[u.access_level]}` }))}
     />
   )
 }
