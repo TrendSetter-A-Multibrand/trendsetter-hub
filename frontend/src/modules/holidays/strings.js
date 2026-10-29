@@ -35,6 +35,7 @@ const strings = {
       return `${n} дней`
     },
     openCalendar: 'Производственный календарь',
+    calendarLink: 'Календарь',
     loadError: 'Не удалось загрузить праздники',
   },
 

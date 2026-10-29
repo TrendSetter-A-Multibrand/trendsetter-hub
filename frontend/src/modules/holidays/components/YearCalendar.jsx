@@ -1,5 +1,5 @@
 import { LeftOutlined, RightOutlined } from '@ant-design/icons'
-import { Button, Segmented } from 'antd'
+import { Button } from 'antd'
 import { COUNTRIES, dayType, monthGrid } from '../lib/holidays.js'
 import strings from '../strings.js'
 import '../holidays.css'
@@ -11,11 +11,24 @@ const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1)
 // Классы ячейки по типу дня (цвета и маркеры — в holidays.css)
 const TYPE_CLASS = { holiday: 'hc-holiday', day_off: 'hc-dayoff', weekend: 'hc-weekend', workday: 'hc-workday', short: 'hc-short', work: 'hc-work' }
 
+// Переключатель страны: .seg V1; value/onChange — чтобы работал и как поле antd Form
+export function CountrySeg({ value, onChange }) {
+  return (
+    <span className="seg" role="group" aria-label={s.country}>
+      {COUNTRIES.map((c) => (
+        <button key={c.id} type="button" className="seg-btn" aria-pressed={value === c.id} onClick={() => onChange?.(c.id)}>
+          {strings.countries[c.id]}
+        </button>
+      ))}
+    </span>
+  )
+}
+
 // Панель над сеткой: переключатель страны и года (общая для модалки и раздела редактора); children — справа (кнопки)
 export function YearToolbar({ country, onCountry, year, onYear, children }) {
   return (
     <div className="hc-toolbar">
-      <Segmented aria-label={s.country} value={country} onChange={onCountry} options={COUNTRIES.map((c) => ({ value: c.id, label: strings.countries[c.id] }))} />
+      <CountrySeg value={country} onChange={onCountry} />
       <div className="hc-year-switch">
         <Button size="small" icon={<LeftOutlined />} aria-label={s.prevYear} onClick={() => onYear(year - 1)} />
         <span className="hc-year-value mono">{year}</span>

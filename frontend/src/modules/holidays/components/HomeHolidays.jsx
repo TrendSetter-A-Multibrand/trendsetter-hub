@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Alert, Button, Spin } from 'antd'
+import { Spin } from 'antd'
 import { api } from '../../../core/api/index.js'
 import { addDays } from '../../../core/dates.js'
+import SectionHead from '../../../core/layout/SectionHead.jsx'
 import { COUNTRIES, formatPeriod, indexDays, restPeriods, todayIn } from '../lib/holidays.js'
 import strings from '../strings.js'
 import CalendarModal from './CalendarModal.jsx'
@@ -33,10 +34,14 @@ export default function HomeHolidays() {
   const index = state.rows ? indexDays(state.rows) : null
 
   return (
-    <section className="home-card">
-      <div className="home-card-head">{s.title}</div>
+    <section className="home-block tight" aria-labelledby="home-holidays">
+      <SectionHead id="home-holidays" title={s.title}>
+        <button type="button" className="sec-link mono-label hc-home-open" onClick={() => setOpen(true)}>
+          {s.calendarLink}
+        </button>
+      </SectionHead>
       {state.error ? (
-        <Alert type="error" showIcon title={s.loadError} />
+        <div className="people-empty">{s.loadError}</div>
       ) : !index ? (
         <Spin size="small" />
       ) : (
@@ -44,10 +49,10 @@ export default function HomeHolidays() {
           const periods = restPeriods(index[c.id], todays[i], { horizon: HORIZON })
           return (
             <div className="hc-home-country" key={c.id}>
-              <div className="hc-home-country-name">{strings.countries[c.id]}</div>
+              <div className="hc-home-country-name mono-label">{strings.countries[c.id]}</div>
               {periods.length === 0 && <div className="people-empty">{s.empty}</div>}
               {periods.map((p) => (
-                <div className="hc-home-row" key={p.start}>
+                <div className="people-row hc-home-row" key={p.start}>
                   <span className="hc-home-when mono">{formatPeriod(p.start, p.end)}</span>
                   <span className="hc-home-name">
                     {p.names.join(', ') || s.fallbackName}
@@ -62,9 +67,6 @@ export default function HomeHolidays() {
           )
         })
       )}
-      <Button type="link" className="hc-home-open" onClick={() => setOpen(true)}>
-        {s.openCalendar}
-      </Button>
       {open && <CalendarModal onClose={() => setOpen(false)} />}
     </section>
   )

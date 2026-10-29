@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Alert, App, Button, Popconfirm, Spin } from 'antd'
 import { api } from '../../core/api/index.js'
 import { addDays, countDays } from '../../core/dates.js'
+import PageHead from '../../core/layout/PageHead.jsx'
+import SectionHead from '../../core/layout/SectionHead.jsx'
 import { COUNTRIES, formatRange, groupRanges, indexDays, isWeekend, todayIn } from './lib/holidays.js'
 import { useYearDays } from './lib/useYearDays.js'
 import strings from './strings.js'
@@ -13,7 +15,7 @@ const s = strings.admin
 const CHUNK_DAYS = 31 // сервер принимает не больше 31 дня за раз; длинный склеенный диапазон удаляется частями
 
 // Раздел «Производственный календарь» (/modules/holidays, только редактор): календарь года, клик по дню, диапазоны, список с правкой и удалением.
-export default function HolidaysAdminSection() {
+export default function HolidaysAdminSection({ module }) {
   const { message } = App.useApp()
   const [country, setCountry] = useState(COUNTRIES[0].id)
   const [year, setYear] = useState(() => new Date().getFullYear())
@@ -43,13 +45,13 @@ export default function HolidaysAdminSection() {
   }
 
   return (
-    <div className="hc-admin">
-      <h1 className="h1">{s.pageTitle}</h1>
-      <YearToolbar country={country} onCountry={setCountry} year={year} onYear={setYear}>
+    <div className="stack module holidays hc-admin">
+      <PageHead module={module} title={module.strings.tool}>
         <Button type="primary" onClick={() => setEditing({ country, start: '', end: '', kind: 'holiday', name: '' })}>
           {s.markDays}
         </Button>
-      </YearToolbar>
+      </PageHead>
+      <YearToolbar country={country} onCountry={setCountry} year={year} onYear={setYear} />
       {error ? (
         <Alert type="error" showIcon title={strings.calendar.loadError} />
       ) : !index ? (
@@ -57,7 +59,7 @@ export default function HolidaysAdminSection() {
       ) : (
         <>
           <YearCalendar year={year} rows={index[country]} today={today} onDayClick={openDay} />
-          <h3 className="hc-list-title">{strings.calendar.listTitle}</h3>
+          <SectionHead id="hc-list" title={strings.calendar.listTitle} />
           {ranges.length === 0 && <div className="hc-empty-note">{strings.calendar.empty}</div>}
           <ul className="hc-list">
             {ranges.map((r) => (

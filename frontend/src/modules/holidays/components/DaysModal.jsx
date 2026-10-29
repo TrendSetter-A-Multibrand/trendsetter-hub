@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { App, Button, DatePicker, Form, Input, Modal, Popconfirm, Segmented, Select } from 'antd'
+import { App, Button, DatePicker, Form, Input, Modal, Popconfirm, Select } from 'antd'
 import dayjs from 'dayjs'
 import { api } from '../../../core/api/index.js'
 import coreStrings from '../../../core/strings.js'
 import { addDays, countDays } from '../../../core/dates.js'
-import { COUNTRIES, KINDS, validateRange } from '../lib/holidays.js'
+import { KINDS, validateRange } from '../lib/holidays.js'
 import strings from '../strings.js'
+import { CountrySeg } from './YearCalendar.jsx'
 import '../holidays.css'
 
 const s = strings.admin
@@ -95,7 +96,7 @@ export default function DaysModal({ initial, rowsByCountry, onClose, onDone }) {
         }}
       >
         <Form.Item name="country" label={s.country}>
-          <Segmented options={COUNTRIES.map((c) => ({ value: c.id, label: strings.countries[c.id] }))} />
+          <CountrySeg />
         </Form.Item>
         <Form.Item name="range" label={s.period} extra={s.periodHint}>
           <DatePicker.RangePicker style={{ width: '100%' }} format="DD.MM.YYYY" />

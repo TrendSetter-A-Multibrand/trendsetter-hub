@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Alert, Modal, Spin } from 'antd'
+import SectionHead from '../../../core/layout/SectionHead.jsx'
 import { COUNTRIES, formatRange, groupRanges, indexDays, todayIn } from '../lib/holidays.js'
 import { useYearDays } from '../lib/useYearDays.js'
 import strings from '../strings.js'
@@ -27,7 +28,7 @@ export default function CalendarModal({ onClose }) {
       ) : (
         <>
           <YearCalendar year={year} rows={index[country]} today={today} />
-          <h3 className="hc-list-title">{s.listTitle}</h3>
+          <SectionHead id="hc-list" title={s.listTitle} />
           {ranges.length === 0 && <div className="hc-empty-note">{s.empty}</div>}
           <ul className="hc-list">
             {ranges.map((r) => (
