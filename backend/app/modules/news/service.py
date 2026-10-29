@@ -2,12 +2,16 @@
 
 Таблицы news_* в схеме trendsetter_hub (db/09_news.sql). Читатель — доступ view/run к модулю news (viewer — нет).
 Редактор — «Ответственный» на news или администратор (is_editor). Время «прошло / открыто / истекло» считается от _now() (параметр :now в SQL).
-В журнал (log_action, module_id='news') пишутся только id, kind, status и имена изменённых полей — заголовки и тексты не пишутся.
+В журнал (log_action, module_id='news') пишутся только id, kind, status и имена изменённых полей — заголовки, тексты и комментарии модератора не пишутся.
 Текст записей — plain text.
-TODO(Q-N11): уведомления (колокольчик) о новом событии и плашке не делаются в этом этапе.
+Статусы: draft | pending | needs_changes | published | rejected. Предложка: сотрудник-читатель подаёт запись (created_by = автор,
+submitted_at IS NOT NULL) -> pending; редактор проверяет: approve -> published, return -> needs_changes, reject -> rejected;
+автор дорабатывает и подаёт снова (needs_changes / rejected -> pending). Редакторский PATCH не меняет статус и архив у pending и не трогает
+needs_changes / rejected (обход модерации закрыт). Проверка защищена от гонки через expectedUpdatedAt (docs/TZ-news-moderation.md, решения 1-8).
+Уведомления (колокольчик) — только автору при решении (решение 7); о новом событии и плашке не делаются, редакторам о предложении — только бейдж.
 TODO(Q-N12): журнал news.* пишется только в БД; читалки в интерфейсе нет, HR-журнал эти действия не показывает.
 """
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException
 from sqlalchemy import text
@@ -19,6 +23,7 @@ from app.core.access import can_manage_users, can_see_data
 from app.core.audit import log_action
 from app.core.deps import module_rights
 from app.core.models import User
+from app.core.notifications import notify
 
 MODULE_ID = "news"
 N = "trendsetter_hub.news_"
@@ -32,6 +37,18 @@ MSG_RSVP_OFF = "Голосование для этой записи не вкл�
 MSG_RSVP_CLOSED = "Приём ответов закрыт"
 MSG_BANNER_PAST = "Время окончания плашки уже прошло"
 MSG_BANNER_CONFLICT = "Плашка обновляется другим пользователем, повторите"
+MSG_ALREADY_PUBLISHED = "Предложение уже опубликовано"
+MSG_ALREADY_REVIEWED = "Предложение уже рассмотрено"
+MSG_STALE = "Запись изменилась, обновите список"
+MSG_AT_AUTHOR = "Запись у автора на доработке"
+MSG_USE_REVIEW = "Используйте кнопки проверки"
+MSG_OPEN_LIMIT = "Не больше 3 предложений на проверке одновременно — дождитесь решения редактора"
+MSG_DAILY_LIMIT = "Не больше 5 предложений в сутки — попробуйте завтра"
+
+PROPOSAL_OPEN_LIMIT = 3
+PROPOSAL_DAILY_LIMIT = 5
+PROPOSAL_LINK = "/profile?section=proposals"
+MINE_LIMIT = 50
 
 # camelCase (контракт) -> столбец
 FIELDS = {
@@ -57,9 +74,14 @@ TABS = {
         f"status = 'published' AND ({CURRENT_EVENT} OR {CURRENT_NEWS})",
         "pinned DESC, (kind = 'news') ASC, starts_at ASC NULLS LAST, published_at DESC, id DESC",
     ),
-    "past": (f"status = 'published' AND {PAST}", "coalesce(starts_at, published_at) DESC, id DESC"),
+    "past": (
+        f"(status = 'published' AND {PAST}) OR status = 'rejected'",
+        "coalesce(starts_at, published_at, reviewed_at) DESC, id DESC",
+    ),
     "drafts": ("status = 'draft'", "updated_at DESC, id DESC"),
+    "review": ("status IN ('pending', 'needs_changes')", "(status = 'pending') DESC, submitted_at ASC, id ASC"),
 }
+OPEN_STATUSES = ("pending", "needs_changes")
 
 
 def _now() -> datetime:
@@ -130,8 +152,29 @@ def _rsvp_open(row, now: datetime) -> bool:
     )
 
 
-def _items(session: Session, rows: list, user: User, editor: bool, now: datetime) -> list[dict]:
+def _authors(session: Session, rows: list) -> dict[int, str]:
+    ids = sorted({r["created_by"] for r in rows if r["submitted_at"] is not None and r["created_by"] is not None})
+    if not ids:
+        return {}
+    return dict(session.execute(text("SELECT id, full_name FROM trendsetter_hub.users WHERE id = ANY(:ids)"), {"ids": ids}).all())
+
+
+def _review(r, authors: dict[int, str]) -> dict | None:
+    if r["submitted_at"] is None:
+        return None
+    author_id = r["created_by"]
+    return {
+        "author": {"id": author_id, "name": authors[author_id]} if author_id in authors else None,
+        "submittedAt": _iso(r["submitted_at"]),
+        "reviewComment": r["review_comment"],
+        "reviewedAt": _iso(r["reviewed_at"]),
+    }
+
+
+def _items(session: Session, rows: list, user: User, editor: bool, now: datetime, review: bool = False) -> list[dict]:
+    """review=True — добавляет ключ review (списки редактора и собственные записи автора); /feed, rsvp, responses его не получают."""
     counts, mine = _rsvp_data(session, rows, user)
+    authors = _authors(session, rows) if review else {}
     result = []
     for r in rows:
         rsvp = None
@@ -161,6 +204,7 @@ def _items(session: Session, rows: list, user: User, editor: bool, now: datetime
                 "rsvpDeadline": _iso(r["rsvp_deadline"]),
                 "rsvpNamesPublic": r["rsvp_names_public"],
                 "rsvp": rsvp,
+                **({"review": _review(r, authors)} if review else {}),
             }
         )
     return result
@@ -201,7 +245,7 @@ def list_items(session: Session, user: User, tab: str, limit: int, offset: int) 
         text(f"SELECT * FROM {N}items WHERE {where} ORDER BY {order} LIMIT :limit OFFSET :offset"),
         {"now": now, "limit": limit, "offset": offset},
     ).mappings().all()
-    return {"items": _items(session, rows, user, True, now), "total": total}
+    return {"items": _items(session, rows, user, True, now, review=True), "total": total}
 
 
 # ---------- создание и правка ----------
@@ -239,7 +283,7 @@ def create_item(session: Session, user: User, data: dict) -> dict:
     ).mappings().one()
     log_action(session, user.id, "news.create", MODULE_ID, news_id=row["id"], kind=row["kind"], status=row["status"])
     session.commit()
-    return _items(session, [row], user, True, now)[0]
+    return _items(session, [row], user, True, now, review=True)[0]
 
 
 def update_item(session: Session, user: User, item_id: int, data: dict) -> dict:
@@ -248,6 +292,10 @@ def update_item(session: Session, user: User, item_id: int, data: dict) -> dict:
     current = session.execute(text(f"SELECT * FROM {N}items WHERE id = :id FOR UPDATE"), {"id": item_id}).mappings().first()
     if current is None:
         fail(404, m.NOT_FOUND)
+    if current["status"] in ("needs_changes", "rejected"):
+        fail(409, MSG_AT_AUTHOR)
+    if current["status"] == "pending" and ("status" in data or "archived" in data):
+        fail(409, MSG_USE_REVIEW)
     state = dict(current)
     for camel, value in data.items():
         state[FIELDS.get(camel, camel)] = value  # status и archived — столбцы с тем же именем
@@ -256,7 +304,7 @@ def update_item(session: Session, user: User, item_id: int, data: dict) -> dict:
     status_changed = state["status"] != current["status"]
     archive_changed = state["archived"] != current["archived"]
     if not (changed or status_changed or archive_changed):
-        return _items(session, [current], user, True, now)[0]
+        return _items(session, [current], user, True, now, review=True)[0]
     published_at = current["published_at"]
     if state["status"] == "published" and published_at is None:
         published_at = now
@@ -275,7 +323,7 @@ def update_item(session: Session, user: User, item_id: int, data: dict) -> dict:
     if archive_changed:
         log_action(session, user.id, "news.archive" if state["archived"] else "news.unarchive", MODULE_ID, news_id=item_id)
     session.commit()
-    return _items(session, [row], user, True, now)[0]
+    return _items(session, [row], user, True, now, review=True)[0]
 
 
 def delete_item(session: Session, user: User, item_id: int) -> dict:
@@ -285,6 +333,151 @@ def delete_item(session: Session, user: User, item_id: int) -> dict:
     log_action(session, user.id, "news.delete", MODULE_ID, news_id=item_id, kind=kind)
     session.commit()
     return {"ok": True}
+
+
+# ---------- предложка (автор) ----------
+
+
+def _open_count(session: Session, user: User) -> int:
+    return session.execute(
+        text(f"SELECT count(*) FROM {N}items WHERE created_by = :u AND submitted_at IS NOT NULL AND status IN ('pending', 'needs_changes')"),
+        {"u": user.id},
+    ).scalar_one()
+
+
+def _check_open_limit(session: Session, user: User) -> None:
+    # TODO(Q-NM16): гонка двух одновременных подач одного автора не закрыта (превышение на 1 допустимо)
+    if _open_count(session, user) >= PROPOSAL_OPEN_LIMIT:
+        fail(429, MSG_OPEN_LIMIT)
+
+
+def _check_daily_limit(session: Session, user: User, now: datetime) -> None:
+    sent = session.execute(
+        text(f"SELECT count(*) FROM {N}items WHERE created_by = :u AND submitted_at IS NOT NULL AND created_at > :since"),
+        {"u": user.id, "since": now - timedelta(hours=24)},
+    ).scalar_one()
+    if sent >= PROPOSAL_DAILY_LIMIT:
+        fail(429, MSG_DAILY_LIMIT)
+
+
+def my_proposals(session: Session, user: User, editor: bool) -> dict:
+    now = _now()
+    rows = session.execute(
+        text(
+            f"SELECT * FROM {N}items WHERE created_by = :u AND submitted_at IS NOT NULL ORDER BY created_at DESC, id DESC LIMIT :n"
+        ),
+        {"u": user.id, "n": MINE_LIMIT},
+    ).mappings().all()
+    return {"items": _items(session, rows, user, editor, now, review=True)}
+
+
+def create_proposal(session: Session, user: User, data: dict, editor: bool) -> dict:
+    """data — поля ProposalBody (camelCase, без pinned и status); запись создаётся pending, не закреплённой."""
+    now = _now()
+    state = {"kind": data["kind"], "status": "pending"}
+    for camel, column in FIELDS.items():
+        state[column] = data.get(camel)
+    state["pinned"] = False
+    _validate_state(state)
+    _check_open_limit(session, user)
+    _check_daily_limit(session, user, now)
+    row = session.execute(
+        text(
+            f"INSERT INTO {N}items (kind, title, body, place, starts_at, ends_at, pinned, color, status, rsvp_enabled, rsvp_deadline, rsvp_names_public, "
+            "published_at, submitted_at, created_by, created_at, updated_by, updated_at) "
+            "VALUES (:kind, :title, :body, :place, :starts_at, :ends_at, :pinned, :color, :status, :rsvp_enabled, :rsvp_deadline, :rsvp_names_public, "
+            "NULL, :now, :uid, :now, :uid, :now) RETURNING *"
+        ),
+        {**state, "uid": user.id, "now": now},
+    ).mappings().one()
+    log_action(session, user.id, "news.submit", MODULE_ID, news_id=row["id"], kind=row["kind"])
+    session.commit()
+    return _items(session, [row], user, editor, now, review=True)[0]
+
+
+def update_proposal(session: Session, user: User, item_id: int, data: dict, editor: bool) -> dict:
+    """data — только переданные поля ProposalPatchBody. Итог всегда pending (переотправка после доработки)."""
+    now = _now()
+    current = session.execute(text(f"SELECT * FROM {N}items WHERE id = :id FOR UPDATE"), {"id": item_id}).mappings().first()
+    if current is None or current["created_by"] != user.id or current["submitted_at"] is None:
+        fail(404, m.NOT_FOUND)
+    if current["status"] not in ("pending", "needs_changes", "rejected"):
+        # published (в т. ч. в архиве) и снятое с публикации в draft автору не правятся
+        fail(409, MSG_ALREADY_PUBLISHED)
+    state = dict(current)
+    for camel, value in data.items():
+        state[FIELDS[camel]] = value
+    _validate_state(state)
+    changed = sorted(camel for camel, column in FIELDS.items() if camel in data and state[column] != current[column])
+    if current["status"] == "pending" and not changed:
+        return _items(session, [current], user, editor, now, review=True)[0]
+    if current["status"] == "rejected":
+        _check_open_limit(session, user)
+    submitted_at = current["submitted_at"] if current["status"] == "pending" else now
+    row = session.execute(
+        text(
+            f"UPDATE {N}items SET title = :title, body = :body, place = :place, starts_at = :starts_at, ends_at = :ends_at, color = :color, "
+            "rsvp_enabled = :rsvp_enabled, rsvp_deadline = :rsvp_deadline, rsvp_names_public = :rsvp_names_public, "
+            "status = 'pending', submitted_at = :submitted_at, updated_by = :uid, updated_at = :now WHERE id = :id RETURNING *"
+        ),
+        {**state, "submitted_at": submitted_at, "uid": user.id, "now": now, "id": item_id},
+    ).mappings().one()
+    log_action(session, user.id, "news.resubmit", MODULE_ID, news_id=item_id, fields=changed)
+    session.commit()
+    return _items(session, [row], user, editor, now, review=True)[0]
+
+
+# ---------- проверка (редактор) ----------
+
+REVIEW_ACTIONS = {
+    "approve": ("published", "news.approve", "Ваша новость опубликована"),
+    "return": ("needs_changes", "news.return", "Новость нужно доработать"),
+    "reject": ("rejected", "news.reject", "Новость отклонена"),
+}
+
+
+def _review_body(action: str, title: str, comment: str | None) -> str:
+    if action == "approve":
+        return title
+    if action == "return":
+        return f"«{title}»: {comment}"
+    return f"«{title}». Причина: {comment}. Можно доработать и отправить снова."
+
+
+def review_item(session: Session, user: User, item_id: int, action: str, comment: str | None, expected_updated_at: datetime) -> dict:
+    """Решение по предложению из pending; comment — для return/reject. Уведомление уходит только автору (не себе и не неактивному)."""
+    now = _now()
+    status, log_name, title = REVIEW_ACTIONS[action]
+    current = session.execute(text(f"SELECT * FROM {N}items WHERE id = :id FOR UPDATE"), {"id": item_id}).mappings().first()
+    if current is None:
+        fail(404, m.NOT_FOUND)
+    if current["status"] != "pending":
+        fail(409, MSG_ALREADY_REVIEWED)
+    if current["updated_at"] != expected_updated_at:
+        fail(409, MSG_STALE)
+    row = session.execute(
+        text(
+            f"UPDATE {N}items SET status = :status, review_comment = coalesce(:comment, review_comment), "
+            "published_at = CASE WHEN :status = 'published' THEN coalesce(published_at, :now) ELSE published_at END, "
+            "reviewed_by = :uid, reviewed_at = :now, updated_by = :uid, updated_at = :now WHERE id = :id RETURNING *"
+        ),
+        {"status": status, "comment": comment, "uid": user.id, "now": now, "id": item_id},
+    ).mappings().one()
+    author_id = row["created_by"]
+    if author_id is not None and author_id != user.id and session.scalar(
+        text("SELECT is_active FROM trendsetter_hub.users WHERE id = :id"), {"id": author_id}
+    ):
+        notify(session, [author_id], "news_review", title, _review_body(action, row["title"], comment), PROPOSAL_LINK)
+    log_action(session, user.id, log_name, MODULE_ID, news_id=item_id)
+    session.commit()
+    return _items(session, [row], user, True, now, review=True)[0]
+
+
+def badge(session: Session, user: User) -> int:
+    """Бейдж пункта меню «Редактор новостей»: число предложений на проверке (только редактору)."""
+    if not is_editor(session, user):
+        return 0
+    return session.execute(text(f"SELECT count(*) FROM {N}items WHERE status = 'pending'")).scalar_one()
 
 
 # ---------- «Кто пойдёт» ----------

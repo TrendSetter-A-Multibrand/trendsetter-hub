@@ -19,6 +19,7 @@ Body = Annotated[str, StringConstraints(strip_whitespace=True, max_length=5000)]
 Place = Annotated[str, StringConstraints(max_length=200)]
 Color = Literal["red", "green", "yellow", "blue", "pink", "gray"]
 BannerText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=300)]
+ReviewComment = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=1000)]
 
 
 def reader(user: User = Depends(get_current_user), session: Session = Db) -> tuple[User, bool]:
@@ -81,6 +82,45 @@ class ItemPatchBody(_PlaceMixin):
     archived: bool = Field(None)
 
 
+class ProposalBody(_PlaceMixin):
+    """Предложение автора: поля ItemBody без pinned и status (они назначаются сервером; лишние ключи — 422)."""
+
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal["news", "event"]
+    title: Title
+    body: Body = ""
+    place: Place | None = None
+    startsAt: AwareDatetime | None = None
+    endsAt: AwareDatetime | None = None
+    color: Color | None = None
+    rsvpEnabled: bool = False
+    rsvpDeadline: AwareDatetime | None = None
+    rsvpNamesPublic: bool = False
+
+
+class ProposalPatchBody(_PlaceMixin):
+    """Как ItemPatchBody, но без kind, pinned, status и archived."""
+
+    model_config = ConfigDict(extra="forbid")
+    title: Title = Field(None)
+    body: Body = Field(None)
+    place: Place | None = None
+    startsAt: AwareDatetime | None = None
+    endsAt: AwareDatetime | None = None
+    color: Color | None = None
+    rsvpEnabled: bool = Field(None)
+    rsvpDeadline: AwareDatetime | None = None
+    rsvpNamesPublic: bool = Field(None)
+
+
+class ApproveBody(BaseModel):
+    expectedUpdatedAt: AwareDatetime
+
+
+class ReviewBody(ApproveBody):
+    comment: ReviewComment
+
+
 class RsvpBody(BaseModel):
     answer: Literal["yes", "maybe", "no"]
 
@@ -115,12 +155,31 @@ def responses(item_id: int, ctx: tuple[User, bool] = Reader, session: Session = 
     return service.responses(session, item_id, ctx[1])
 
 
+@router.get("/proposals/mine")
+def my_proposals(ctx: tuple[User, bool] = Reader, session: Session = Db):
+    user, editor = ctx
+    return service.my_proposals(session, user, editor)
+
+
+@router.post("/proposals")
+def create_proposal(body: ProposalBody, ctx: tuple[User, bool] = Reader, session: Session = Db):
+    user, editor = ctx
+    return service.create_proposal(session, user, body.model_dump(), editor)
+
+
+@router.patch("/proposals/{item_id}")
+def update_proposal(item_id: int, body: ProposalPatchBody, ctx: tuple[User, bool] = Reader, session: Session = Db):
+    user, editor = ctx
+    data = {name: getattr(body, name) for name in body.model_fields_set}
+    return service.update_proposal(session, user, item_id, data, editor)
+
+
 # ---------- редактор ----------
 
 
 @router.get("/items")
 def list_items(
-    tab: Literal["current", "past", "drafts"],
+    tab: Literal["current", "past", "drafts", "review"],
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     user: User = Editor,
@@ -143,6 +202,21 @@ def update_item(item_id: int, body: ItemPatchBody, user: User = Editor, session:
 @router.post("/items/{item_id}/delete")
 def delete_item(item_id: int, user: User = Editor, session: Session = Db):
     return service.delete_item(session, user, item_id)
+
+
+@router.post("/items/{item_id}/approve")
+def approve_item(item_id: int, body: ApproveBody, user: User = Editor, session: Session = Db):
+    return service.review_item(session, user, item_id, "approve", None, body.expectedUpdatedAt)
+
+
+@router.post("/items/{item_id}/return")
+def return_item(item_id: int, body: ReviewBody, user: User = Editor, session: Session = Db):
+    return service.review_item(session, user, item_id, "return", body.comment, body.expectedUpdatedAt)
+
+
+@router.post("/items/{item_id}/reject")
+def reject_item(item_id: int, body: ReviewBody, user: User = Editor, session: Session = Db):
+    return service.review_item(session, user, item_id, "reject", body.comment, body.expectedUpdatedAt)
 
 
 @router.post("/banner")

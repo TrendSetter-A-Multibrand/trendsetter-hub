@@ -9,6 +9,7 @@ from app.core.models import User
 from app.modules.hr import reminders as hr_reminders
 from app.modules.hr import service as hr_service
 from app.modules.hr.router import router as hr_router
+from app.modules.news import service as news_service
 from app.modules.news.router import router as news_router
 from app.modules.team.router import router as team_router
 from app.modules.warehouse.router import router as warehouse_router
@@ -34,5 +35,5 @@ MODULES: list[ModuleManifest] = [
     ModuleManifest("pricing", "Цены", "roadmap"),
     ModuleManifest("hr", "HR", "roadmap", hr_router, badge=hr_service.badge, daily_job=hr_reminders.run_daily),
     ModuleManifest("team", "Карта команды", "roadmap", team_router, for_all=True),
-    ModuleManifest("news", "Новости", "mvp", news_router, for_all=True),
+    ModuleManifest("news", "Новости", "mvp", news_router, for_all=True, badge=news_service.badge),
 ]

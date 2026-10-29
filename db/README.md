@@ -161,6 +161,16 @@ docker exec -u root trendsetter-hub-api rm -rf /tmp/team-import                 
 
 **Выкат 0013:** под doadmin выполнить `db/modules/wb/002_wb_marking_imported.sql`, затем `deploy/stamp_alembic_0013.sql` (`0012` → `0013`); только после этого — merge в `main`. **Откат** (`alembic downgrade 0012`): удаляется только `wb_marking_imported`.
 
+## Новости: предложка и модерация (ревизия 0014)
+`14_news_moderation.sql`: в `news_items` четыре столбца — `submitted_at` (признак предложения: `NOT NULL`), `review_comment`, `reviewed_by`, `reviewed_at`. Статус теперь `draft | pending | needs_changes | published | rejected`: старое CHECK статуса из `09_news.sql` снимается (находится по определению, имя не зашито), добавляются `news_items_status_v2_check`, `news_items_review_comment_check` (1..1000 символов) и `news_items_proposal_check` (предложение всегда с `submitted_at`), а также индексы `news_items_author_idx` и `news_items_pending_idx`. Автор предложения — существующий `created_by`. Скрипт идемпотентен.
+
+**Выкат 0014** (как у `0010`; `deploy.sh` миграции не выполняет):
+1. Под doadmin в `defaultdb` выполнить `db/14_news_moderation.sql` (после `modules/wb/002_wb_marking_imported.sql`).
+2. Под doadmin выполнить `deploy/stamp_alembic_0014.sql` (версия миграции `0013` → `0014`).
+3. Только после этого — merge в `main`. Иначе `/modules/news/*` отвечает 500 (в запросах есть новые столбцы).
+
+**Откат** (`alembic downgrade 0013`): предложения (`pending`, `needs_changes`, `rejected`) становятся черновиками, комментарии и сведения о проверке теряются.
+
 ## Модуль «Склад»
 Листы Google Таблицы «Склад-приёмка» стали таблицами: Приемки → `warehouse_receipts`, Раскладки → `warehouse_receipt_plans`, Счётчики → `warehouse_box_counters` и `warehouse_pallet_pointers`, Сканы → `warehouse_scans`, Короба → `warehouse_boxes`, Хранение → `warehouse_storage_boxes`, Хранение — архив → `warehouse_storage_archive`, Секции → `warehouse_extra_sections`, Коды ЧЗ → `warehouse_marks`, Сводка → представление `warehouse_receipt_summary`. Условия, которые раньше защищал `LockService`, держит база: уникальность кода ЧЗ, одно место на короб, уникальное имя приёмки, номера коробов через функцию `warehouse_next_box_number()`, повтор отправки скана отсекается по id.
 
