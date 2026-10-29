@@ -747,3 +747,15 @@ a:hover { color: var(--accent-fill-hover); }
 .onboarding-bar-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-12); margin-left: auto; color: var(--text-secondary); }
 .stack.onboarding { max-width: 720px; margin: 0 auto; gap: var(--space-24); }
 .onboarding-admin { max-width: 560px; display: flex; flex-direction: column; gap: var(--space-16); }
+
+/* ---- мой город и подсказка (home-city) ---- */
+.city-gear {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 24px; height: 24px; padding: 0; margin: 0; border: 0; background: transparent; cursor: pointer; font-size: 14px;
+}
+.hero-clocks-gear { position: absolute; top: 0; right: 0; z-index: 2; color: var(--accent-fill); }
+.weather-gear { color: var(--text-secondary); }
+.weather-gear:hover { color: var(--accent-primary); }
+.city-picker-select { width: 220px; max-width: 100%; }
+.hero-advice { margin: 0; max-width: 560px; font-family: var(--font-sans); font-size: 16px; color: var(--text-on-accent); opacity: .85; }
+.home-block .seg { flex-wrap: wrap; }
