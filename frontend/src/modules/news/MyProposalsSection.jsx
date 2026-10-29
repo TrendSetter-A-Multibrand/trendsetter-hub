@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Button, Tag } from 'antd'
 import { formatDateTime } from '../../core/format.js'
+import SectionHead from '../../core/layout/SectionHead.jsx'
 import strings from './strings.js'
 import ProposalModal from './components/ProposalModal.jsx'
 import './news.css'
@@ -27,6 +28,7 @@ export default function MyProposalsSection({ data, reload }) {
 
   return (
     <div className="news-admin">
+      <SectionHead id="news-my-proposals" title={s.title} />
       {data.items.length === 0 && <div className="news-empty">{s.empty}</div>}
       <div>
         <Button type="primary" onClick={() => setEditing(null)}>

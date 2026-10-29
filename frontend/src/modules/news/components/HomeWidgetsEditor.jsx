@@ -3,6 +3,7 @@ import { Alert, App, Button, Spin, Switch } from 'antd'
 import { ArrowDownOutlined, ArrowUpOutlined } from '@ant-design/icons'
 import { api } from '../../../core/api/index.js'
 import { ASIDE_WIDGETS } from '../../../core/home/asideWidgets.js'
+import SectionHead from '../../../core/layout/SectionHead.jsx'
 import { orderWidgets } from '../../../core/home/widgetConfig.js'
 import strings from '../strings.js'
 import '../news.css'
@@ -51,21 +52,24 @@ export default function HomeWidgetsEditor() {
   }
 
   return (
-    <div className="news-panel">
+    <div className="news-admin">
+      <SectionHead id="news-widgets" title={s.title}>
+        <span className="sec-note mono-label">{s.fixedNote}</span>
+      </SectionHead>
       <div className="news-hint">{s.hint}</div>
       {failed && <Alert type="error" showIcon title={s.loadError} />}
       {!list && !failed && <Spin size="small" />}
       {list && (
         <>
           {list.map((w, i) => (
-            <div key={w.id} className="widget-row">
+            <div key={w.id} className="people-row widget-row">
               <span className="widget-label">{w.label}</span>
               <Switch checked={w.enabled} onChange={(value) => toggle(i, value)} aria-label={`${s.show}: ${w.label}`} />
               <Button size="small" icon={<ArrowUpOutlined />} disabled={i === 0} aria-label={s.up(w.label)} onClick={() => move(i, -1)} />
               <Button size="small" icon={<ArrowDownOutlined />} disabled={i === list.length - 1} aria-label={s.down(w.label)} onClick={() => move(i, 1)} />
             </div>
           ))}
-          <div>
+          <div className="news-save">
             <Button type="primary" loading={busy} onClick={save}>
               {s.save}
             </Button>

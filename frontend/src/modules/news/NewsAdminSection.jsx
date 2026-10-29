@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { ArrowDownOutlined, ArrowUpOutlined } from '@ant-design/icons'
-import { Alert, App, Button, Pagination, Popconfirm, Segmented, Spin, Tag } from 'antd'
+import { Alert, App, Button, Pagination, Popconfirm, Spin, Tag } from 'antd'
 import { api } from '../../core/api/index.js'
 import { useAuth } from '../../core/auth/useAuth.js'
 import { formatDateTime } from '../../core/format.js'
+import PageHead from '../../core/layout/PageHead.jsx'
+import SectionHead from '../../core/layout/SectionHead.jsx'
 import strings from './strings.js'
 import BannerEditor from './components/BannerEditor.jsx'
 import HomeWidgetsEditor from './components/HomeWidgetsEditor.jsx'
@@ -87,7 +89,7 @@ function ItemRow({ item, move, onEdit, onReview, onResponses, onPatch, onRemove 
 }
 
 // Раздел «Редактор новостей» (/modules/news, только редактор): срочная плашка, проверка предложений и списки записей.
-export default function NewsAdminSection() {
+export default function NewsAdminSection({ module }) {
   const { message } = App.useApp()
   const { me, refreshMe } = useAuth()
   const [tab, setTab] = useState('review')
@@ -155,26 +157,31 @@ export default function NewsAdminSection() {
     }
   }
 
-  const tabLabel = (value) => (value === 'review' && pending > 0 ? `${s.tabs.review} ${pending}` : s.tabs[value])
-
   return (
-    <div className="news-admin">
-      <h1 className="h1">{s.pageTitle}</h1>
-      <section className="news-admin">
-        <h3 className="h2">{s.bannerTitle}</h3>
+    <div className="stack module news">
+      <PageHead module={module} title={module.strings.tool}>
+        <Button type="primary" onClick={() => setEditing(null)}>
+          {s.add}
+        </Button>
+      </PageHead>
+      <section className="news-admin" aria-labelledby="news-banner">
+        <SectionHead id="news-banner" title={s.bannerTitle} />
         <BannerEditor />
       </section>
-      <section className="news-admin">
-        <h3 className="h2">{strings.widgets.title}</h3>
+      <section className="news-admin" aria-labelledby="news-widgets">
         <HomeWidgetsEditor />
       </section>
-      <section className="news-admin">
-        <div className="news-admin-bar">
-          <Segmented aria-label={s.tabsLabel} value={tab} onChange={changeTab} options={TABS.map((value) => ({ value, label: tabLabel(value) }))} />
-          <Button type="primary" onClick={() => setEditing(null)}>
-            {s.add}
-          </Button>
-        </div>
+      <section className="news-admin" aria-labelledby="news-items">
+        <SectionHead id="news-items" title={s.itemsTitle}>
+          <span className="seg" role="group" aria-label={s.tabsLabel}>
+            {TABS.map((value) => (
+              <button key={value} type="button" className="seg-btn" aria-pressed={tab === value} onClick={() => changeTab(value)}>
+                {s.tabs[value]}
+                {value === 'review' && pending > 0 && <span className="nav-badge news-tab-badge">{pending}</span>}
+              </button>
+            ))}
+          </span>
+        </SectionHead>
         {failed && <Alert type="error" showIcon title={s.loadError} />}
         {!list && !failed && <Spin size="small" />}
         {list && list.items.length === 0 && <div className="news-empty">{s.empty[tab]}</div>}

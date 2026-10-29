@@ -51,7 +51,7 @@ export default function NewsForm({ value, onChange, withPinned, isNew }) {
     <>
       {isNew && (
         <Field label={s.kind}>
-          <Radio.Group value={value.kind} onChange={(e) => onChange({ kind: e.target.value })} options={Object.entries(kinds).map(([k, label]) => ({ value: k, label }))} />
+          <Radio.Group className="card-options" value={value.kind} onChange={(e) => onChange({ kind: e.target.value })} options={Object.entries(kinds).map(([k, label]) => ({ value: k, label }))} />
         </Field>
       )}
       <Field label={s.fieldTitle}>

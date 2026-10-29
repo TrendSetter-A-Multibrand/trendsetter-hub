@@ -115,3 +115,17 @@
 
 /* Кнопка «Предложить» в шапке блока новостей: выглядит как ссылка sec-link */
 .news-propose { background: none; border: 0; padding: 0; cursor: pointer; font: inherit; margin-left: var(--space-16); }
+
+/* Рестайл под V1: редактор новостей. Только токены */
+.news-admin-item { border-top-color: var(--border-default); }
+.news-when, .news-admin-head .news-pin { font-family: var(--font-mono); }
+.news-tab-badge { margin-left: var(--space-8); vertical-align: middle; }
+.news-panel { border-color: var(--border-default); border-radius: 0; }
+.widget-row.people-row { gap: var(--space-12); }
+.news-save { padding-top: var(--space-12); }
+.news-propose + .news-propose, .sec-link + .news-propose { margin-left: var(--space-16); }
+.news-propose { color: var(--text-primary); }
+.news-propose:hover { color: var(--accent-primary); }
+@media (max-width: 767px) {
+  .sec-head .news-propose { white-space: normal; text-align: left; }
+}
