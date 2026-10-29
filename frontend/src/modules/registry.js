@@ -18,6 +18,8 @@ import newsStrings from './news/strings.js'
 import { canReadNews, isNewsEditor } from './news/lib/news.js'
 import holidaysStrings from './holidays/strings.js'
 import { canReadHolidays, isHolidaysEditor } from './holidays/lib/holidays.js'
+import feedbackStrings from './feedback/strings.js'
+import { canSendFeedback, isFeedbackReader } from './feedback/lib/feedback.js'
 
 // hidden: boolean или (me) => boolean (isModuleHidden в core/access.js). Скрытый модуль есть в реестре (особые права, группы, права в /core/me),
 // но не показывается в меню, а его страница /modules/<id> — «Не найдено». Нужен модулям без своей страницы (pricing)
@@ -46,6 +48,11 @@ export const MODULES = [
   {
     id: 'holidays', status: 'mvp', hidden: (me) => !isHolidaysEditor(me), forAll: true, wide: true, strings: holidaysStrings,
     Component: lazy(() => import('./holidays/HolidaysAdminSection.jsx')),
+  },
+  // Обратная связь: пункт меню — только читателю (ответственный или admin); отправка — карточка на главной и вкладка профиля
+  {
+    id: 'feedback', status: 'mvp', hidden: (me) => !isFeedbackReader(me), forAll: true, wide: true, strings: feedbackStrings,
+    Component: lazy(() => import('./feedback/FeedbackAdminSection.jsx')),
   },
 ]
 
@@ -120,6 +127,14 @@ export const PROFILE_SECTIONS = [
     badge: (data) => data.items.filter((i) => ['needs_changes', 'rejected'].includes(i.status)).length,
     Component: lazy(() => import('./news/MyProposalsSection.jsx')),
   },
+  {
+    // свои именные сообщения обратной связи: отправитель feedback (viewer — нет)
+    id: 'feedback',
+    label: feedbackStrings.profile.title,
+    load: ownData((api) => api.get('/modules/feedback/mine')),
+    visible: (me, data) => canSendFeedback(me) && data != null,
+    Component: lazy(() => import('./feedback/MyFeedbackSection.jsx')),
+  },
 ]
 
 // homeEditor: «Ответственный» этого модуля может настраивать виджеты главной (зеркало home_editor в бэкенд-манифесте).
@@ -139,4 +154,5 @@ export const HOME_WIDGETS = [
   { id: 'news-banner', slot: 'banner', visible: canReadNews, Component: lazy(() => import('./news/components/HomeBanner.jsx')) },
   { id: 'news-feed', slot: 'left', visible: canReadNews, Component: lazy(() => import('./news/components/HomeNewsFeed.jsx')) },
   { id: 'news-events', slot: 'center', visible: canReadNews, Component: lazy(() => import('./news/components/HomeEvents.jsx')) },
+  { id: 'feedback', label: feedbackStrings.home.widgetLabel, visible: canSendFeedback, Component: lazy(() => import('./feedback/components/HomeFeedbackCard.jsx')) },
 ]
