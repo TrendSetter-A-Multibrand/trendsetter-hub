@@ -840,6 +840,12 @@ const strings = {
       'core.user_permission_set': 'Изменение особых прав',
       'core.password_change': 'Смена пароля',
       'core.password_reset': 'Сброс пароля администратором',
+      'core.onboarding_self_register': 'Самостоятельная регистрация новичка',
+      'core.onboarding_password_set': 'Задан общий пароль онбординга',
+      'core.onboarding_password_clear': 'Общий пароль онбординга сброшен',
+      'user.onboarding_extend': 'Срок онбординга продлён',
+      'user.onboarding_finish': 'Онбординг завершён досрочно',
+      'user.onboarding_delete': 'Онбординг-учётка удалена',
     },
   },
 

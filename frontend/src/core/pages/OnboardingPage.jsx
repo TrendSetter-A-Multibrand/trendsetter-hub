@@ -66,7 +66,7 @@ export default function OnboardingPage() {
               {s.checkStatus}
             </Button>
             <Suspense fallback={null}>
-              <ProfileForm key={formKey} />
+              <ProfileForm key={formKey} onboarding />
             </Suspense>
           </>
         )}

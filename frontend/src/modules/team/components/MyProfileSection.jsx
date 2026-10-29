@@ -7,16 +7,16 @@ import { useMyProfileForm } from '../lib/useMyProfileForm.js'
 
 const s = strings.profile
 
-function Form({ me, onChanged }) {
+function Form({ me, onChanged, onboarding }) {
   const form = useMyProfileForm({ me, onChanged })
   const { fields, loadError, busy, pending } = form
   if (loadError) return <Alert type="error" showIcon title={s.loadError} description={loadError} />
   if (!fields) return <Spin />
   return (
     <div style={{ maxWidth: 640 }}>
-      {!me.person && <Alert type="warning" showIcon title={s.noCardNotice} style={{ marginBottom: 16 }} />}
-      <SubmissionStatus submission={me.submission} />
-      <Alert type="info" title={s.notice} style={{ marginBottom: 16 }} />
+      {!onboarding && !me.person && <Alert type="warning" showIcon title={s.noCardNotice} style={{ marginBottom: 16 }} />}
+      {(!onboarding || me.submission) && <SubmissionStatus submission={me.submission} />}
+      {!onboarding && <Alert type="info" title={s.notice} style={{ marginBottom: 16 }} />}
       <ProfileForm
         fields={fields}
         values={form.values}
@@ -46,8 +46,9 @@ function Form({ me, onChanged }) {
 
 // Раздел «Моя анкета» страницы профиля: та же форма, что в карте команды, встроенная (не drawer).
 // После отправки/отзыва анкета перечитывается; форма пересоздаётся, когда меняется заявка (id или статус).
-export default function MyProfileSection() {
+// onboarding: экран первого входа — общую подсказку показывает страница, лишние подсказки скрыты.
+export default function MyProfileSection({ onboarding = false }) {
   const { me, reload } = useMyProfile(true)
   if (!me) return <Spin />
-  return <Form key={`${me.submission?.id ?? 0}-${me.submission?.status ?? ''}`} me={me} onChanged={reload} />
+  return <Form key={`${me.submission?.id ?? 0}-${me.submission?.status ?? ''}`} me={me} onChanged={reload} onboarding={onboarding} />
 }
