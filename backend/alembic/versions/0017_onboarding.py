@@ -31,8 +31,11 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    # Учётки без уровня отключаются и получают viewer: открытых учёток без проверки не остаётся
-    op.execute("UPDATE trendsetter_hub.users SET is_active = false, access_level = 'viewer' WHERE access_level IS NULL")
+    # Все учётки на онбординге отключаются (в том числе те, кому админ выдал уровень через PATCH); без уровня получают viewer
+    op.execute(
+        "UPDATE trendsetter_hub.users SET is_active = false, access_level = COALESCE(access_level, 'viewer') "
+        "WHERE onboarding OR access_level IS NULL"
+    )
     op.execute("ALTER TABLE trendsetter_hub.users DROP CONSTRAINT IF EXISTS users_must_change_password_check")
     op.execute("ALTER TABLE trendsetter_hub.users DROP CONSTRAINT IF EXISTS users_level_or_onboarding_check")
     op.execute("ALTER TABLE trendsetter_hub.users DROP COLUMN IF EXISTS must_change_password")

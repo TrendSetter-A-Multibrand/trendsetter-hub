@@ -243,11 +243,15 @@ def finish_user_onboarding(
     user = _get_onboarding_user(session, user_id)
     if user.must_change_password:
         raise HTTPException(422, m.ONBOARDING_PASSWORD_PENDING)
-    onboarding.finish_onboarding(session, user, body.access_level, body.department_ids, ACCESS_LEVELS)
-    log_action(
-        session, me.id, "user.onboarding_finish", target_user_id=user.id, access_level=user.access_level, department_ids=sorted(set(body.department_ids))
-    )
-    session.commit()
+    try:
+        onboarding.finish_onboarding(session, user, body.access_level, body.department_ids, ACCESS_LEVELS)
+        log_action(
+            session, me.id, "user.onboarding_finish", target_user_id=user.id, access_level=user.access_level, department_ids=sorted(set(body.department_ids))
+        )
+        session.commit()
+    except IntegrityError:  # например, отдел удалён между проверкой и записью
+        session.rollback()
+        raise HTTPException(409, m.CONFLICT) from None
     return _public_user(user, _department_ids_by_user(session).get(user.id, []))
 
 

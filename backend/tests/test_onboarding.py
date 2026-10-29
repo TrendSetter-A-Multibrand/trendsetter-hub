@@ -553,6 +553,38 @@ def test_admin_onboarding_password_and_info(client, db, admin, shared, hr):
         assert client.request(method, path, json={"password": SHARED + "1", "access_level": "viewer"}, headers=hr).status_code == 403, path
 
 
+def _fake_validate(monkeypatch):
+    """Проверка отделов «пропускает» несуществующий id 99: ошибка возникает уже при записи (внешний ключ)."""
+    from app.core import onboarding
+
+    fake = lambda session, level, ids, allowed: [99]  # noqa: E731
+    monkeypatch.setattr(onboarding, "validate_finish", fake)
+    monkeypatch.setattr(team_service, "validate_finish", fake)
+
+
+def test_admin_finish_db_conflict_is_409(client, db, admin, shared, monkeypatch):
+    h = register(client)
+    to_profile(client, h)
+    uid = user_row(db, "ivan.test@trendsettercrew.com")["id"]
+    _fake_validate(monkeypatch)
+    r = client.post(f"/admin/users/{uid}/onboarding/finish", json={"access_level": "viewer", "department_ids": []}, headers=admin)
+    assert r.status_code == 409 and r.json()["detail"] == m.CONFLICT
+    u = user_row(db, "ivan.test@trendsettercrew.com")
+    assert u["onboarding"] is True and u["access_level"] is None
+
+
+def test_hr_approve_db_conflict_is_not_email_duplicate(client, db, shared, hr, tree, monkeypatch):
+    h = newbie_at_profile(client)
+    submit_profile(client, h)
+    sid = client.get(f"{BASE}/hr/submissions", headers=hr).json()[0]["id"]
+    _fake_validate(monkeypatch)
+    r = client.post(f"{BASE}/hr/submissions/{sid}/approve", json={"directionId": "ops", "managerId": tree["mgr"], "accessLevel": "viewer"}, headers=hr)
+    assert r.status_code == 409 and r.json()["detail"] == m.CONFLICT != team_service.MSG_EMAIL_DUPLICATE
+    u = user_row(db, "ivan.test@trendsettercrew.com")
+    assert u["onboarding"] is True and u["access_level"] is None
+    assert pending_submission(db)["status"] == "pending"
+
+
 def test_admin_can_clear_shared_password(client, db, admin, shared):
     register(client, "first@trendsettercrew.com")
     r = client.post("/admin/onboarding/password", json={"password": ""}, headers=admin)

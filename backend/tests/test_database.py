@@ -156,14 +156,20 @@ def test_onboarding_downgrade_disables_unleveled_users(database):
             "INSERT INTO trendsetter_hub.users (email, full_name, password_hash, access_level, onboarding, must_change_password) "
             "VALUES ('down@example.com', 'Д', 'x', NULL, true, true) RETURNING id"
         ).fetchone()[0]
+        # онбординг-учётке админ выдал уровень через PATCH: онбординг остался, значит она тоже должна быть отключена
+        leveled_id = conn.execute(
+            "INSERT INTO trendsetter_hub.users (email, full_name, password_hash, access_level, onboarding, must_change_password) "
+            "VALUES ('down2@example.com', 'Е', 'x', 'admin', true, false) RETURNING id"
+        ).fetchone()[0]
         try:
             alembic("downgrade", "0016")
             assert conn.execute("SELECT is_active, access_level FROM trendsetter_hub.users WHERE id = %s", (user_id,)).fetchone() == (False, "viewer")
+            assert conn.execute("SELECT is_active, access_level FROM trendsetter_hub.users WHERE id = %s", (leveled_id,)).fetchone() == (False, "admin")
             assert conn.execute("SELECT version_num FROM trendsetter_hub.alembic_version").fetchone() == ("0016",)
             assert conn.execute("SELECT to_regclass('trendsetter_hub.onboarding_settings')").fetchone()[0] is None
         finally:
             alembic("upgrade", "head")
-            conn.execute("DELETE FROM trendsetter_hub.users WHERE id = %s", (user_id,))
+            conn.execute("DELETE FROM trendsetter_hub.users WHERE id IN (%s, %s)", (user_id, leveled_id))
         assert conn.execute("SELECT version_num FROM trendsetter_hub.alembic_version").fetchone() == ("0017",)
         assert conn.execute("SELECT count(*) FROM trendsetter_hub.onboarding_settings").fetchone() == (1,)
 

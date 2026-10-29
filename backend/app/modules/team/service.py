@@ -611,9 +611,10 @@ def approve(session: Session, hr: User, submission_id: int, d: dict) -> dict:
             extra = {"onboarding_done": True, "access_level": level, "department_ids": department_ids}
         log_action(session, hr.id, "team.approve", MODULE_ID, submission_id=submission_id, person_id=pid, **extra)
         session.commit()
-    except IntegrityError:
+    except IntegrityError as exc:
         session.rollback()
-        fail(409, MSG_EMAIL_DUPLICATE)
+        # Дубль (unique, 23505) — почта; внешний ключ, CHECK и прочее (например, отдел исчез) — общий конфликт
+        fail(409, MSG_EMAIL_DUPLICATE if getattr(exc.orig, "sqlstate", None) == "23505" else m.CONFLICT)
     return _hr_person(session, pid)
 
 
