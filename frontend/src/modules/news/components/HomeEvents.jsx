@@ -5,6 +5,7 @@ import strings from '../strings.js'
 import NewsItemModal from './NewsItemModal.jsx'
 import { EventRow } from './NewsRows.jsx'
 import { useFeed } from './useFeed.js'
+import SectionHead from '../../../core/layout/SectionHead.jsx'
 import '../news.css'
 
 const s = strings.home
@@ -16,8 +17,8 @@ export default function HomeEvents({ me }) {
   const opened = feed?.events.find((e) => e.id === openId)
 
   return (
-    <section className="home-panel events" aria-label={s.eventsTitle}>
-      <div className="news-col-title">{s.eventsTitle}</div>
+    <section className="home-block" aria-labelledby="home-events">
+      <SectionHead id="home-events" title={s.eventsTitle} />
       {failed ? (
         <div className="news-empty">{s.loadError}</div>
       ) : feed === null ? (

@@ -34,6 +34,19 @@ export function fromLocalInput(value) {
   return Number.isNaN(d.getTime()) ? null : d.toISOString()
 }
 
+const MONTHS = ['ЯНВ', 'ФЕВ', 'МАР', 'АПР', 'МАЙ', 'ИЮН', 'ИЮЛ', 'АВГ', 'СЕН', 'ОКТ', 'НОЯ', 'ДЕК']
+
+// ISO -> { day: '05', month: 'НОЯ', weekday: 'СР' } для даты-плашки события; невалидная дата -> null
+export function eventDateBadge(iso) {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return null
+  return {
+    day: pad(d.getDate()),
+    month: MONTHS[d.getMonth()],
+    weekday: d.toLocaleDateString('ru-RU', { weekday: 'short' }).toUpperCase(),
+  }
+}
+
 // Первые limit символов текста; при обрезке — «…»
 export function excerpt(text, limit = 160) {
   const value = text ?? ''

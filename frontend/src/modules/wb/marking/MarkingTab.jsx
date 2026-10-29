@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
-import { Alert, App, Button, DatePicker, Input, Segmented, Switch, Table, Tooltip } from 'antd'
+import { Alert, App, Button, DatePicker, Input, Table, Tooltip } from 'antd'
 import dayjs from 'dayjs'
 import 'dayjs/locale/ru' // календарь с понедельника (локаль ru из ConfigProvider)
 import { canRun } from '../../../core/access.js'
 import { api } from '../../../core/api/index.js'
 import { formatPrice } from '../../../core/format.js'
 import strings from '../strings.js'
+import PageHead from '../../../core/layout/PageHead.jsx'
+import SectionHead from '../../../core/layout/SectionHead.jsx'
 import ImportModal from './ImportModal.jsx'
 import { chzSheet, exportSheets } from './xlsx.js'
 import './marking.css'
@@ -34,12 +36,15 @@ function periodDays(from, to) {
   return days
 }
 
+// accent: 'marker' — жёлтая плашка на цифре (нужно действие), 'red' — красная цифра (проверить вручную)
 function Kpi({ label, value, hint, accent }) {
   return (
-    <div className={`mk-kpi${accent ? ' accent' : ''}`}>
-      <span className="mk-kpi-label">{label}</span>
-      <span className="mk-kpi-value">{value}</span>
-      {hint && <span className="mk-kpi-hint">{hint}</span>}
+    <div className="kpi">
+      <span className="kpi-label">{label}</span>
+      <span>
+        <span className={`kpi-value${accent === 'marker' ? ' marker' : accent === 'red' ? ' mk-red' : ''}`}>{value}</span>
+      </span>
+      {hint && <span className="kpi-sub">{hint}</span>}
     </div>
   )
 }
@@ -60,7 +65,7 @@ function Sources({ sources }) {
   )
 }
 
-export default function MarkingTab({ access }) {
+export default function MarkingTab({ module, access }) {
   const { message } = App.useApp()
   const [period, setPeriod] = useState(DEFAULT_PERIOD)
   const [version, setVersion] = useState(0) // «Пересчитать сверку» — тот же запрос заново
@@ -182,9 +187,9 @@ export default function MarkingTab({ access }) {
     )
 
   const columns = [
-    { title: s.columns.date, dataIndex: 'date', width: 70, render: (v) => <span className="mono">{dayLabel(v)}</span> },
+    { title: s.tableColumns.date, dataIndex: 'date', width: 70, render: (v) => <span className="mono">{dayLabel(v)}</span> },
     {
-      title: s.columns.article,
+      title: s.tableColumns.article,
       dataIndex: 'nm_id',
       render: (v, it) => (
         <div className="mk-article">
@@ -195,164 +200,183 @@ export default function MarkingTab({ access }) {
         </div>
       ),
     },
-    { title: s.columns.code, dataIndex: 'km', render: (v) => <span className="mono mk-code">{v}</span> },
+    { title: s.tableColumns.code, dataIndex: 'km', render: (v) => <span className="mono mk-code">{v}</span> },
     {
-      title: s.columns.assembly,
+      title: s.tableColumns.assembly,
       dataIndex: 'assembly_id',
       render: (v) => (v ? <span className="mono">{v}</span> : <span className="mk-missing">{s.noAssembly}</span>),
     },
-    { title: s.columns.price, dataIndex: 'price', align: 'right', render: (v) => <span className="mono">{formatPrice(v)}</span> },
+    { title: s.tableColumns.price, dataIndex: 'price', align: 'right', render: (v) => <span className="mono">{formatPrice(v)}</span> },
   ]
   if (list === 'strange') {
-    columns.push({ title: s.columns.reason, dataIndex: 'reason', render: (v) => <span className="mk-reason">{s.reasons[v]}</span> })
+    columns.push({ title: s.tableColumns.reason, dataIndex: 'reason', render: (v) => <span className="mk-reason">{s.reasons[v]}</span> })
   } else {
     columns.push(
-      { title: list === 'withdraw' ? s.columns.document : s.columns.returnDocument, dataIndex: 'document', render: (_, it) => documentCell(it) },
+      { title: s.tableColumns.document, dataIndex: 'document', render: (_, it) => documentCell(it) },
       {
-        title: s.columns.status,
+        title: s.tableColumns.status,
         key: 'status',
         render: (_, it) => (
-          <span className={`mk-status ${it.document ? 'st-ok' : 'st-wait'}`}>
-            <span className="mk-status-dot" />
-            {it.document ? s.statuses[list].done : s.statuses[list].wait}
-          </span>
+          <span className={`mk-status ${it.document ? 'st-ok' : 'st-wait'}`}>{it.document ? s.statuses[list].done : s.statuses[list].wait}</span>
         ),
       },
     )
   }
 
+  const section = module.strings.sections.marking
+  const total = byList[list].length
+
   return (
-    <div className="mk">
+    <div className="stack module mk">
+      <PageHead module={module} title={section.label} subtitle={section.description}>
+        <Button onClick={() => setVersion((v) => v + 1)} loading={loading}>
+          {s.refresh}
+        </Button>
+        {canRun(access) && <Button onClick={() => setImportOpen(true)}>↑ {s.upload}</Button>}
+        <Button type="primary" disabled={!data} onClick={download}>
+          ↓ {s.download}
+        </Button>
+      </PageHead>
+      <ImportModal open={importOpen} onClose={() => setImportOpen(false)} onDone={() => setVersion((v) => v + 1)} />
+
       <div className="mk-bar">
-        <div className="mk-week">
-          <span className="mk-week-label">{s.period}</span>
-          <DatePicker.RangePicker
-            allowClear={false}
-            format="DD.MM.YYYY"
-            value={[dayjs(period.from), dayjs(period.to)]}
-            onChange={pickPeriod}
-            disabledDate={disabledDate}
-            presets={PRESETS}
-            aria-label={s.pickPeriod}
+        <DatePicker.RangePicker
+          allowClear={false}
+          format="DD.MM.YYYY"
+          value={[dayjs(period.from), dayjs(period.to)]}
+          onChange={pickPeriod}
+          disabledDate={disabledDate}
+          presets={PRESETS}
+          aria-label={s.pickPeriod}
+        />
+        {data && <Sources sources={data.sources} />}
+      </div>
+      {error && <Alert type="error" showIcon message={error} />}
+
+      <section className="section" aria-labelledby="mk-sum">
+        <SectionHead id="mk-sum" title={s.summaryTitle} />
+        <div className="kpis">
+          <Kpi
+            label={s.kpi.toWithdraw}
+            value={numberFormatter.format(withdrawPending.length)}
+            hint={formatPrice(withdrawPending.reduce((acc, it) => acc + it.price, 0))}
+            accent={withdrawPending.length > 0 ? 'marker' : null}
+          />
+          <Kpi
+            label={s.kpi.withdrawn}
+            value={numberFormatter.format(byList.withdraw.length - withdrawPending.length)}
+            hint={s.kpi.ofPeriod(byList.withdraw.length)}
+          />
+          <Kpi
+            label={s.kpi.returns}
+            value={numberFormatter.format(byList.return.length)}
+            hint={s.kpi.pendingReturns(byList.return.filter(pending).length)}
+          />
+          <Kpi
+            label={s.kpi.strange}
+            value={numberFormatter.format(byList.strange.length)}
+            hint={s.kpi.strangeHint}
+            accent={byList.strange.length > 0 ? 'red' : null}
           />
         </div>
-        <div className="mk-actions">
-          <Button onClick={() => setVersion((v) => v + 1)} loading={loading}>
-            {s.refresh}
-          </Button>
-          {canRun(access) && <Button onClick={() => setImportOpen(true)}>↑ {s.upload}</Button>}
-          <Button type="primary" disabled={!data} onClick={download}>
-            ↓ {s.download}
-          </Button>
+      </section>
+
+      <section className="section" aria-labelledby="mk-days">
+        <SectionHead id="mk-days" title={s.daysTitle}>
+          <span className="seg" role="tablist" aria-label={s.listLabel}>
+            {LISTS.map((l) => (
+              <button
+                key={l}
+                type="button"
+                role="tab"
+                className="seg-btn"
+                aria-selected={list === l}
+                onClick={() => {
+                  setList(l)
+                  setOnlyPending(false)
+                }}
+              >
+                {s.tabs[l]} · {byList[l].length}
+              </button>
+            ))}
+          </span>
+        </SectionHead>
+        <div className="mk-days">
+          {days.map((d) => {
+            const dayItems = byList[list].filter((it) => it.date === d)
+            const waiting = dayItems.filter(pending).length
+            const issue = waiting || (list === 'strange' && dayItems.length)
+            const done = dayItems.length - waiting
+            return (
+              <button type="button" key={d} aria-pressed={day === d} className={`mk-day${day === d ? ' active' : ''}`} onClick={() => setDay(day === d ? 'all' : d)}>
+                <span className="mk-day-head">
+                  {weekday(d)} · {dayLabel(d)}
+                </span>
+                <span className="mk-day-count">{dayItems.length}</span>
+                <span className="mk-day-bar" aria-hidden="true">
+                  <span className={issue ? 'wait' : ''} style={{ width: `${list === 'strange' ? (dayItems.length / maxDay) * 100 : dayItems.length ? (done / dayItems.length) * 100 : 0}%` }} />
+                </span>
+                <span className={`mk-day-issues${issue ? ' has' : ''}`}>
+                  {list === 'strange' ? s.checkThem : waiting ? s.waitingCount(waiting) : s.allDone}
+                </span>
+              </button>
+            )
+          })}
         </div>
-      </div>
-      <ImportModal open={importOpen} onClose={() => setImportOpen(false)} onDone={() => setVersion((v) => v + 1)} />
-      {error && <Alert type="error" showIcon message={error} />}
-      {data && <Sources sources={data.sources} />}
+      </section>
 
-      <div className="mk-kpis">
-        <Kpi
-          label={s.kpi.toWithdraw}
-          value={numberFormatter.format(withdrawPending.length)}
-          hint={formatPrice(withdrawPending.reduce((acc, it) => acc + it.price, 0))}
-          accent={withdrawPending.length > 0}
-        />
-        <Kpi
-          label={s.kpi.withdrawn}
-          value={numberFormatter.format(byList.withdraw.length - withdrawPending.length)}
-          hint={s.kpi.ofPeriod(byList.withdraw.length)}
-        />
-        <Kpi
-          label={s.kpi.returns}
-          value={numberFormatter.format(byList.return.length)}
-          hint={s.kpi.pendingReturns(byList.return.filter(pending).length)}
-        />
-        <Kpi
-          label={s.kpi.strange}
-          value={numberFormatter.format(byList.strange.length)}
-          hint={s.kpi.strangeHint}
-          accent={byList.strange.length > 0}
-        />
-      </div>
-
-      <Segmented
-        value={list}
-        onChange={(v) => {
-          setList(v)
-          setOnlyPending(false)
-        }}
-        options={LISTS.map((l) => ({ value: l, label: `${s.lists[l]} · ${byList[l].length}` }))}
-      />
-
-      <div className="mk-days">
-        {days.map((d) => {
-          const dayItems = byList[list].filter((it) => it.date === d)
-          const waiting = dayItems.filter(pending).length
-          return (
-            <button type="button" key={d} className={`mk-day${day === d ? ' active' : ''}`} onClick={() => setDay(day === d ? 'all' : d)}>
-              <span className="mk-day-head mono">
-                {weekday(d)} · {dayLabel(d)}
+      <section className="section" aria-labelledby="mk-codes">
+        <SectionHead id="mk-codes" title={s.codesTitle(rows.length, total)} />
+        <div className="mk-filters">
+          <Input.Search allowClear placeholder={s.search} aria-label={s.search} value={query} onChange={(e) => setQuery(e.target.value)} style={{ flex: '1 1 260px', maxWidth: 360 }} />
+          {list !== 'strange' && (
+            <button type="button" role="switch" aria-checked={onlyPending} className="sq-switch" onClick={() => setOnlyPending((v) => !v)}>
+              <span className="sq-switch-track" aria-hidden="true">
+                <span className="sq-switch-knob" />
               </span>
-              <span className="mk-day-count">{dayItems.length}</span>
-              <span className="mk-day-bar">
-                <span style={{ width: `${(dayItems.length / maxDay) * 100}%` }} />
-              </span>
-              <span className={`mk-day-issues${waiting || (list === 'strange' && dayItems.length) ? ' has' : ''}`}>
-                {list === 'strange' ? s.checkThem : waiting ? s.waitingCount(waiting) : s.allDone}
-              </span>
+              {s.onlyPending}
             </button>
-          )
-        })}
-      </div>
-
-      <div className="mk-filters">
-        <Input.Search allowClear placeholder={s.search} value={query} onChange={(e) => setQuery(e.target.value)} style={{ width: 300 }} />
-        {list !== 'strange' && (
-          <label className="mk-switch">
-            <Switch size="small" checked={onlyPending} onChange={setOnlyPending} /> {s.onlyPending}
-          </label>
-        )}
-        {day !== 'all' && (
-          <Button size="small" type="link" onClick={() => setDay('all')}>
-            {s.allPeriod}
-          </Button>
-        )}
-        <span className="counter mono">[{String(rows.length).padStart(2, '0')}]</span>
-      </div>
-
-      {list !== 'strange' && rows.some(pending) && (
-        <div className="mk-chz">
-          <Tooltip title={s.chz.hint}>
-            <Button onClick={downloadChz}>{s.chz.download(rows.filter(pending).length)}</Button>
-          </Tooltip>
-          {canRun(access) && (
-            <>
-              <Input
-                className="mono"
-                placeholder={s.chz.documentPlaceholder}
-                value={bulkDocument}
-                onChange={(e) => setBulkDocument(e.target.value)}
-                onPressEnter={() => bulkDocument.trim() && applyDocument()}
-                style={{ width: 170 }}
-              />
-              <Button type="primary" ghost disabled={!bulkDocument.trim()} loading={bulkBusy} onClick={applyDocument}>
-                {s.chz.apply(rows.filter(pending).length)}
-              </Button>
-            </>
+          )}
+          {day !== 'all' && (
+            <button type="button" className="seg-btn mk-chip" aria-pressed="true" onClick={() => setDay('all')}>
+              {s.dayChip(dayLabel(day))}
+            </button>
+          )}
+          {list !== 'strange' && rows.some(pending) && (
+            <span className="mk-chz">
+              <Tooltip title={s.chz.hint}>
+                <Button onClick={downloadChz}>{s.chz.download(rows.filter(pending).length)}</Button>
+              </Tooltip>
+              {canRun(access) && (
+                <>
+                  <Input
+                    className="mono"
+                    placeholder={s.chz.documentPlaceholder}
+                    aria-label={s.chz.documentPlaceholder}
+                    value={bulkDocument}
+                    onChange={(e) => setBulkDocument(e.target.value)}
+                    onPressEnter={() => bulkDocument.trim() && applyDocument()}
+                    style={{ width: 170 }}
+                  />
+                  <Button disabled={!bulkDocument.trim()} loading={bulkBusy} onClick={applyDocument}>
+                    {s.chz.apply(rows.filter(pending).length)}
+                  </Button>
+                </>
+              )}
+            </span>
           )}
         </div>
-      )}
-
-      <Table
-        size="small"
-        columns={columns}
-        dataSource={rows}
-        rowKey="key"
-        loading={loading}
-        pagination={{ pageSize: 20, showSizeChanger: false, hideOnSinglePage: true }}
-        rowClassName={(it) => (it.list === 'strange' ? 'mk-row-issue' : pending(it) ? 'mk-row-wait' : '')}
-        scroll={{ x: 960 }}
-      />
+        <Table
+          size="small"
+          columns={columns}
+          dataSource={rows}
+          rowKey="key"
+          loading={loading}
+          pagination={{ pageSize: 20, showSizeChanger: false, hideOnSinglePage: true }}
+          rowClassName={(it) => (it.list === 'strange' ? 'mk-row-issue' : '')}
+          scroll={{ x: 980 }}
+        />
+      </section>
     </div>
   )
 }

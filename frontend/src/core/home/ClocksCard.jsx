@@ -20,17 +20,19 @@ export default function ClocksCard() {
     }
   }, [])
 
+  // В шапке главной — только два города (остальные решения демо-витрины не требуют): Ереван и Москва
+  const zones = CLOCK_ZONES.slice(0, 2)
+
   return (
-    <section className="home-card">
-      <div className="home-card-head">{s.clocksTitle}</div>
-      <div className="clocks">
-        {CLOCK_ZONES.map((z) => (
-          <div className="clock" key={z.id}>
-            <span className="clock-city">{s.cities[z.id]}</span>
-            <span className="clock-time">{formatClock(now, z.timeZone)}</span>
-          </div>
-        ))}
-      </div>
-    </section>
+    <div className="hero-clocks" role="group" aria-label={s.clocksTitle}>
+      {zones.map((z, i) => (
+        <div className={`hero-clock${i === 0 ? ' prime' : ''}`} key={z.id}>
+          <span className="hero-clock-label">
+            {String(i + 1).padStart(2, '0')} · {s.cities[z.id]}
+          </span>
+          <span className="hero-clock-time">{formatClock(now, z.timeZone)}</span>
+        </div>
+      ))}
+    </div>
   )
 }

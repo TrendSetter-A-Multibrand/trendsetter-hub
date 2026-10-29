@@ -14,7 +14,7 @@ test('rateRows: номинал, формат, направление', () => {
   assert.deepEqual(rateRows(data), [
     { code: 'USD', label: '1 USD', value: '81,12 ₽', delta: '+0,14', direction: 'up' },
     { code: 'EUR', label: '1 EUR', value: '94,50 ₽', delta: '0,00', direction: 'flat' },
-    { code: 'AMD', label: '1 RUB', value: '4,48 AMD', delta: '+0,03', direction: 'up' },
+    { code: 'AMD', label: '1 RUB', value: '4,48 ֏', delta: '+0,03', direction: 'up' },
   ])
 })
 
@@ -24,7 +24,7 @@ test('rateRows: AMD — обратный курс, направление по �
   assert.equal(amd(22, 22.5).direction, 'up')
   assert.equal(amd(22.5, 22).direction, 'down')
   assert.equal(amd(22.5, 22.5).direction, 'flat')
-  assert.equal(amd(25, 25).value, '4,00 AMD')
+  assert.equal(amd(25, 25).value, '4,00 ֏')
 })
 
 test('rateRows: порог flat 0.005', () => {

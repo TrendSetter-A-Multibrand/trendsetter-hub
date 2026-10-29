@@ -4,6 +4,7 @@ import { addDays, todayIso } from '../../../core/dates.js'
 import { UPCOMING_DAYS, monthKey, upcomingBirthdays } from '../lib/birthdays.js'
 import { useBirthdays } from '../lib/useBirthdays.js'
 import strings from '../strings.js'
+import SectionHead from '../../../core/layout/SectionHead.jsx'
 
 const s = strings.birthdays
 
@@ -16,19 +17,21 @@ export default function HomeBirthdays() {
   const list = entries ? upcomingBirthdays(entries, today) : []
 
   return (
-    <section className="home-card">
-      <div className="home-card-head">{s.title}</div>
+    <section className="home-block tight" aria-labelledby="home-birthdays">
+      <SectionHead id="home-birthdays" title={s.title} />
       {entries === null ? (
         <Spin size="small" />
       ) : list.length === 0 ? (
         <div className="people-empty">{s.empty}</div>
       ) : (
-        list.map((b) => (
-          <div className="people-row" key={`${b.personId}|${b.date}`}>
-            <span className="people-name">{b.name}</span>
-            <span className="people-when mono">{whenLabel(b.inDays)}</span>
-          </div>
-        ))
+        <div>
+          {list.map((b) => (
+            <div className="people-row" key={`${b.personId}|${b.date}`}>
+              <span className="people-name">{b.name}</span>
+              <span className={`people-when${b.inDays === 0 ? ' today' : ''}`}>{whenLabel(b.inDays)}</span>
+            </div>
+          ))}
+        </div>
       )}
     </section>
   )

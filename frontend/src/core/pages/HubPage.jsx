@@ -17,7 +17,8 @@ export default function HubPage() {
   const [today] = useState(formatToday)
 
   // Блоки модулей (HOME_WIDGETS): ядро не знает, чьи они; невидимые не рендерятся и запросов не делают
-  // slot: 'banner' — над шапкой, 'left' и 'center' — колонки новостей и событий, не указан — в правую колонку виджетов
+  // slot: 'banner' — над приветствием, 'left' — рядом с погодой (новости), 'center' — рядом с курсами (события),
+  // не указан — в правую колонку под курсами
   const widgetsOf = (slot) =>
     HOME_WIDGETS.filter((w) => (w.slot ?? null) === slot && w.visible(me)).map(({ id, Component }) => (
       <Suspense key={id} fallback={slot === 'banner' ? null : <Spin size="small" />}>
@@ -25,10 +26,8 @@ export default function HubPage() {
       </Suspense>
     ))
 
-  // Нет доступа к новостям — колонок нет, виджеты занимают всю ширину (сеткой)
   const left = widgetsOf('left')
   const center = widgetsOf('center')
-  const hasFeed = left.length > 0 || center.length > 0
 
   const firstName = me.full_name.split(' ')[0]
   const greeting = s.greeting(firstName, hour)
@@ -36,24 +35,29 @@ export default function HubPage() {
   return (
     <div className="stack home">
       {widgetsOf('banner')}
-      <header className="greeting">
-        <div className="greeting-date">{today}</div>
-        <div className="greeting-row">
-          <span className="greeting-mascot">
-            <img src={mascot} alt="" width="52" height="52" />
+      <section className="hero" aria-label={s.greetingLabel}>
+        <div className="hero-main">
+          <span className="hero-tag">
+            [ {strings.layout.hub} ] {today}
           </span>
-          <h1>
-            {greeting.part}, <span className="accent">{greeting.name}</span>
+          <h1 className="hero-title">
+            {greeting.part}, <span className="hero-name">{greeting.name}</span>!
           </h1>
         </div>
-      </header>
+        <ClocksCard />
+        <img className="hero-mascot" src={mascot} alt="" aria-hidden="true" />
+      </section>
 
-      <div className={`home-layout${hasFeed ? ' with-feed' : ''}`}>
-        {left.length > 0 && <div className="home-col">{left}</div>}
-        {center.length > 0 && <div className="home-col">{center}</div>}
-        <div className="home-aside">
-          <ClocksCard />
+      <div className="home-row">
+        {left.length > 0 && <div className="home-main">{left}</div>}
+        <div className="home-side">
           <WeatherCard />
+        </div>
+      </div>
+
+      <div className="home-row">
+        {center.length > 0 && <div className="home-main">{center}</div>}
+        <div className="home-side">
           <RatesCard />
           {widgetsOf(null)}
         </div>

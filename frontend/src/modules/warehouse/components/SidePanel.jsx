@@ -5,6 +5,7 @@ import {
 import { UNK, byNum } from '../lib/format.js'
 import { STATUS } from '../lib/csv.js'
 import strings from '../strings.js'
+import SectionHead from '../../../core/layout/SectionHead.jsx'
 import { useStore } from './useStore.js'
 
 const u = strings.side
@@ -61,42 +62,66 @@ function Grid() {
   )
 }
 
+const EXPORTS = [
+  ['txt', exportTxt],
+  ['kiz', exportKiz],
+  ['copy', exportCopy],
+  ['byBox', exportByBox],
+  ['diff', exportDiff],
+  ['storage', exportStorage],
+]
+
 export default function SidePanel() {
   useStore()
   const v = view()
   return (
     <div className="wh-side">
-      <div className="wh-box">
+      <section className="section" aria-labelledby="wh-boxes">
+        <SectionHead id="wh-boxes" title={u.boxesTitle}>
+          <span className="sec-note">{u.openCount(openKeys().length)}</span>
+        </SectionHead>
         <Grid />
-        <div className="wh-row">
-          <button type="button" onClick={printOpen}>{u.printOpen}</button>
-          <button type="button" onClick={closeAll}>{u.closeAll}</button>
-          <button type="button" onClick={printTest}>{u.testLabel}</button>
+        <div className="wh-joined">
+          <button type="button" className="wh-btn" onClick={printOpen}>{u.printOpen}</button>
+          <button type="button" className="wh-btn" onClick={closeAll}>{u.closeAll}</button>
+          <button type="button" className="wh-btn" onClick={printTest}>{u.testLabel}</button>
         </div>
-      </div>
-      <div className="wh-box">
-        <b>{u.exportTitle}</b>
-        <div className="wh-row">
-          <button type="button" className="wh-dark" onClick={exportTxt}>{u.exportTxt}</button>
-          <button type="button" onClick={exportKiz}>{u.exportKiz}</button>
-          <button type="button" onClick={exportCopy}>{u.exportCopy}</button>
-          <button type="button" onClick={exportByBox}>{u.exportByBox}</button>
-          <button type="button" onClick={exportDiff}>{u.exportDiff}</button>
-          <button type="button" onClick={exportStorage}>{u.exportStorage}</button>
+      </section>
+      <section className="section wh-export" aria-labelledby="wh-export">
+        <SectionHead id="wh-export" title={u.exportTitle} />
+        <div>
+          {EXPORTS.map(([key, fn]) => {
+            const [label, ext] = u.exports[key]
+            const isCopy = key === 'copy'
+            return (
+              <div className="wh-export-row" key={key}>
+                <span className="wh-export-label">{label}</span>
+                <span className="wh-export-ext">{ext}</span>
+                <button type="button" className="wh-icon-btn" aria-label={isCopy ? u.copy(label) : u.download(label)} onClick={fn}>
+                  {isCopy ? '⧉' : '↓'}
+                </button>
+              </div>
+            )
+          })}
         </div>
-        <div className="wh-log">
-          {v.scans.slice(-60).reverse().map((s, i) => (
-            <div key={s.id || i} className={s.status === 'ok' ? '' : 'u'}>
-              <span>
-                {s.bc}
-                {s.noCz ? u.noCzSuffix : ''}
-                {s.status === 'ok' ? '' : ' · ' + STATUS[s.status]}
-              </span>
-              <em>→ {s.box}</em>
-            </div>
-          ))}
-        </div>
-      </div>
+      </section>
+      {v.scans.length > 0 && (
+        <section className="section" aria-labelledby="wh-log">
+          <SectionHead id="wh-log" title={u.logTitle} />
+          <div className="wh-log">
+            {v.scans.slice(-60).reverse().map((s, i) => (
+              <div key={s.id || i} className={s.status === 'ok' ? '' : 'u'}>
+                <span>
+                  {s.bc}
+                  {s.noCz ? u.noCzSuffix : ''}
+                  {s.status === 'ok' ? '' : ' · ' + STATUS[s.status]}
+                </span>
+                <em>→ {s.box}</em>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   )
 }

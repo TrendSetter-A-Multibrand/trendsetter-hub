@@ -6,7 +6,7 @@ import { S, boot, flush, refreshPalCache, pollPlan, focusScan } from './store.js
 import strings from './strings.js'
 import Header from './components/Header.jsx'
 import PlanPanel from './components/PlanPanel.jsx'
-import ScanArea from './components/ScanArea.jsx'
+import Target, { Counters, ScanInput } from './components/ScanArea.jsx'
 import SidePanel from './components/SidePanel.jsx'
 import ClosedTable from './components/ClosedTable.jsx'
 import Dialogs from './components/Dialogs.jsx'
@@ -15,7 +15,7 @@ import './warehouse.css'
 
 const u = strings.page
 
-function Receiving() {
+function Receiving({ module }) {
   useStore()
   const { cfg } = S
   useEffect(() => {
@@ -55,22 +55,24 @@ function Receiving() {
 
   return (
     <div className={`wh${cfg.cz ? ' cz' : ''}${cfg.noCz ? ' nocz' : ''}`}>
-      <Header />
+      <Header module={module} />
       <div className="wh-czbar">{u.czBar}</div>
       <div className="wh-noczbar">{u.noCzBar}</div>
       <PlanPanel />
-      <main className="wh-main">
-        <ScanArea />
+      <ScanInput />
+      <Counters />
+      <div className="wh-main">
+        <Target />
         <SidePanel />
-      </main>
+      </div>
       <ClosedTable />
       <Dialogs />
     </div>
   )
 }
 
-export default function WarehousePage({ access }) {
+export default function WarehousePage({ module, access }) {
   if (!canSeeData(access)) return <NoDataAccess />
   if (!canRun(access)) return <Alert type="info" showIcon title={u.noRun} />
-  return <Receiving />
+  return <Receiving module={module} />
 }

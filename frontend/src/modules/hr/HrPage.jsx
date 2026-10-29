@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Badge, Tabs } from 'antd'
+import { useSearchParams } from 'react-router-dom'
 import { api } from '../../core/api/index.js'
 import { useAuth } from '../../core/auth/useAuth.js'
 import ForbiddenPage from '../../core/pages/ForbiddenPage.jsx'
+import PageHead from '../../core/layout/PageHead.jsx'
 import strings from './strings.js'
 import SubmissionsTab from './components/SubmissionsTab.jsx'
 import PeopleTab from './components/PeopleTab.jsx'
@@ -12,8 +13,10 @@ import PoliciesTab from './components/PoliciesTab.jsx'
 import ChecklistTemplatesTab from './components/ChecklistTemplatesTab.jsx'
 import AuditTab from './components/AuditTab.jsx'
 import PlanTab from './plan/PlanTab.jsx'
+import './hr.css'
 
-// Вкладки модуля. Новая вкладка (зарплаты…) = одна запись здесь. Component получает { pending, onChanged }.
+// Вкладки модуля. Новая вкладка (зарплаты…) = одна запись здесь. Component получает { pending, onChanged, actionsEl }
+// (actionsEl — место для кнопок в шапке страницы, вкладка выводит их туда порталом).
 // badge: 'pending' — число анкет на проверке, 'leavePending' — число заявок на отпуск, ждущих решения, рядом с названием.
 // visible(me): вкладка показывается только при true (нет поля — всем). Журнал: ответственный за HR или администратор.
 // group: ключ из strings.groups; вкладки одной группы должны идти подряд (новая группа, например «Зарплата» — новая запись + подпись в strings.groups).
@@ -28,7 +31,9 @@ const TABS = [
   { key: 'audit', group: 'security', label: strings.tabs.audit, Component: AuditTab, visible: (me) => Boolean(me.module_responsible?.hr || me.can_manage_users) },
 ]
 
-export default function HrPage({ access }) {
+export default function HrPage({ module, access }) {
+  const [params, setParams] = useSearchParams()
+  const [actionsEl, setActionsEl] = useState(null)
   const { me, syncMe } = useAuth()
   const [pending, setPending] = useState(0)
   const [leavePending, setLeavePending] = useState(0)
@@ -72,32 +77,47 @@ export default function HrPage({ access }) {
 
   const badges = { pending, leavePending }
   const tabs = TABS.filter((t) => !t.visible || t.visible(me))
+  const current = tabs.find((t) => t.key === params.get('tab')) ?? tabs[0]
+  const groups = tabs.reduce((acc, t) => {
+    const last = acc[acc.length - 1]
+    if (last?.key === t.group) last.items.push(t)
+    else acc.push({ key: t.group, items: [t] })
+    return acc
+  }, [])
+  const { Component } = current
+  const pick = (key) => setParams(key === tabs[0].key ? {} : { tab: key })
+
   return (
-    <div style={{ padding: '24px 40px' }}>
-      <Tabs
-        destroyOnHidden
-        items={tabs.map(({ key, group, label, badge, Component }, i) => {
-          // первая вкладка группы: тонкий разделитель слева (кроме самой первой) и mono-подпись группы
-          const groupStart = group !== tabs[i - 1]?.group
-          return {
-            key,
-            label: (
-              <span
-                style={groupStart && i > 0 ? { borderLeft: '1px solid var(--border-input)', paddingLeft: 16, marginLeft: 0 } : undefined}
-              >
-                {groupStart && (
-                  <span className="mono" style={{ fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: 'var(--faint)', marginRight: 8 }}>
-                    {strings.groups[group]}
-                  </span>
-                )}
-                {label}
-                {badge && <Badge count={badges[badge]} overflowCount={99} style={{ marginLeft: 8 }} />}
-              </span>
-            ),
-            children: <Component pending={pending} onChanged={onChanged} />,
-          }
-        })}
-      />
+    <div className="stack module hr">
+      <PageHead module={module} title={module.strings.tool}>
+        <div ref={setActionsEl} className="page-actions" />
+      </PageHead>
+      <nav className="hr-nav" aria-label={strings.navLabel}>
+        {groups.map((g) => (
+          <div key={g.key} className="hr-nav-group">
+            <span className="hr-nav-title">{strings.groups[g.key]}</span>
+            <div className="hr-nav-items">
+              {g.items.map((t) => {
+                const on = t.key === current.key
+                const count = t.badge ? badges[t.badge] : 0
+                return (
+                  <button key={t.key} type="button" className={`hr-nav-item${on ? ' active' : ''}`} aria-current={on ? 'page' : undefined} onClick={() => pick(t.key)}>
+                    {on ? (
+                      <span>
+                        <span className="bracket" aria-hidden="true">[</span>&nbsp;{t.label}&nbsp;<span className="bracket" aria-hidden="true">]</span>
+                      </span>
+                    ) : (
+                      t.label
+                    )}
+                    {count > 0 && <span className="nav-badge">{count > 99 ? '99+' : count}</span>}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        ))}
+      </nav>
+      <Component key={current.key} pending={pending} onChanged={onChanged} actionsEl={actionsEl} />
     </div>
   )
 }

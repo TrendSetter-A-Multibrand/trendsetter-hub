@@ -5,6 +5,7 @@ import strings from '../strings.js'
 import NewsItemModal from './NewsItemModal.jsx'
 import { NewsRow } from './NewsRows.jsx'
 import { useFeed } from './useFeed.js'
+import SectionHead from '../../../core/layout/SectionHead.jsx'
 import '../news.css'
 
 const s = strings.home
@@ -16,8 +17,8 @@ export default function HomeNewsFeed({ me }) {
   const opened = feed?.news.find((n) => n.id === openId)
 
   return (
-    <section className="home-panel news" aria-label={s.newsTitle}>
-      <div className="news-col-title">{s.newsTitle}</div>
+    <section className="home-block" aria-labelledby="home-news">
+      <SectionHead id="home-news" title={s.newsTitle} />
       {failed ? (
         <div className="news-empty">{s.loadError}</div>
       ) : feed === null ? (
@@ -25,7 +26,7 @@ export default function HomeNewsFeed({ me }) {
       ) : feed.news.length === 0 ? (
         <div className="news-empty">{s.noNews}</div>
       ) : (
-        feed.news.map((n) => <NewsRow key={n.id} item={n} onOpen={setOpenId} />)
+        feed.news.map((n, i) => <NewsRow key={n.id} item={n} featured={i === 0} onOpen={setOpenId} />)
       )}
       {opened && <NewsItemModal item={opened} canManage={isNewsEditor(me)} onChange={replace} onClose={() => setOpenId(null)} />}
     </section>
