@@ -98,14 +98,20 @@ def self_register(session: Session, email_key: str) -> User | None:
     return user
 
 
-def finish_onboarding(session: Session, user: User, access_level: str | None, department_ids: list[int], allowed_levels: tuple[str, ...]) -> None:
-    """Снимает онбординг: ставит уровень и заменяет отделы. Коммит — на вызывающем."""
+def validate_finish(session: Session, access_level: str | None, department_ids: list[int], allowed_levels: tuple[str, ...]) -> list[int]:
+    """Проверка уровня и отделов без записи (422 UNKNOWN_LEVEL / UNKNOWN_DEPARTMENT); возвращает отсортированные уникальные id отделов."""
     if access_level not in allowed_levels:
         raise HTTPException(422, m.UNKNOWN_LEVEL)
     ids = sorted(set(department_ids))
     found = set(session.scalars(select(Department.id).where(Department.id.in_(ids))).all()) if ids else set()
     if set(ids) != found:
         raise HTTPException(422, m.UNKNOWN_DEPARTMENT)
+    return ids
+
+
+def finish_onboarding(session: Session, user: User, access_level: str | None, department_ids: list[int], allowed_levels: tuple[str, ...]) -> None:
+    """Снимает онбординг: ставит уровень и заменяет отделы. Коммит — на вызывающем."""
+    ids = validate_finish(session, access_level, department_ids, allowed_levels)
     user.access_level = access_level
     user.onboarding = False
     session.query(UserDepartment).filter(UserDepartment.user_id == user.id).delete()

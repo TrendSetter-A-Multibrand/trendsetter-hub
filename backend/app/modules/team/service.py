@@ -18,6 +18,7 @@ from app.core import messages as m
 from app.core.access import can_see_data
 from app.core.audit import log_action
 from app.core.deps import module_rights
+from app.core.onboarding import HR_LEVELS, finish_onboarding, validate_finish
 from app.core.models import User
 
 MODULE_ID = "team"
@@ -336,7 +337,7 @@ def _pending(session: Session, user_id: int, *, lock: bool = False):
 
 
 def get_me(session: Session, user: User) -> dict:
-    pid = resolve_own_person(session, user)
+    pid = None if user.onboarding else resolve_own_person(session, user)  # новичок чужую карточку не видит (D5)
     row = _person_row(session, pid) if pid else None
     pending = _pending(session, user.id)
     last = session.execute(
@@ -374,13 +375,16 @@ def get_me(session: Session, user: User) -> dict:
 
 def submit(session: Session, user: User, values: dict, photo: dict | None, *, replace: bool) -> dict:
     """Новая заявка (replace=False) или замена своей pending (replace=True). Любая правка сотрудника — только через заявку."""
-    pid = resolve_own_person(session, user)
+    pid = resolve_own_person(session, user)  # для person_id заявки (HR увидит «было/стало»)
+    card = None if user.onboarding else pid  # новичок: карточку не привязываем и её фото не засчитываем (D5)
     pending = _pending(session, user.id, lock=True)
     if replace and pending is None:
         fail(404, MSG_NO_PENDING)
     if not replace and pending is not None:
         fail(409, MSG_PENDING_EXISTS)
-    clean = _clean(_fields(session, True), values or {}, strict=True, has_person=pid is not None)
+    clean = _clean(_fields(session, True), values or {}, strict=True, has_person=card is not None)
+    if user.onboarding and "email" in clean:
+        clean["email"] = user.email  # D6: новичок не записывает в анкету чужую почту
     full = thumb = None
     if photo is not None:
         full, thumb = parse_photo(photo)
@@ -393,7 +397,7 @@ def submit(session: Session, user: User, values: dict, photo: dict | None, *, re
     has_photo = (
         full is not None
         or (pending is not None and pending["has_photo"])
-        or (pid is not None and session.execute(text(f"SELECT 1 FROM {S}photos WHERE person_id = :p"), {"p": pid}).first() is not None)
+        or (card is not None and session.execute(text(f"SELECT 1 FROM {S}photos WHERE person_id = :p"), {"p": card}).first() is not None)
     )
     if not has_photo:
         fail(422, MSG_PHOTO_REQUIRED)
@@ -415,7 +419,7 @@ def submit(session: Session, user: User, values: dict, photo: dict | None, *, re
                 ),
                 {"u": user.id, "p": pid, "v": json.dumps(clean, ensure_ascii=False), "f": full, "t": thumb},
             ).scalar_one()
-        if pid is not None:  # связь «учётка — карточка» запоминается при первой заявке
+        if pid is not None and not user.onboarding:  # связь «учётка — карточка» запоминается при первой заявке (у новичка — при одобрении)
             bound = session.execute(text(f"UPDATE {S}people SET user_id = :u WHERE id = :p AND user_id IS NULL"), {"u": user.id, "p": pid}).rowcount
             if not bound and session.execute(text(f"SELECT user_id FROM {S}people WHERE id = :p"), {"p": pid}).scalar() != user.id:
                 session.rollback()  # карточку успел занять другой пользователь
@@ -454,7 +458,7 @@ def list_submissions(session: Session, status: str) -> list[dict]:
     rows = session.execute(
         text(
             f"""SELECT s.id, s.user_id, u.full_name, u.email, s.person_id, s.status, s.created_at, s.reviewed_at, s.review_comment,
-                s."values", s.photo_full IS NOT NULL AS has_photo, s.photo_thumb
+                s."values", s.photo_full IS NOT NULL AS has_photo, s.photo_thumb, u.onboarding
                 FROM {S}submissions s JOIN trendsetter_hub.users u ON u.id = s.user_id {cond} ORDER BY {order}"""
         ),
         {"st": status},
@@ -471,6 +475,7 @@ def list_submissions(session: Session, status: str) -> list[dict]:
                 "status": r["status"], "createdAt": r["created_at"].isoformat(),
                 "reviewedAt": r["reviewed_at"].isoformat() if r["reviewed_at"] else None, "reviewComment": r["review_comment"],
                 "values": r["values"] or {}, "hasPhoto": r["has_photo"], "thumb": _data_url(r["photo_thumb"]), "current": current,
+                "userOnboarding": r["onboarding"],
             }
         )
     return out
@@ -540,11 +545,18 @@ def approve(session: Session, hr: User, submission_id: int, d: dict) -> dict:
     if sub["status"] != "pending":
         fail(409, MSG_NOT_PENDING)
     values = sub["values"] or {}
+    owner = session.get(User, sub["user_id"])
+    onboarding_done = bool(owner and owner.onboarding)
+    if onboarding_done:
+        # Все проверки доступа — до любых записей: иначе ошибка после записи уйдёт в except IntegrityError как 409
+        level = d.get("accessLevel")
+        if not level:
+            fail(422, m.ONBOARDING_LEVEL_REQUIRED)
+        department_ids = validate_finish(session, level, d.get("departmentIds") or [], HR_LEVELS)
     pid = sub["person_id"]
     if pid is None:
         pid = session.execute(text(f"SELECT id FROM {S}people WHERE user_id = :u"), {"u": sub["user_id"]}).scalar()
     if pid is None and d.get("personId") is None:
-        owner = session.get(User, sub["user_id"])
         pid = resolve_own_person(session, owner) if owner else None
     if pid is None and d.get("personId") is not None:
         pid = d["personId"]
@@ -590,7 +602,14 @@ def approve(session: Session, hr: User, submission_id: int, d: dict) -> dict:
             text(f"UPDATE {S}submissions SET status = 'approved', person_id = :p, reviewed_by = :r, reviewed_at = now() WHERE id = :i"),
             {"p": pid, "r": hr.id, "i": submission_id},
         )
-        log_action(session, hr.id, "team.approve", MODULE_ID, submission_id=submission_id, person_id=pid)
+        extra = {}
+        if onboarding_done:
+            finish_onboarding(session, owner, level, department_ids, HR_LEVELS)
+            first, last = values.get("first_name"), values.get("last_name")
+            if isinstance(first, str) and isinstance(last, str) and first.strip() and last.strip():
+                owner.full_name = f"{first.strip()} {last.strip()}"[:120]
+            extra = {"onboarding_done": True, "access_level": level, "department_ids": department_ids}
+        log_action(session, hr.id, "team.approve", MODULE_ID, submission_id=submission_id, person_id=pid, **extra)
         session.commit()
     except IntegrityError:
         session.rollback()
@@ -630,10 +649,16 @@ def hr_users(session: Session) -> list[dict]:
             f"""SELECT u.id, u.full_name, u.email,
                 (SELECT p.id FROM {S}people p WHERE p.user_id = u.id
                     OR (p.user_id IS NULL AND lower(p.email) = lower(u.email)) ORDER BY (p.user_id IS NULL), p.id LIMIT 1) AS person_id
-                FROM trendsetter_hub.users u WHERE u.is_active ORDER BY u.full_name, u.id"""
+                FROM trendsetter_hub.users u WHERE u.is_active AND NOT u.onboarding ORDER BY u.full_name, u.id"""
         )
     ).mappings().all()
     return [{"id": r["id"], "fullName": r["full_name"], "email": r["email"], "personId": r["person_id"]} for r in rows]
+
+
+def hr_departments(session: Session) -> list[dict]:
+    """Справочник отделов для диалога одобрения (HR не администратор: /admin/departments ему закрыт)."""
+    rows = session.execute(text("SELECT id, name FROM trendsetter_hub.departments ORDER BY id")).mappings().all()
+    return [{"id": r["id"], "name": r["name"]} for r in rows]
 
 
 def _req_text(d: dict, key: str, limit: int) -> str:
