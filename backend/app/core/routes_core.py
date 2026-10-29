@@ -1,7 +1,7 @@
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field, StringConstraints, field_validator
 from sqlalchemy import func, select, text, update
 from sqlalchemy.orm import Session
@@ -84,8 +84,8 @@ def runs(limit: int = 5, user: User = Depends(get_current_user)) -> list:
 
 
 @router.get("/home/weather")
-def home_weather(user: User = Depends(get_current_user)) -> dict:
-    return home.weather_payload()
+def home_weather(city: str | None = Query(None, max_length=40), user: User = Depends(get_current_user)) -> dict:
+    return home.weather_payload(city)
 
 
 @router.get("/home/rates")

@@ -23,11 +23,29 @@ HTTP_TIMEOUT = 5.0
 
 MET_URL = "https://api.met.no/weatherapi/locationforecast/2.0/complete?lat={lat:.4f}&lon={lon:.4f}"
 MET_SOURCE = "MET Norway"
-# TODO(Q-H7): города и валюты — жёсткие константы
+# Белый список городов: URL к MET строится только из него. Копия зон — frontend/src/core/home/myCity.js. TODO(Q-H7)/TODO(Q-W3): список подтверждает пользователь
 CITIES = (
     {"id": "yerevan", "lat": 40.1792, "lon": 44.4991, "timezone": "Asia/Yerevan"},
     {"id": "moscow", "lat": 55.7558, "lon": 37.6173, "timezone": "Europe/Moscow"},
+    {"id": "saintPetersburg", "lat": 59.9386, "lon": 30.3141, "timezone": "Europe/Moscow"},
+    {"id": "kazan", "lat": 55.7961, "lon": 49.1064, "timezone": "Europe/Moscow"},
+    {"id": "krasnodar", "lat": 45.0355, "lon": 38.9753, "timezone": "Europe/Moscow"},
+    {"id": "yekaterinburg", "lat": 56.8389, "lon": 60.6057, "timezone": "Asia/Yekaterinburg"},
+    {"id": "novosibirsk", "lat": 55.0084, "lon": 82.9357, "timezone": "Asia/Novosibirsk"},
+    {"id": "minsk", "lat": 53.9006, "lon": 27.5590, "timezone": "Europe/Minsk"},
+    {"id": "tbilisi", "lat": 41.7151, "lon": 44.8271, "timezone": "Asia/Tbilisi"},
+    {"id": "baku", "lat": 40.4093, "lon": 49.8671, "timezone": "Asia/Baku"},
+    {"id": "almaty", "lat": 43.2220, "lon": 76.8512, "timezone": "Asia/Almaty"},
+    {"id": "astana", "lat": 51.1605, "lon": 71.4704, "timezone": "Asia/Almaty"},
+    {"id": "tashkent", "lat": 41.2995, "lon": 69.2401, "timezone": "Asia/Tashkent"},
+    {"id": "bishkek", "lat": 42.8746, "lon": 74.5698, "timezone": "Asia/Bishkek"},
+    {"id": "istanbul", "lat": 41.0082, "lon": 28.9784, "timezone": "Europe/Istanbul"},
+    {"id": "dubai", "lat": 25.2048, "lon": 55.2708, "timezone": "Asia/Dubai"},
+    {"id": "belgrade", "lat": 44.7866, "lon": 20.4489, "timezone": "Europe/Belgrade"},
 )
+DEFAULT_CITY_IDS = ("yerevan", "moscow")
+# Контрольные окна дня: (id, начало, конец, опорный час), часы местные, start <= hour < end
+SLOTS = (("morning", 6, 11, 8), ("noon", 11, 13, 12), ("lunch", 13, 17, 14), ("evening", 17, 22, 19))
 WEATHER_DAYS = 7
 WEATHER_MIN_INTERVAL = 3600  # не чаще раза в час
 WEATHER_MAX_AGE = 24 * 3600  # старше — не отдаём
@@ -126,9 +144,67 @@ def aggregate_days(timeseries: list[dict], tz_name: str) -> dict[str, dict]:
     return out
 
 
-def parse_met(payload: dict, tz_name: str) -> tuple[str | None, dict[str, dict]]:
+def _num(value) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def aggregate_slots(timeseries: list[dict], tz_name: str) -> dict[str, list[dict]]:
+    """{ 'YYYY-MM-DD': [окна с данными в порядке SLOTS] } по почасовым точкам (есть next_1_hours), см. TZ-home-weather.md."""
+    tz = ZoneInfo(tz_name)
+    buckets: dict[str, dict[str, list[tuple[datetime, dict]]]] = {}
+    for item in timeseries:
+        try:
+            t = datetime.fromisoformat(item["time"].replace("Z", "+00:00")).astimezone(tz)
+        except (KeyError, ValueError, AttributeError):
+            continue
+        data = item.get("data")
+        if not isinstance(data, dict) or not data.get("next_1_hours"):
+            continue
+        for slot_id, start, end, _ref in SLOTS:
+            if start <= t.hour < end:
+                buckets.setdefault(t.date().isoformat(), {}).setdefault(slot_id, []).append((t, data))
+                break
+    out: dict[str, list[dict]] = {}
+    for day, by_slot in buckets.items():
+        slots = []
+        for slot_id, _start, _end, ref in SLOTS:
+            points = sorted(by_slot.get(slot_id, []), key=lambda p: p[0])
+            if not points:
+                continue
+            temps = [(t, ((d.get("instant") or {}).get("details") or {}).get("air_temperature")) for t, d in points]
+            temps = [(t, v) for t, v in temps if _num(v)]
+            ref_temp = next((v for t, v in temps if t.hour == ref), temps[0][1] if temps else None)
+            symbols: list[str] = []
+            precip = 0.0
+            winds = []
+            for _t, d in points:
+                one = d["next_1_hours"] if isinstance(d["next_1_hours"], dict) else {}
+                symbol = strip_symbol((one.get("summary") or {}).get("symbol_code"))
+                if symbol and symbol not in symbols:
+                    symbols.append(symbol)
+                amount = (one.get("details") or {}).get("precipitation_amount")
+                if _num(amount):
+                    precip += amount
+                wind = ((d.get("instant") or {}).get("details") or {}).get("wind_speed")
+                if _num(wind):
+                    winds.append(wind)
+            slots.append({
+                "id": slot_id,
+                "temp": round_half_up(ref_temp) if ref_temp is not None else None,
+                "tempMin": round_half_up(min(v for _t, v in temps)) if temps else None,
+                "tempMax": round_half_up(max(v for _t, v in temps)) if temps else None,
+                "symbols": symbols,
+                "precip": round(precip, 1),
+                "wind": round(max(winds), 1) if winds else None,
+            })
+        out[day] = slots
+    return out
+
+
+def parse_met(payload: dict, tz_name: str) -> tuple[str | None, dict[str, dict], dict[str, list[dict]]]:
     props = payload["properties"]
-    return (props.get("meta") or {}).get("updated_at"), aggregate_days(props["timeseries"], tz_name)
+    timeseries = props["timeseries"]
+    return (props.get("meta") or {}).get("updated_at"), aggregate_days(timeseries, tz_name), aggregate_slots(timeseries, tz_name)
 
 
 def select_days(days_by_date: dict[str, dict], tz_name: str, now: datetime) -> list[dict]:
@@ -143,19 +219,18 @@ def select_days(days_by_date: dict[str, dict], tz_name: str, now: datetime) -> l
 
 def _new_city_state() -> dict:
     return {
-        "days_by_date": {}, "updated_at": None, "fetched_at": 0.0, "expires_at": 0.0,
+        "days_by_date": {}, "slots_by_date": {}, "updated_at": None, "fetched_at": 0.0, "expires_at": 0.0,
         "last_modified": None, "next_try_at": 0.0, "failed": False,
     }
 
 
-_weather: dict[str, dict] = {c["id"]: _new_city_state() for c in CITIES}
+_weather: dict[str, dict] = {}  # состояние города создаётся лениво; ключи — только id из CITIES
 _rates: dict = {"data": None, "fetched_at": 0.0, "next_try_at": 0.0, "failed": False}
 
 
 def reset_cache() -> None:
     with _lock:
-        for c in CITIES:
-            _weather[c["id"]] = _new_city_state()
+        _weather.clear()
     with _rates_lock:
         _rates.update({"data": None, "fetched_at": 0.0, "next_try_at": 0.0, "failed": False})
 
@@ -176,9 +251,9 @@ def _refresh_city(city: dict, state: dict, now: float) -> None:
         if response.status_code == 304:
             state.update(fetched_at=now, expires_at=_expires_ts(response, now), failed=False)
         elif response.status_code == 200:
-            updated_at, days = parse_met(response.json(), city["timezone"])
+            updated_at, days, slots = parse_met(response.json(), city["timezone"])
             state.update(
-                days_by_date=days, updated_at=updated_at, fetched_at=now, expires_at=_expires_ts(response, now),
+                days_by_date=days, slots_by_date=slots, updated_at=updated_at, fetched_at=now, expires_at=_expires_ts(response, now),
                 last_modified=response.headers.get("Last-Modified"), failed=False,
             )
         else:
@@ -188,17 +263,39 @@ def _refresh_city(city: dict, state: dict, now: float) -> None:
         state.update(next_try_at=now + RETRY_AFTER_FAILURE, failed=True)
 
 
-def weather_payload() -> dict:
+def _empty_slot(slot_id: str) -> dict:
+    return {"id": slot_id, "temp": None, "tempMin": None, "tempMax": None, "symbols": [], "precip": None, "wind": None}
+
+
+def _slots_today(state: dict, today_key: str, today_date: date, now_local: datetime, tz: ZoneInfo) -> list[dict]:
+    by_id = {s["id"]: s for s in state["slots_by_date"].get(today_key, [])}
+    return [
+        {**by_id.get(slot_id, _empty_slot(slot_id)), "past": now_local >= datetime.combine(today_date, time(end), tzinfo=tz)}
+        for slot_id, _start, end, _ref in SLOTS
+    ]
+
+
+def weather_payload(city_id: str | None = None) -> dict:
+    """Города по умолчанию + (если city_id — известный id вне DEFAULT_CITY_IDS) он третьим. Значение city_id нигде не отражается."""
+    ids = list(DEFAULT_CITY_IDS)
+    if city_id and city_id not in ids and any(c["id"] == city_id for c in CITIES):
+        ids.append(city_id)
     cities = []
     with _lock:
         now_dt = _now()
         now = now_dt.timestamp()
-        for city in CITIES:
-            state = _weather[city["id"]]
+        for city in (next(c for c in CITIES if c["id"] == i) for i in ids):
+            state = _weather.setdefault(city["id"], _new_city_state())
             if now >= max(state["fetched_at"] + WEATHER_MIN_INTERVAL, state["expires_at"]) and now >= state["next_try_at"]:
                 _refresh_city(city, state, now)
             fresh = bool(state["days_by_date"]) and now - state["fetched_at"] <= WEATHER_MAX_AGE
             days = select_days(state["days_by_date"], city["timezone"], now_dt) if fresh else []
+            if days:
+                tz = ZoneInfo(city["timezone"])
+                now_local = now_dt.astimezone(tz)
+                # слоты — только если «сегодня» есть и по нему есть почасовые данные (иначе форма дня как в V1)
+                if days[0]["date"] == now_local.date().isoformat() and state["slots_by_date"].get(days[0]["date"]):
+                    days[0]["slots"] = _slots_today(state, days[0]["date"], now_local.date(), now_local, tz)
             cities.append({
                 "id": city["id"],
                 "timezone": city["timezone"],
