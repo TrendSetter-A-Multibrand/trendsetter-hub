@@ -6,6 +6,8 @@ from fastapi import APIRouter
 from sqlalchemy.orm import Session
 
 from app.core.models import User
+from app.modules.feedback import service as feedback_service
+from app.modules.feedback.router import router as feedback_router
 from app.modules.holidays.router import router as holidays_router
 from app.modules.hr import reminders as hr_reminders
 from app.modules.hr import service as hr_service
@@ -39,4 +41,5 @@ MODULES: list[ModuleManifest] = [
     ModuleManifest("team", "Карта команды", "roadmap", team_router, for_all=True),
     ModuleManifest("news", "Новости", "mvp", news_router, for_all=True, badge=news_service.badge, home_editor=True),
     ModuleManifest("holidays", "Производственный календарь", "mvp", holidays_router, for_all=True),
+    ModuleManifest("feedback", "Обратная связь", "mvp", feedback_router, for_all=True, badge=feedback_service.badge),
 ]
