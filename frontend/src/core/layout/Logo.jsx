@@ -4,9 +4,9 @@ import strings from '../strings.js'
 
 // Логотип — оригинальный вектор из дизайн-системы (01 Атомы, trendsetter_logo), не перерисован и не набран текстом.
 // Цвет — currentColor: Red в светлой теме, White в тёмной (официальные варианты логотипа).
-export default function Logo() {
+export default function Logo({ className = '' }) {
   return (
-    <Link to="/" className="brand-logo" aria-label={strings.brand}>
+    <Link to="/" className={`brand-logo${className ? ` ${className}` : ''}`} aria-label={strings.brand}>
       <span aria-hidden="true" dangerouslySetInnerHTML={{ __html: logoSvg }} />
     </Link>
   )

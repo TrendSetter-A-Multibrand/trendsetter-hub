@@ -7,6 +7,7 @@ import RatesCard from '../home/RatesCard.jsx'
 import WeatherCard from '../home/WeatherCard.jsx'
 import strings from '../strings.js'
 import mascot from '../layout/mascot.svg'
+import Logo from '../layout/Logo.jsx'
 
 const s = strings.hub
 const formatToday = () => new Date().toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' })
@@ -37,6 +38,7 @@ export default function HubPage() {
     <div className="stack home">
       {widgetsOf('banner')}
       <header className="greeting">
+        <Logo className="home-logo" />
         <div className="greeting-date">{today}</div>
         <div className="greeting-row">
           <span className="greeting-mascot">
