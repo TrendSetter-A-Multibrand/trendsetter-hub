@@ -1,5 +1,4 @@
-// Тема antd: Soft Minimalism + TRENDSETTER — нейтралка из палитры Claude.ai (тёплый stone/cream), белые поверхности,
-// скругления 8/14, Inter Tight Regular/Medium, TS · Motion, фирменный Red как акцент.
+// Тема antd: Soft Minimalism + TRENDSETTER — фон Warm Off-White, белые поверхности, скругления 8/14, Inter Tight Regular/Medium, TS · Motion.
 // Две палитры — светлая и тёмная; значения совпадают с переменными в styles.css (:root и [data-theme='dark']).
 // antd считает оттенки hover/active сам, поэтому здесь конкретные цвета, а не var(--…).
 import { theme as antdTheme } from 'antd'
@@ -8,15 +7,15 @@ const PALETTE = {
   // fill — заливка главной кнопки (белый текст), link — красный текст на фоне темы
   light: {
     fill: '#A22325', fillHover: '#861C1E', fillActive: '#7E1A1C', link: '#A22325', linkHover: '#861C1E',
-    ink: '#141413', muted: '#3D3D3A', page: '#FAF9F6', surface: '#FFFFFF', surface2: '#F5F4ED',
-    border: '#BCBCBB', borderSoft: '#DDDDDD', rowBorder: '#DDDDDD', forest: '#265B19', warn: '#5A4815',
-    mask: 'rgba(20,20,19,.45)', track: '#E7E7E0',
+    ink: '#232120', muted: '#4D4946', page: '#F6F3EE', surface: '#FFFFFF', surface2: '#FAF8F5',
+    border: '#D5D1CB', borderSoft: '#E5E2DD', rowBorder: '#EFECE8', forest: '#2F6B52', warn: '#8F5A10',
+    mask: 'rgba(35,33,32,.45)', track: '#EFEBE5',
   },
   dark: {
     fill: '#B8302F', fillHover: '#C9403F', fillActive: '#A12827', link: '#E8807E', linkHover: '#F0A09E',
-    ink: '#FAF9F5', muted: '#C2C0B6', page: '#141413', surface: '#30302E', surface2: '#262624',
-    border: '#4C4C48', borderSoft: '#41413E', rowBorder: '#41413E', forest: '#7AB948', warn: '#D1A041',
-    mask: 'rgba(0,0,0,.6)', track: '#3B3B39',
+    ink: '#EDEBE8', muted: '#B9B4AF', page: '#1A1918', surface: '#232120', surface2: '#2A2826',
+    border: '#4A4643', borderSoft: '#363331', rowBorder: '#2D2B29', forest: '#7CC4A0', warn: '#E0B356',
+    mask: 'rgba(0,0,0,.6)', track: '#34312F',
   },
 }
 
