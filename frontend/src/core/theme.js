@@ -15,7 +15,7 @@ const PALETTE = {
   dark: {
     fill: '#B8302F', fillHover: '#C9403F', fillActive: '#A12827', link: '#E8807E', linkHover: '#F0A09E',
     ink: '#FAF9F5', muted: '#C2C0B6', page: '#141413', surface: '#30302E', surface2: '#262624',
-    border: '#64645F', borderSoft: '#4A4A46', rowBorder: '#4A4A46', forest: '#7AB948', warn: '#D1A041',
+    border: '#4C4C48', borderSoft: '#41413E', rowBorder: '#41413E', forest: '#7AB948', warn: '#D1A041',
     mask: 'rgba(0,0,0,.6)', track: '#3B3B39',
   },
 }

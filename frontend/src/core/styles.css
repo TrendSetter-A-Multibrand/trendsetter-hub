@@ -144,23 +144,25 @@
   --text-on-inverse: #141413;
   --bg-inverse: #FAF9F5;
   --bg-inverse-hover: #DEDCD1;
-  --border-default: #64645F;        /* border #DEDCD1 @ 30% на карточке */
-  --border-subtle: #4A4A46;         /* border #DEDCD1 @ 15% */
-  --border-strong: #76756F;         /* border #DEDCD1 @ 40% — фокус поля, выбранное */
-  --border-input: #64645F;
+  /* Границы в тёмной теме приглушены сильнее формулы Claude (16/10/26% вместо 30/15/40%) — на тёмном фоне
+     та же непрозрачность выглядит жёстче, чем на светлом; разделение карточек и так даёт контраст с --bg-page. */
+  --border-default: #4C4C48;        /* border #DEDCD1 @ 16% на карточке */
+  --border-subtle: #41413E;         /* border #DEDCD1 @ 10% */
+  --border-strong: #5D5D58;         /* border #DEDCD1 @ 26% — фокус поля, выбранное */
+  --border-input: #4C4C48;
   --accent-primary: #E8807E;
   --accent-fill: #B8302F;
   --accent-fill-hover: #C9403F;
   --accent-disabled: #5A3434;
   --accent-soft: #3A2626;
   --status-info: #80AADD;
-  --status-info-soft: #253E5F;
+  --status-info-soft: #2A3849;      /* смягчено к тону карточки — спокойнее на тёмном фоне, см. комментарий у border-default */
   --status-success: #7AB948;
-  --status-success-soft: #1B4614;
+  --status-success-soft: #243C20;
   --status-warning: #D1A041;
-  --status-warning-soft: #483A0F;
+  --status-warning-soft: #3D361D;
   --status-error: #EE8884;
-  --status-error-soft: #602A28;
+  --status-error-soft: #4A2D2B;
   --overlay: rgba(0, 0, 0, .6);
   --focus-ring: #E8807E;
   --blue: var(--data-1);
