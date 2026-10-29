@@ -1,3 +1,4 @@
+import { App } from 'antd'
 import Avatar from './Avatar.jsx'
 import AwayTag from './AwayTag.jsx'
 import strings from '../strings.js'
@@ -43,6 +44,7 @@ function ExtraValue({ item }) {
 }
 
 export default function ProfileDrawer({ person, by, limited, away, onSelect, onClose, onEditOwn }) {
+  const { message } = App.useApp()
   const fullPhoto = useFullPhoto(person.id, !limited && Boolean(person.thumb))
   const chain = chainOf(by, person.id)
   const facts = [
@@ -54,6 +56,15 @@ export default function ProfileDrawer({ person, by, limited, away, onSelect, onC
   const socials = (person.socials ?? []).filter((l) => safeLink(l.url))
   const extra = limited ? [] : (person.extra ?? []).filter((e) => (e.kind !== 'links' || e.value.some((l) => safeLink(l.url))))
   const hasContacts = Boolean(person.telegram || person.email)
+  const copyEmail = async (e) => {
+    e.preventDefault()
+    try {
+      await navigator.clipboard.writeText(person.email)
+      message.success(s.emailCopied)
+    } catch {
+      message.error(s.emailCopyFailed)
+    }
+  }
   const incomplete =
     !limited && facts.length === 0 && !person.responsibility && !person.askMeAbout && hobbies.length === 0 && !hasContacts && socials.length === 0 && extra.length === 0
 
@@ -143,7 +154,7 @@ export default function ProfileDrawer({ person, by, limited, away, onSelect, onC
                 </a>
               )}
               {person.email && (
-                <a href={`mailto:${person.email}`}>
+                <a href={`mailto:${person.email}`} onClick={copyEmail} title={s.emailCopyHint}>
                   <span className="mono tm-contact-k">{s.email}</span>
                   {person.email}
                 </a>
