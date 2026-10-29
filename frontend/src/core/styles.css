@@ -57,6 +57,7 @@
   /* ---- Типографика ---- */
   --font-sans: 'Inter Tight', 'Inter', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
   --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --font-display: 'Comfortaa', var(--font-sans); /* только приветствие на главной — круглый, «бабл» акцент */
   --fs-caption: 12px;   /* служебные подписи, даты */
   --fs-small: 13px;     /* вторичный текст */
   --fs-body: 14px;      /* текст интерфейса, таблицы */
@@ -488,7 +489,7 @@ a:hover { color: var(--accent-fill-hover); }
 /* Приветствие: крупное лого, дата-плашка и персональный заголовок; тонкая красная черта — фирменный акцент */
 .greeting { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-12); padding: var(--space-16) 0 var(--space-8); animation: greeting-in var(--motion-enter) var(--motion-ease) both; }
 .home-logo.brand-logo {
-  width: clamp(120px, 14vw, 200px); margin-bottom: var(--space-8);
+  width: clamp(220px, 24vw, 380px); align-self: center; margin-bottom: var(--space-8);
   animation: home-logo-in 650ms var(--motion-ease) both;
 }
 .greeting-date { font-size: var(--fs-small); color: var(--text-secondary); padding: 4px 10px; border-radius: var(--radius-sm); background: var(--bg-surface); box-shadow: var(--shadow-card); }
@@ -496,9 +497,9 @@ a:hover { color: var(--accent-fill-hover); }
 .greeting-row { display: flex; align-items: center; gap: var(--space-16); }
 .greeting-mascot { width: 52px; height: 52px; flex: none; border-radius: 50%; overflow: hidden; box-shadow: var(--shadow-card); }
 .greeting-mascot img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.greeting h1 { margin: 0; font-size: 48px; font-weight: var(--fw-medium); letter-spacing: -0.03em; line-height: 1.08; text-wrap: balance; }
-/* Имя — тем же шрифтом (Inter Tight), но курсивным насыщенным начертанием: выразительный акцент без смены гарнитуры */
-.greeting h1 .accent { color: var(--accent-primary); font-style: italic; font-weight: 600; letter-spacing: -0.02em; }
+/* Приветствие — отдельный «бабл»-шрифт (Comfortaa, круглый, жирный), заметно отличается от основного текста интерфейса */
+.greeting h1 { margin: 0; font-family: var(--font-display); font-size: 40px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.15; text-wrap: balance; }
+.greeting h1 .accent { color: var(--accent-primary); }
 .greeting h1::after { content: ''; display: block; width: 48px; height: 3px; margin-top: var(--space-16); border-radius: 2px; background: var(--accent-fill); animation: greeting-bar 500ms var(--motion-ease) 150ms both; }
 @keyframes greeting-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @keyframes greeting-bar { from { width: 0; } to { width: 48px; } }
