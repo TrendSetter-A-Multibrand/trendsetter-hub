@@ -103,6 +103,8 @@ def validate_finish(session: Session, access_level: str | None, department_ids: 
     if access_level not in allowed_levels:
         raise HTTPException(422, m.UNKNOWN_LEVEL)
     ids = sorted(set(department_ids))
+    if any(not 0 < i < 32768 for i in ids):  # id отделов — smallint: иное значение — несуществующий отдел, а не ошибка БД
+        raise HTTPException(422, m.UNKNOWN_DEPARTMENT)
     found = set(session.scalars(select(Department.id).where(Department.id.in_(ids))).all()) if ids else set()
     if set(ids) != found:
         raise HTTPException(422, m.UNKNOWN_DEPARTMENT)
