@@ -206,6 +206,16 @@ docker exec -u root trendsetter-hub-api rm -rf /tmp/team-import                 
 
 **Откат** (`alembic downgrade 0016`): учётки без уровня отключаются и получают `viewer`; флаги, срок и общий пароль теряются.
 
+## Обратная связь (ревизия 0018)
+`18_feedback.sql`: таблица `feedback_messages` — сообщения сотрудников (благодарность, предложение, жалоба, другое). Столбцы: `kind` — тип; `body` — текст; `is_anonymous`; `author_id` — автор (у анонимных всегда `NULL`); `contact_ok` — «разрешаю HR связаться» (только у неанонимных); `recipient_id` — адресат (только у благодарности); `status` — `new` / `in_progress` / `closed`; `note` — внутренний комментарий читателя; `created_at`, `updated_at`, `updated_by` — кто из читателей разбирал (при создании `NULL`). **У анонимных сообщений автор не хранится нигде**: ни в таблице, ни в `audit_log`, ни в уведомлениях. Текст и комментарий хранятся только зашифрованными (`HUB_PII_KEY`, формат `enc:v1:…`): `CHECK … LIKE 'enc:v1:%'` отвергает открытый текст. Права hub_app — автоматически (`ALTER DEFAULT PRIVILEGES` из `01_core_hub.sql`). Скрипт идемпотентен.
+
+**Выкат 0018** (`deploy.sh` миграции не выполняет):
+1. Под doadmin в `defaultdb` выполнить `db/18_feedback.sql` (после `db/17_onboarding.sql`; порядок выката БД: `0014` → … → `0017` → `0018`).
+2. Под doadmin выполнить `deploy/stamp_alembic_0018.sql` (версия миграции `0017` → `0018`).
+3. Только после этого — merge в `main`. Иначе `/modules/feedback/*` и `/core/me` (бейдж) отвечают 500. На сервере должен быть задан `HUB_PII_KEY`, иначе отправка вернёт 503.
+
+**Откат** (`alembic downgrade 0017`): таблица `feedback_messages` и **все сообщения удаляются безвозвратно**.
+
 ## Модуль «Склад»
 Листы Google Таблицы «Склад-приёмка» стали таблицами: Приемки → `warehouse_receipts`, Раскладки → `warehouse_receipt_plans`, Счётчики → `warehouse_box_counters` и `warehouse_pallet_pointers`, Сканы → `warehouse_scans`, Короба → `warehouse_boxes`, Хранение → `warehouse_storage_boxes`, Хранение — архив → `warehouse_storage_archive`, Секции → `warehouse_extra_sections`, Коды ЧЗ → `warehouse_marks`, Сводка → представление `warehouse_receipt_summary`. Условия, которые раньше защищал `LockService`, держит база: уникальность кода ЧЗ, одно место на короб, уникальное имя приёмки, номера коробов через функцию `warehouse_next_box_number()`, повтор отправки скана отсекается по id.
 
