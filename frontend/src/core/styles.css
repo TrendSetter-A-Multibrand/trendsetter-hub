@@ -1,7 +1,8 @@
 /* =====================================================================================================
    Хаб TRENDSETTER — основа интерфейса: токены (светлая и тёмная темы), типографика, каркас, общие блоки.
-   Направление — Soft Minimalism + TRENDSETTER: фон Warm Off-White, белые карточки со скруглением, деликатные цветовые зоны,
-   фирменный Red как единственный яркий акцент. Шрифты — Inter Tight + Geist Mono (TRENDSETTER Design System v2.0).
+   Направление — Soft Minimalism + TRENDSETTER: нейтралка (фон/текст/границы/статусы) — палитра интерфейса Claude.ai
+   (тёплый stone/cream), белые карточки со скруглением, фирменный Red как единственный яркий акцент.
+   Шрифты — Inter Tight + Geist Mono (TRENDSETTER Design System v2.0).
    Модули используют только эти токены; свои цвета модулям не нужны.
    ===================================================================================================== */
 
@@ -9,42 +10,46 @@
   color-scheme: light;
 
   /* ---- Семантические токены (переключаются темой) ---- */
-  --bg-page: #F6F3EE;               /* Warm Off-White — единый фон всех страниц (утверждён) */
-  --bg-sidebar: #F6F3EE;            /* меню на том же фоне, отделено тонкой линией: навигация лёгкая */
-  --bg-surface: #FFFFFF;            /* карточки, таблицы, окна */
-  --bg-surface-secondary: #FAF8F5;  /* hover строки, плашки внутри карточки */
-  --bg-surface-tertiary: #EFEBE5;   /* нажатое / выбранное нейтральное, подложка переключателей */
-  /* Цветовые зоны (приглушённые, только как фон крупных блоков) */
+  /* Фон, текст, границы и статусы — палитра интерфейса Claude.ai (тёплый stone/cream), подтверждена пользователем
+     как основа нейтралки хаба; красный акцент и шрифты — свои, TRENDSETTER. */
+  --bg-page: #FAF9F5;               /* самый дальний план (канва страницы) */
+  --bg-sidebar: #FAF9F5;            /* меню на фоне страницы, отделено тонкой линией */
+  --bg-surface: #FFFFFF;            /* карточки, таблицы, окна — передний план */
+  --bg-surface-secondary: #F5F4ED;  /* hover строки, вторичные панели */
+  --bg-surface-tertiary: #E7E7E0;   /* нажатое / выбранное нейтральное */
+  /* Цветовые зоны (приглушённые, только как фон крупных блоков) — свои, не из палитры Claude */
   --zone-mint: #EAF2EC;             /* события, «готово» */
   --zone-blue: #EDF0F6;             /* информационные виджеты */
   --zone-sand: #F8EFDF;             /* важные объявления */
   --zone-mint-line: #D5E5DA;
   --zone-blue-line: #DCE1EC;
   --zone-sand-line: #EEDDBF;
-  --text-primary: #232120;          /* Sage — основной текст */
-  --text-secondary: #4D4946;        /* подписи, AA на белом и фоне */
-  --text-tertiary: #635E5A;         /* мелкие служебные подписи, AA на белом, фоне и зонах */
+  --text-primary: #141413;
+  --text-secondary: #3D3D3A;
+  --text-tertiary: #706F69;         /* чуть темнее исходного #73726C — иначе не проходил AA на bg-surface-secondary */
   --text-on-accent: #FFFFFF;
-  --text-on-inverse: #FFFFFF;       /* текст на заливке --bg-inverse */
-  --bg-inverse: #232120;            /* тёмная кнопка / выбранный чип */
-  --bg-inverse-hover: #3A3735;
-  --border-default: #E5E2DD;        /* светло-серые деликатные рамки карточек */
-  --border-subtle: #EFECE8;         /* линии между строками внутри карточки */
-  --border-strong: #232120;         /* фокус поля, выбранное */
-  --border-input: #D5D1CB;
-  --accent-primary: #A22325;        /* Red: текст-акцент, активный пункт, ссылки */
-  --accent-fill: #A22325;           /* Red: заливка главной кнопки, бейджи */
+  --text-on-inverse: #FAF9F5;       /* текст на заливке --bg-inverse */
+  --bg-inverse: #141413;            /* тёмная кнопка / выбранный чип */
+  --bg-inverse-hover: #30302E;
+  --border-default: #BCBCBB;        /* border #1F1E1D @ 30% на белой карточке */
+  --border-subtle: #DDDDDD;         /* border #1F1E1D @ 15% — линии между строками */
+  --border-strong: #A5A5A5;         /* border #1F1E1D @ 40% — фокус поля, выбранное */
+  --border-input: #BCBCBB;
+  --accent-primary: #A22325;        /* Red TRENDSETTER: текст-акцент, активный пункт, ссылки */
+  --accent-fill: #A22325;
   --accent-fill-hover: #861C1E;
   --accent-disabled: #D9B8B8;
-  --accent-soft: #F6E7E6;           /* мягкое красное выделение */
-  --status-success: #2F6B52;        /* приглушённый Forest */
-  --status-success-soft: var(--zone-mint);
-  --status-warning: #8F5A10;
-  --status-warning-soft: var(--zone-sand);
-  --status-error: #A22325;
-  --status-error-soft: #F7E4E2;
+  --accent-soft: #F6E7E6;
+  --status-info: #3063A8;           /* чуть темнее исходного #3266AD — иначе не проходил AA */
+  --status-info-soft: #D6E4F6;
+  --status-success: #265B19;
+  --status-success-soft: #E9F1DC;
+  --status-warning: #5A4815;
+  --status-warning-soft: #F6EEDF;
+  --status-error: #7F2C28;
+  --status-error-soft: #F7ECEC;
   --marker: #F3D03E;                /* Marker — жёлтая плашка, точечно */
-  --overlay: rgba(35, 33, 32, .5);
+  --overlay: rgba(20, 20, 19, .5);
   --focus-ring: #A22325;
   /* Палитра данных: диаграммы, направления, категории — приглушённая, различимая, без кислотных тонов */
   --data-1: #4A6B9A; --data-2: #A85F33; --data-3: #3F7A5F; --data-4: #B57AA6; --data-5: #C9A443; --data-6: #3F7F7A; --data-7: #A9A39E;
@@ -78,7 +83,7 @@
   --radius-control: 8px;
   --radius-sm: 6px;
   /* Тень одна, очень мягкая — только чтобы белая карточка отделилась от серого фона */
-  --shadow-card: 0 1px 2px rgba(35, 33, 32, .04), 0 2px 8px rgba(35, 33, 32, .04);
+  --shadow-card: 0 1px 2px rgba(20, 20, 19, .04), 0 2px 8px rgba(20, 20, 19, .04);
 
   /* ---- Движение (TS · Motion) ---- */
   --motion-hover: 150ms;
@@ -116,47 +121,49 @@
   --tint-sand: var(--zone-sand);
 }
 
-/* Тёмная тема: собственные токены — тёплый графит в тон Warm Off-White (не инверсия светлой),
-   три уровня поверхностей, светлый текст без чистого белого. Red для текста светлее (AA на тёмном), для заливок — насыщенный. */
+/* Тёмная тема — та же палитра Claude.ai, свой тёплый графит вместо инверсии светлой.
+   «Канва» страницы — почти чёрная, карточка светлее неё (передний план), тот же порядок уровней, что в светлой. */
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg-page: #1A1918;
-  --bg-sidebar: #1A1918;
-  --bg-surface: #232120;
-  --bg-surface-secondary: #2A2826;
-  --bg-surface-tertiary: #34312F;
+  --bg-page: #141413;
+  --bg-sidebar: #141413;
+  --bg-surface: #30302E;
+  --bg-surface-secondary: #262624;
+  --bg-surface-tertiary: #3B3B39;
   --zone-mint: #1D2722;
   --zone-blue: #1F232C;
   --zone-sand: #2C261E;
   --zone-mint-line: #2B3A31;
   --zone-blue-line: #2D3340;
   --zone-sand-line: #413727;
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, .3);
-  --text-primary: #EDEBE8;
-  --text-secondary: #B9B4AF;
-  --text-tertiary: #9E9893;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, .35);
+  --text-primary: #FAF9F5;
+  --text-secondary: #C2C0B6;
+  --text-tertiary: #9C9A92;
   --text-on-accent: #FFFFFF;
-  --text-on-inverse: #1A1918;
-  --bg-inverse: #EDEBE8;
-  --bg-inverse-hover: #D4D0CB;
-  --border-default: #363331;
-  --border-subtle: #2D2B29;
-  --border-strong: #EDEBE8;
-  --border-input: #4A4643;
+  --text-on-inverse: #141413;
+  --bg-inverse: #FAF9F5;
+  --bg-inverse-hover: #DEDCD1;
+  --border-default: #64645F;        /* border #DEDCD1 @ 30% на карточке */
+  --border-subtle: #4A4A46;         /* border #DEDCD1 @ 15% */
+  --border-strong: #76756F;         /* border #DEDCD1 @ 40% — фокус поля, выбранное */
+  --border-input: #64645F;
   --accent-primary: #E8807E;
   --accent-fill: #B8302F;
   --accent-fill-hover: #C9403F;
   --accent-disabled: #5A3434;
   --accent-soft: #3A2626;
-  --status-success: #7CC4A0;
-  --status-success-soft: var(--zone-mint);
-  --status-warning: #E0B356;
-  --status-warning-soft: var(--zone-sand);
-  --status-error: #E8807E;
-  --status-error-soft: #3A2727;
+  --status-info: #80AADD;
+  --status-info-soft: #253E5F;
+  --status-success: #7AB948;
+  --status-success-soft: #1B4614;
+  --status-warning: #D1A041;
+  --status-warning-soft: #483A0F;
+  --status-error: #EE8884;
+  --status-error-soft: #602A28;
   --overlay: rgba(0, 0, 0, .6);
   --focus-ring: #E8807E;
-  --blue: #9DB4DA;
+  --blue: var(--data-1);
   --data-1: #7E9CC8; --data-2: #D28E5F; --data-3: #6FAE90; --data-4: #CC97C0; --data-5: #D9BA62; --data-6: #72B3AD; --data-7: #8F8984;
 }
 
@@ -506,7 +513,7 @@ a:hover { color: var(--accent-fill-hover); }
 }
 .home-panel.events { background: var(--zone-mint); border-color: var(--zone-mint-line); box-shadow: none; }
 .home-aside .home-card { background: var(--zone-blue); border-color: var(--zone-blue-line); box-shadow: none; }
-.home-panel.events .news-row, .home-aside .home-card .clock, .home-aside .home-card .rates-row { border-color: rgba(35, 33, 32, .08); }
+.home-panel.events .news-row, .home-aside .home-card .clock, .home-aside .home-card .rates-row { border-color: rgba(20, 20, 19, .08); }
 :root[data-theme='dark'] .home-panel.events .news-row, :root[data-theme='dark'] .home-aside .home-card .clock,
 :root[data-theme='dark'] .home-aside .home-card .rates-row { border-color: rgba(255, 255, 255, .07); }
 .home-card-head, .news-col-title {
@@ -521,7 +528,7 @@ a:hover { color: var(--accent-fill-hover); }
 .clock-city { font-family: var(--font-sans); font-size: var(--fs-small); color: var(--text-secondary); }
 .clock-time { font-family: var(--font-mono); font-size: 26px; font-weight: var(--fw-regular); line-height: 1.2; font-variant-numeric: tabular-nums; }
 
-.weather-city { display: flex; flex-direction: column; gap: var(--space-8); padding: var(--space-12) 0; border-top: 1px solid rgba(35, 33, 32, .08); }
+.weather-city { display: flex; flex-direction: column; gap: var(--space-8); padding: var(--space-12) 0; border-top: 1px solid rgba(20, 20, 19, .08); }
 :root[data-theme='dark'] .weather-city { border-top-color: rgba(255, 255, 255, .07); }
 .weather-city:first-of-type { border-top: 0; }
 .weather-city-head { display: flex; align-items: baseline; gap: var(--space-12); }
@@ -558,12 +565,12 @@ a:hover { color: var(--accent-fill-hover); }
 /* Всплывающие слои: мягкая тень вместо жёсткой рамки */
 .ant-popover-inner, .ant-dropdown-menu, .ant-select-dropdown, .ant-picker-dropdown .ant-picker-panel-container,
 .ant-modal-content, .ant-message-notice-content, .ant-notification-notice, .ant-dropdown .ant-dropdown-menu {
-  box-shadow: 0 8px 28px rgba(35, 33, 32, .12) !important; border: 1px solid var(--border-default);
+  box-shadow: 0 8px 28px rgba(20, 20, 19, .12) !important; border: 1px solid var(--border-default);
 }
 :root[data-theme='dark'] .ant-popover-inner, :root[data-theme='dark'] .ant-dropdown-menu, :root[data-theme='dark'] .ant-select-dropdown,
 :root[data-theme='dark'] .ant-picker-dropdown .ant-picker-panel-container, :root[data-theme='dark'] .ant-modal-content,
 :root[data-theme='dark'] .ant-message-notice-content { box-shadow: 0 8px 28px rgba(0, 0, 0, .45) !important; }
-.ant-drawer-content-wrapper { box-shadow: -8px 0 32px rgba(35, 33, 32, .12) !important; }
+.ant-drawer-content-wrapper { box-shadow: -8px 0 32px rgba(20, 20, 19, .12) !important; }
 /* Таблицы antd — внутри скруглённой карточки */
 .ant-table-wrapper .ant-table { border: 1px solid var(--border-default); border-radius: var(--radius-card); overflow: hidden; box-shadow: var(--shadow-card); }
 .ant-table-wrapper .ant-table-container { border-radius: var(--radius-card); }
