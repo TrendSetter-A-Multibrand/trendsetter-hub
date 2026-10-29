@@ -1,12 +1,13 @@
 import { Suspense, useState } from 'react'
 import { Navigate } from 'react-router-dom'
-import { Button, Steps, Typography } from 'antd'
+import { Button, Steps } from 'antd'
 import { DEMO_MODE } from '../config.js'
 import { ONBOARDING_PROFILE_FORM } from '../../modules/registry.js'
 import { onboardingStep } from '../auth/onboarding.js'
 import { useAuth } from '../auth/useAuth.js'
 import DemoUserSwitcher from '../layout/DemoUserSwitcher.jsx'
 import Logo from '../layout/Logo.jsx'
+import PageHead from '../layout/PageHead.jsx'
 import strings from '../strings.js'
 import ChangePasswordForm from './ChangePasswordForm.jsx'
 
@@ -26,45 +27,32 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh' }}>
-      {DEMO_MODE && (
-        <div className="demo-banner">
-          <span className="dot" />
-          <span>{strings.demoBanner}</span>
-          <span className="switcher">
-            <DemoUserSwitcher />
-          </span>
-        </div>
-      )}
-      <header style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 24px' }}>
-        <div style={{ width: 136 }}>
+    <div className="onboarding-shell">
+      <div className="onboarding-bar">
+        <div className="onboarding-logo">
           <Logo />
         </div>
-        <Typography.Text type="secondary" style={{ marginLeft: 'auto' }}>
-          {me.email}
-        </Typography.Text>
-        <Button onClick={logout}>{strings.layout.logout}</Button>
-      </header>
-      <main style={{ maxWidth: 720, margin: '0 auto', padding: '8px 24px 48px' }}>
-        <Typography.Title level={3} style={{ marginTop: 0 }}>
-          {s.title}
-        </Typography.Title>
-        <Steps
-          current={step === 'password' ? 0 : 1}
-          items={[{ title: s.steps.password }, { title: s.steps.profile }]}
-          style={{ marginBottom: 24 }}
-        />
+        <div className="onboarding-bar-actions">
+          {DEMO_MODE && (
+            <>
+              <span className="demo-flag">{strings.layout.demoData}</span>
+              <DemoUserSwitcher />
+            </>
+          )}
+          <span className="mono-label">{me.email}</span>
+          <Button onClick={logout}>{strings.layout.logout}</Button>
+        </div>
+      </div>
+      <main className="stack onboarding">
+        <PageHead eyebrow={s.eyebrow} title={s.title} subtitle={step === 'password' ? s.passwordHint : s.profileHint} />
+        <Steps current={step === 'password' ? 0 : 1} items={[{ title: s.steps.password }, { title: s.steps.profile }]} />
         {step === 'password' ? (
-          <>
-            <Typography.Paragraph>{s.passwordHint}</Typography.Paragraph>
-            <ChangePasswordForm onChanged={refreshMe} />
-          </>
+          <ChangePasswordForm onChanged={refreshMe} />
         ) : (
           <>
-            <Typography.Paragraph>{s.profileHint}</Typography.Paragraph>
-            <Button onClick={checkStatus} style={{ marginBottom: 16 }}>
-              {s.checkStatus}
-            </Button>
+            <div>
+              <Button onClick={checkStatus}>{s.checkStatus}</Button>
+            </div>
             <Suspense fallback={null}>
               <ProfileForm key={formKey} onboarding />
             </Suspense>

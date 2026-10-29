@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Alert, App, Button, Descriptions, Form, Input, Popconfirm, Space, Spin, Typography } from 'antd'
 import { api } from '../api/index.js'
 import { formatDateTime } from '../format.js'
+import SectionHead from '../layout/SectionHead.jsx'
 import strings from '../strings.js'
 
 const s = strings.admin.onboarding
@@ -60,7 +61,8 @@ export default function OnboardingTab() {
 
   const domains = info.domains ?? [info.domain]
   return (
-    <div style={{ maxWidth: 560 }}>
+    <div className="onboarding-admin">
+      <SectionHead id="admin-onboarding" title={strings.admin.tabOnboarding} />
       <Descriptions column={1} size="small" style={{ marginBottom: 24 }}>
         <Descriptions.Item label={s.passwordLabel}>
           {info.passwordSet ? s.passwordSet(info.updatedAt ? formatDateTime(info.updatedAt) : null, info.updatedBy) : s.passwordNotSet}
