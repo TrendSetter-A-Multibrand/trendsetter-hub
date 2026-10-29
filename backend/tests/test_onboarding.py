@@ -543,7 +543,7 @@ def test_admin_onboarding_password_and_info(client, db, admin, shared, hr):
     for pw in ("я" * 40, "x" * 129):  # больше 72 байт / больше 128 символов
         assert client.post("/admin/onboarding/password", json={"password": pw}, headers=admin).status_code == 422
     r = client.get("/admin/onboarding", headers=admin)
-    assert set(r.json()) == {"passwordSet", "domain", "updatedAt", "updatedBy", "ttlDays", "dailyLimit", "registeredToday"}
+    assert set(r.json()) == {"passwordSet", "domain", "domains", "updatedAt", "updatedBy", "ttlDays", "dailyLimit", "registeredToday"}
     assert r.json()["domain"] == "trendsettercrew.com" and r.json()["ttlDays"] == 14 and r.json()["dailyLimit"] == 20
     assert "$2" not in r.text and SHARED not in r.text
     for method, path in (
@@ -551,6 +551,18 @@ def test_admin_onboarding_password_and_info(client, db, admin, shared, hr):
         ("POST", "/admin/users/1/onboarding/finish"), ("POST", "/admin/users/1/onboarding/delete"),
     ):
         assert client.request(method, path, json={"password": SHARED + "1", "access_level": "viewer"}, headers=hr).status_code == 403, path
+
+
+def test_admin_can_clear_shared_password(client, db, admin, shared):
+    register(client, "first@trendsettercrew.com")
+    r = client.post("/admin/onboarding/password", json={"password": ""}, headers=admin)
+    assert r.status_code == 200 and r.json()["passwordSet"] is False and r.json()["domains"] == ["trendsettercrew.com"]
+    db.rollback()
+    assert db.execute(text("SELECT password_hash FROM trendsetter_hub.onboarding_settings")).scalar_one() is None
+    assert post_login(client, "second@trendsettercrew.com", SHARED).status_code == 401  # самосоздание выключено
+    assert post_login(client, "first@trendsettercrew.com", SHARED).status_code == 401  # и вход общим паролем тоже
+    assert count_users(db, "second@trendsettercrew.com") == 0
+    assert len(audit(db, "core.onboarding_password_clear")) == 1
 
 
 def test_admin_patch_does_not_finish_onboarding(client, db, admin, shared):

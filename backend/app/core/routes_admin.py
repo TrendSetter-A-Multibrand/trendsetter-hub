@@ -168,7 +168,8 @@ def _onboarding_out(session: Session) -> dict:
     updated_by = session.get(User, row.updated_by) if row and row.updated_by else None
     return {
         "passwordSet": bool(row and row.password_hash),
-        "domain": onboarding.SELF_REGISTER_DOMAIN,
+        "domain": onboarding.SELF_REGISTER_DOMAINS[0],
+        "domains": list(onboarding.SELF_REGISTER_DOMAINS),
         "updatedAt": row.updated_at.isoformat() if row and row.password_hash and row.updated_at else None,
         "updatedBy": updated_by.full_name if updated_by else None,
         "ttlDays": onboarding.ONBOARDING_TTL_DAYS,
@@ -189,6 +190,15 @@ class OnboardingPasswordBody(BaseModel):
 @router.post("/onboarding/password")
 def set_onboarding_password(body: OnboardingPasswordBody, me: User = Depends(require_manager), session: Session = Depends(get_session)) -> dict:
     pw = body.password
+    if pw == "":  # пусто = очистить общий пароль: самосоздание и вход общим паролем выключены
+        row = onboarding.settings_row(session)
+        if row is not None:
+            row.password_hash = None
+            row.updated_at = datetime.now(UTC)
+            row.updated_by = me.id
+        log_action(session, me.id, "core.onboarding_password_clear")
+        session.commit()
+        return _onboarding_out(session)
     if len(pw) < onboarding.SHARED_PASSWORD_MIN_LEN or len(pw) > CHANGE_MAX_CHARS or len(pw.encode()) > MAX_PASSWORD_BYTES:
         raise HTTPException(422, m.ONBOARDING_PASSWORD_INVALID)
     row = onboarding.settings_row(session)

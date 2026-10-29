@@ -17,7 +17,7 @@ from app.core.audit import log_action
 from app.core.models import Department, OnboardingSettings, User, UserDepartment
 from app.core.security import hash_password, verify_password
 
-SELF_REGISTER_DOMAIN = "trendsettercrew.com"  # D1: домен — константа, редактора нет
+SELF_REGISTER_DOMAINS = ("trendsettercrew.com",)  # D1: домены — кортеж констант (второй домен — правка одной строки); редактора нет
 ONBOARDING_TTL_DAYS = 14
 SELF_REGISTER_DAILY_LIMIT = 20
 HR_LEVELS = ("employee", "viewer", "superuser")  # admin выдаёт только администратор
@@ -39,11 +39,11 @@ def settings_row(session: Session) -> OnboardingSettings | None:
 
 
 def self_register_email_ok(email_key: str) -> bool:
-    """D2: почта в нижнем регистре; одна «@», локальная часть [a-z0-9._-]{1,64}, домен в точности SELF_REGISTER_DOMAIN."""
+    """D2: почта в нижнем регистре; одна «@», локальная часть [a-z0-9._-]{1,64}, домен в точности из SELF_REGISTER_DOMAINS (поддомены не проходят)."""
     if len(email_key) > EMAIL_MAX_LEN or email_key.count("@") != 1:
         return False
     local, domain = email_key.split("@")
-    return domain == SELF_REGISTER_DOMAIN and LOCAL_PART_RE.fullmatch(local) is not None
+    return domain in SELF_REGISTER_DOMAINS and LOCAL_PART_RE.fullmatch(local) is not None
 
 
 def shared_eligible(user: User) -> bool:
