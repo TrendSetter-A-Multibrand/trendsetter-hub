@@ -4,6 +4,7 @@ import strings from '../../strings.js'
 import { validateNewPassword } from '../../auth/passwordRules.js'
 import { ApiError } from '../client.js'
 import { data, DEMO_PASSWORD } from './data.js'
+import { sharedPasswordOk } from './onboarding.js'
 
 const err = strings.errors
 const MAX_FAILS = 5
@@ -43,14 +44,17 @@ export function createAuthHandlers({ userFromToken: auth, audit, personIdOfUser,
       const newPassword = body?.newPassword
       if (typeof oldPassword !== 'string' || typeof newPassword !== 'string') throw new ApiError(422, err.invalid)
       if (recentFails(user.id).length >= MAX_FAILS) throw new ApiError(429, err.tooManyAttempts)
-      if (oldPassword !== passwordOf(user)) {
+      // «Текущий пароль»: личный или (шаг «пароль» новичка) общий стартовый
+      if (oldPassword !== passwordOf(user) && !sharedPasswordOk(user, oldPassword)) {
         fails.get(user.id).push(now())
         throw new ApiError(401, err.wrongOldPassword)
       }
       const problem = validateNewPassword(oldPassword, newPassword)
       if (problem) throw new ApiError(422, problem)
+      if (user.must_change_password && sharedPasswordOk(user, newPassword)) throw new ApiError(422, strings.profile.settings.password.sameAsOld)
       fails.delete(user.id)
       setPassword(user.id, newPassword)
+      user.must_change_password = false
       audit.log(user.id, 'core.password_change', { personId: personIdOfUser(user.id) })
       return { token: issueToken(user.id) }
     },

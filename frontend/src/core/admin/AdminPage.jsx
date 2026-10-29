@@ -5,6 +5,7 @@ import strings from '../strings.js'
 import UsersTab from './UsersTab.jsx'
 import DepartmentsTab from './DepartmentsTab.jsx'
 import GroupsTab from './GroupsTab.jsx'
+import OnboardingTab from './OnboardingTab.jsx'
 
 export default function AdminPage() {
   const [users, setUsers] = useState(null)
@@ -59,6 +60,11 @@ export default function AdminPage() {
             key: 'groups',
             label: strings.admin.tabGroups,
             children: <GroupsTab groups={groups} users={users} reload={reload} />,
+          },
+          {
+            key: 'onboarding',
+            label: strings.admin.tabOnboarding,
+            children: <OnboardingTab />,
           },
         ]}
       />

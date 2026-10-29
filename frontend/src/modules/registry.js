@@ -51,6 +51,9 @@ export const MODULES = [
 
 export const getModule = (id) => MODULES.find((m) => m.id === id)
 
+// Форма анкеты для экрана онбординга (ядро не импортирует modules/team напрямую).
+export const ONBOARDING_PROFILE_FORM = lazy(() => import('./team/components/MyProfileSection.jsx'))
+
 // Разделы страницы профиля (/profile). Ядро само ничего не знает про модули: порядок вкладок = порядок здесь.
 //   id        — значение ?section= в адресе;
 //   label     — подпись вкладки;

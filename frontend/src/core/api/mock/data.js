@@ -166,5 +166,9 @@ export const data = {
   passwords: {},
   tokenVersions: {},
 
+  // Онбординг: общий стартовый пароль (null = самосоздание выключено), время его задания, кто задал; registeredAt — моменты самосозданий (суточный лимит).
+  // Флаги онбординга (must_change_password, onboarding, onboarding_expires_at) у пользователей появляются при самосоздании; нет флага = false.
+  onboarding: { password: 'Start-demo-2026', updatedAt: '2026-10-29T09:00:00.000Z', updatedBy: 1, registeredAt: [] },
+
   nextId: { user: 15, department: 6, preset: 4, group: 2 },
 }

@@ -89,7 +89,7 @@ function UserModal({ mode, user, users, departments, onClose, onSaved }) {
         onFinish={submit}
         initialValues={
           mode === 'edit'
-            ? { access_level: user.access_level, department_ids: user.department_ids }
+            ? { access_level: user.access_level ?? undefined, department_ids: user.department_ids }
             : { department_ids: [] }
         }
       >
@@ -138,17 +138,77 @@ function UserModal({ mode, user, users, departments, onClose, onSaved }) {
   )
 }
 
+// Завершение онбординга администратором без анкеты: уровень (все четыре, обязательный) и отделы
+function FinishOnboardingModal({ user, departments, onClose, onSaved }) {
+  const { message } = App.useApp()
+  const [form] = Form.useForm()
+  const [saving, setSaving] = useState(false)
+  const level = Form.useWatch('access_level', form)
+
+  const submit = async (values) => {
+    setSaving(true)
+    try {
+      await api.post(`/admin/users/${user.id}/onboarding/finish`, { access_level: values.access_level, department_ids: values.department_ids ?? [] })
+      message.success(s.finished)
+      await onSaved()
+    } catch (e) {
+      message.error(e.message)
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Modal
+      open
+      title={s.finishTitle(user.full_name)}
+      okText={s.finish}
+      cancelText={strings.cancel}
+      confirmLoading={saving}
+      onCancel={onClose}
+      onOk={() => form.submit()}
+    >
+      <Typography.Paragraph type="secondary">{s.finishHint}</Typography.Paragraph>
+      <Form form={form} layout="vertical" onFinish={submit} initialValues={{ department_ids: [] }}>
+        <Form.Item
+          name="access_level"
+          label={s.level}
+          rules={[{ required: true, message: s.finishLevelRequired }]}
+          extra={level ? strings.levelDescriptions[level] : undefined}
+        >
+          <Select placeholder={s.levelPlaceholder} options={ACCESS_LEVELS.map((l) => ({ value: l, label: strings.levels[l] }))} />
+        </Form.Item>
+        <Form.Item name="department_ids" label={s.departments}>
+          <Select mode="multiple" placeholder={s.departmentsPlaceholder} options={departments.map((d) => ({ value: d.id, label: d.name }))} />
+        </Form.Item>
+      </Form>
+    </Modal>
+  )
+}
+
+const isExpired = (user) => Boolean(user.must_change_password && user.onboarding_expires_at && new Date(user.onboarding_expires_at) < new Date())
+
 export default function UsersTab({ users, departments, groups, reload }) {
   const { message } = App.useApp()
   const { me } = useAuth()
   const [modal, setModal] = useState(null) // { mode: 'add' } | { mode: 'edit', user }
   const [resetFor, setResetFor] = useState(null)
   const [rightsFor, setRightsFor] = useState(null)
+  const [finishFor, setFinishFor] = useState(null)
 
   const toggleActive = async (user) => {
     try {
       await api.patch(`/admin/users/${user.id}`, { is_active: !user.is_active })
       message.success(user.is_active ? s.disabledDone : s.enabledDone)
+      await reload()
+    } catch (e) {
+      message.error(e.message)
+    }
+  }
+
+  const onboardingAction = async (user, action, done) => {
+    try {
+      await api.post(`/admin/users/${user.id}/onboarding/${action}`)
+      message.success(done)
       await reload()
     } catch (e) {
       message.error(e.message)
@@ -161,7 +221,7 @@ export default function UsersTab({ users, departments, groups, reload }) {
     {
       title: s.level,
       dataIndex: 'access_level',
-      render: (level) => <Tag>{strings.levels[level]}</Tag>,
+      render: (level) => (level ? <Tag>{strings.levels[level]}</Tag> : strings.dash),
     },
     {
       title: s.departments,
@@ -182,8 +242,11 @@ export default function UsersTab({ users, departments, groups, reload }) {
     {
       title: s.status,
       dataIndex: 'is_active',
-      render: (active) => (
-        <Tag color={active ? 'green' : 'default'}>{active ? s.active : s.disabled}</Tag>
+      render: (active, user) => (
+        <>
+          <Tag color={active ? 'green' : 'default'}>{active ? s.active : s.disabled}</Tag>
+          {user.onboarding && <Tag color={isExpired(user) ? 'red' : 'blue'}>{isExpired(user) ? s.onboardingExpiredTag : s.onboardingTag}</Tag>}
+        </>
       ),
     },
     {
@@ -215,6 +278,34 @@ export default function UsersTab({ users, departments, groups, reload }) {
               <Button size="small">{user.is_active ? s.disable : s.enable}</Button>
             </Popconfirm>
           )}
+          {user.onboarding && user.must_change_password && (
+            <Popconfirm
+              title={s.extendConfirm(user.full_name)}
+              okText={s.extend}
+              cancelText={strings.cancel}
+              onConfirm={() => onboardingAction(user, 'extend', s.extended)}
+            >
+              <Button size="small">{s.extend}</Button>
+            </Popconfirm>
+          )}
+          {user.onboarding && !user.must_change_password && (
+            <Button size="small" onClick={() => setFinishFor(user)}>
+              {s.finish}
+            </Button>
+          )}
+          {user.onboarding && user.id !== me.id && (
+            <Popconfirm
+              title={s.deleteConfirm}
+              okText={s.deleteYes}
+              okButtonProps={{ danger: true }}
+              cancelText={strings.cancel}
+              onConfirm={() => onboardingAction(user, 'delete', s.deleted)}
+            >
+              <Button size="small" danger>
+                {s.deleteOnboarding}
+              </Button>
+            </Popconfirm>
+          )}
         </Space>
       ),
     },
@@ -234,6 +325,17 @@ export default function UsersTab({ users, departments, groups, reload }) {
       />
       {resetFor && <ResetPasswordModal user={resetFor} onClose={() => setResetFor(null)} />}
       {rightsFor && <UserPermissionsModal user={rightsFor} onClose={() => setRightsFor(null)} />}
+      {finishFor && (
+        <FinishOnboardingModal
+          user={finishFor}
+          departments={departments}
+          onClose={() => setFinishFor(null)}
+          onSaved={async () => {
+            setFinishFor(null)
+            await reload()
+          }}
+        />
+      )}
       {modal && (
         <UserModal
           mode={modal.mode}

@@ -24,6 +24,19 @@ import { createHomeHandlers } from './home.js'
 import { createNewsHandlers } from './news.js'
 import { createHolidaysHandlers } from './holidays.js'
 import { createWbHandlers } from './wb.js'
+import {
+  HR_LEVELS,
+  MOCK_DOMAIN,
+  ONBOARDING_TTL_DAYS,
+  SELF_REGISTER_DAILY_LIMIT,
+  SHARED_PASSWORD_MIN_LEN,
+  registeredToday,
+  selfRegister,
+  selfRegisterEmailOk,
+  sharedPasswordOk,
+  sharedPasswordSet,
+  withOnboardingGate,
+} from './onboarding.js'
 
 const err = strings.errors
 
@@ -86,7 +99,9 @@ function findUser(id) {
   return user
 }
 
-const team = createTeamHandlers({ userFromToken, accessTo })
+// Новичок на шаге «анкета» видит анкету: уровня ещё нет, поэтому для team ему отдаётся view (как own_profile_user на сервере)
+const teamAccessTo = (user, moduleId) => (moduleId === 'team' && user.onboarding && !user.must_change_password ? 'view' : accessTo(user, moduleId))
+const team = createTeamHandlers({ userFromToken, accessTo: teamAccessTo })
 const notifications = createNotificationHandlers({ userFromToken, requireManager, findUser })
 const isHrResponsible = (user) => isModuleResponsible(user, groupPermissionsOf(user, 'hr'))
 // Журнал HR: читает ответственный за HR или администратор; пишут в него фабрики hr/hrOps и смена пароля
@@ -139,14 +154,73 @@ function moduleBadges(user) {
   return badges
 }
 
-export const handlers = {
+const onboardingOut = () => ({
+  passwordSet: sharedPasswordSet(),
+  domain: MOCK_DOMAIN,
+  domains: [MOCK_DOMAIN],
+  updatedAt: sharedPasswordSet() ? data.onboarding.updatedAt : null,
+  updatedBy: data.users.find((u) => u.id === data.onboarding.updatedBy)?.full_name ?? null,
+  ttlDays: ONBOARDING_TTL_DAYS,
+  dailyLimit: SELF_REGISTER_DAILY_LIMIT,
+  registeredToday: registeredToday(),
+})
+
+function findOnboardingUser(id) {
+  const user = findUser(id)
+  if (!user.onboarding) throw new ApiError(422, err.onboardingNotActive)
+  return user
+}
+
+// team.js не меняется: онбординг-надстройка над его обработчиками (метка в списке заявок, справочник отделов, доступ при одобрении)
+const teamSubmissions = team.handlers['GET /modules/team/hr/submissions']
+const teamApprove = team.handlers['POST /modules/team/hr/submissions/:id/approve']
+const teamOverrides = {
+  'GET /modules/team/hr/submissions': async (request) => {
+    const list = await teamSubmissions(request)
+    return list.map((x) => ({ ...x, userOnboarding: Boolean(data.users.find((u) => u.id === x.userId)?.onboarding) }))
+  },
+
+  'GET /modules/team/hr/departments': ({ token }) => {
+    if (accessTo(userFromToken(token), 'hr') !== 'run') throw new ApiError(403, err.forbidden)
+    return [...data.departments].sort((a, b) => a.id - b.id).map(({ id, name }) => ({ id, name }))
+  },
+
+  'POST /modules/team/hr/submissions/:id/approve': async (request) => {
+    const list = await teamSubmissions({ token: request.token, query: { status: 'all' } }) // заодно проверка прав HR
+    const sub = list.find((x) => x.id === Number(request.params.id))
+    const owner = sub?.status === 'pending' ? data.users.find((u) => u.id === sub.userId) : null
+    const onboardingOwner = owner?.onboarding ? owner : null
+    const b = request.body ?? {}
+    if (onboardingOwner) {
+      // все проверки доступа — до записей, как на сервере
+      if (!b.accessLevel) throw new ApiError(422, err.onboardingLevelRequired)
+      if (!HR_LEVELS.includes(b.accessLevel)) throw new ApiError(422, err.unknownLevel)
+      checkDepartmentIds(b.departmentIds ?? [])
+    }
+    const result = await teamApprove(request)
+    if (onboardingOwner) {
+      onboardingOwner.access_level = b.accessLevel
+      onboardingOwner.department_ids = [...new Set(b.departmentIds ?? [])].sort((a, c) => a - c)
+      onboardingOwner.onboarding = false
+      const fullName = [sub.values.first_name, sub.values.last_name].map((v) => (v ?? '').trim()).filter(Boolean)
+      if (fullName.length === 2) onboardingOwner.full_name = fullName.join(' ').slice(0, 120)
+    }
+    return result
+  },
+}
+
+const raw = {
   'POST /auth/login': ({ body }) => {
     const email = (body?.email ?? '').trim().toLowerCase()
+    const password = body?.password
     const user = data.users.find((u) => u.email.toLowerCase() === email)
-    if (!user || !user.is_active || body?.password !== passwordOf(user)) {
-      throw new ApiError(401, err.badCredentials)
+    if (user) {
+      if (!user.is_active || (password !== passwordOf(user) && !sharedPasswordOk(user, password))) throw new ApiError(401, err.badCredentials)
+      return { token: issueToken(user.id) }
     }
-    return { token: issueToken(user.id) }
+    // самосоздание: общий пароль задан и верен, почта проходит правила домена; все отказы — обычный 401
+    if (!sharedPasswordSet() || !selfRegisterEmailOk(email) || password !== data.onboarding.password) throw new ApiError(401, err.badCredentials)
+    return { token: issueToken(selfRegister({ emailKey: email, audit }).id) }
   },
 
   'POST /auth/demo-login': ({ body }) => {
@@ -167,19 +241,23 @@ export const handlers = {
 
   'GET /core/me': ({ token }) => {
     const user = userFromToken(token)
+    // Новичок: права не вычисляются, бейджей и уведомлений нет
+    const gated = Boolean(user.must_change_password || user.onboarding)
     return {
       id: user.id,
       email: user.email,
       full_name: user.full_name,
       access_level: user.access_level,
       departments: data.departments.filter((d) => user.department_ids.includes(d.id)),
-      can_manage_users: canManageUsers(user),
-      module_access: Object.fromEntries(MODULES.map((m) => [m.id, accessTo(user, m.id)])),
+      must_change_password: Boolean(user.must_change_password),
+      onboarding: Boolean(user.onboarding),
+      can_manage_users: !gated && canManageUsers(user),
+      module_access: Object.fromEntries(MODULES.map((m) => [m.id, gated ? 'none' : accessTo(user, m.id)])),
       module_responsible: Object.fromEntries(
-        MODULES.map((m) => [m.id, isModuleResponsible(user, groupPermissionsOf(user, m.id))]),
+        MODULES.map((m) => [m.id, !gated && isModuleResponsible(user, groupPermissionsOf(user, m.id))]),
       ),
-      module_badges: moduleBadges(user),
-      unread_notifications: notifications.unreadCount(user),
+      module_badges: gated ? {} : moduleBadges(user),
+      unread_notifications: gated ? 0 : notifications.unreadCount(user),
     }
   },
 
@@ -289,6 +367,68 @@ export const handlers = {
     return {}
   },
 
+  'GET /admin/onboarding': ({ token }) => {
+    requireManager(token)
+    return onboardingOut()
+  },
+
+  // пустой пароль = очистить общий пароль (самосоздание и вход общим паролем выключены)
+  'POST /admin/onboarding/password': ({ token, body }) => {
+    const manager = requireManager(token)
+    const password = body?.password
+    if (typeof password !== 'string') throw new ApiError(422, err.invalid)
+    if (password === '') {
+      data.onboarding.password = null
+      audit.log(manager.id, 'core.onboarding_password_clear')
+    } else {
+      const chars = [...password].length
+      if (chars < SHARED_PASSWORD_MIN_LEN || chars > 128 || new TextEncoder().encode(password).length > 72) {
+        throw new ApiError(422, err.onboardingPasswordInvalid)
+      }
+      data.onboarding.password = password
+      audit.log(manager.id, 'core.onboarding_password_set') // без значения
+    }
+    data.onboarding.updatedAt = new Date().toISOString()
+    data.onboarding.updatedBy = manager.id
+    return onboardingOut()
+  },
+
+  'POST /admin/users/:id/onboarding/extend': ({ token, params }) => {
+    const manager = requireManager(token)
+    const user = findUser(params.id)
+    if (!(user.onboarding && user.must_change_password)) throw new ApiError(422, err.onboardingExtendNotAllowed)
+    user.onboarding_expires_at = new Date(Date.now() + ONBOARDING_TTL_DAYS * 24 * 60 * 60 * 1000).toISOString()
+    audit.log(manager.id, 'user.onboarding_extend')
+    return toPublicUser(user)
+  },
+
+  'POST /admin/users/:id/onboarding/finish': ({ token, params, body }) => {
+    const manager = requireManager(token)
+    const user = findOnboardingUser(params.id)
+    if (user.must_change_password) throw new ApiError(422, err.onboardingPasswordPending)
+    if (!ACCESS_LEVELS.includes(body?.access_level)) throw new ApiError(422, err.unknownLevel)
+    checkDepartmentIds(body.department_ids ?? [])
+    user.access_level = body.access_level
+    user.department_ids = [...new Set(body.department_ids ?? [])].sort((a, b) => a - b)
+    user.onboarding = false
+    audit.log(manager.id, 'user.onboarding_finish')
+    return toPublicUser(user)
+  },
+
+  // удаление онбординг-учётки: почта освобождается и снова регистрируется общим паролем (заявки в team.js остаются: расхождение mock)
+  'POST /admin/users/:id/onboarding/delete': ({ token, params }) => {
+    const manager = requireManager(token)
+    const user = findOnboardingUser(params.id)
+    if (user.id === manager.id) throw new ApiError(422, err.selfDisable)
+    audit.log(manager.id, 'user.onboarding_delete')
+    data.users.splice(data.users.indexOf(user), 1)
+    data.groups.forEach((g) => {
+      g.user_ids = g.user_ids.filter((id) => id !== user.id)
+    })
+    delete data.passwords[user.id]
+    return {}
+  },
+
   'GET /admin/departments': ({ token }) => {
     requireManager(token)
     return data.departments.map((d) => ({
@@ -370,6 +510,7 @@ export const handlers = {
   ...auth.handlers,
   ...audit.handlers,
   ...team.handlers,
+  ...teamOverrides,
   ...notifications.handlers,
   ...hr.handlers,
   ...hrOps.handlers,
@@ -380,3 +521,6 @@ export const handlers = {
   ...holidays.handlers,
   ...wb.handlers,
 }
+
+// Шлюз онбординга оборачивает ВСЕ обработчики
+export const handlers = withOnboardingGate(raw, userFromToken)

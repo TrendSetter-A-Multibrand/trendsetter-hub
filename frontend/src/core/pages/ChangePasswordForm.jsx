@@ -7,7 +7,7 @@ import strings from '../strings.js'
 const s = strings.profile.settings.password
 
 // Форма «Смена пароля» в «Настройках». Пароли живут только в полях формы и в теле запроса: не логируются, после ответа очищаются.
-export default function ChangePasswordForm() {
+export default function ChangePasswordForm({ onChanged }) {
   const [form] = Form.useForm()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
@@ -25,6 +25,7 @@ export default function ChangePasswordForm() {
     try {
       const { token } = await api.post('/auth/change-password', { oldPassword: values.oldPassword, newPassword: values.newPassword })
       setToken(token) // прежние сессии закрыты сервером: подменяем сохранённый токен на новый
+      await onChanged?.()
       form.resetFields()
       setDone(true)
     } catch (e) {

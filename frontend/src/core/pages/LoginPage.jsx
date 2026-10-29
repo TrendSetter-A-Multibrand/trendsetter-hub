@@ -162,6 +162,7 @@ export default function LoginPage() {
                 ))}
               </div>
               <span className="login-note">{s.demoHint}</span>
+              <span className="login-note">{s.demoOnboardingHint}</span>
             </div>
           )}
 
