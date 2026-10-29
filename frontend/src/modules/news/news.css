@@ -94,6 +94,8 @@
 .news-swatch.blue { background: var(--blue); }
 .news-swatch.pink { background: var(--data-4); }
 .news-swatch.gray { background: var(--text-tertiary); }
+.news-col-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; }
+.news-col-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: 13px; font-weight: 400; letter-spacing: 0; }
 .news-admin-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
 .news-admin-item { display: flex; flex-direction: column; gap: 6px; padding: 12px 0; border-top: 1px solid var(--border); min-width: 0; }
 .news-admin-item:first-of-type { border-top: 0; }
@@ -106,3 +108,6 @@
   .news-featured { padding: var(--space-24); }
   .news-featured-title { font-size: 28px; }
 }
+
+/* Кнопка «Предложить» в шапке блока новостей: выглядит как ссылка sec-link */
+.news-propose { background: none; border: 0; padding: 0; cursor: pointer; font: inherit; margin-left: var(--space-16); }

@@ -1,5 +1,6 @@
 // Чистые функции модуля «Новости». Без React и браузерных глобалов (storage передаётся параметром).
 import { canSeeData } from '../../../core/access.js'
+import strings from '../strings.js'
 
 export const HIDDEN_BANNER_KEY = 'hub.news.hiddenBanner'
 
@@ -44,6 +45,50 @@ export function eventDateBadge(iso) {
     day: pad(d.getDate()),
     month: MONTHS[d.getMonth()],
     weekday: d.toLocaleDateString('ru-RU', { weekday: 'short' }).toUpperCase(),
+  }
+}
+
+// Состояние формы записи (общей для редактора и предложки) по записи с сервера; item = null — пустая форма
+export const initialOf = (item) => ({
+  kind: item?.kind ?? 'news',
+  title: item?.title ?? '',
+  startsAt: toLocalInput(item?.startsAt),
+  endsAt: toLocalInput(item?.endsAt),
+  place: item?.place ?? '',
+  body: item?.body ?? '',
+  pinned: item?.pinned ?? false,
+  color: item?.color ?? null,
+  rsvpEnabled: item?.rsvpEnabled ?? false,
+  rsvpDeadline: toLocalInput(item?.rsvpDeadline),
+  rsvpNamesPublic: item?.rsvpNamesPublic ?? false,
+})
+
+// Клиентская проверка зеркалит серверную; возвращает текст первой ошибки или null
+export function validate(f) {
+  const errors = strings.editor.errors
+  if (!f.title.trim()) return errors.title
+  if (f.kind === 'news') return null
+  const starts = fromLocalInput(f.startsAt)
+  if (starts === null) return errors.starts
+  const ends = fromLocalInput(f.endsAt)
+  if (ends !== null && ends < starts) return errors.endsBeforeStart
+  const deadline = fromLocalInput(f.rsvpDeadline)
+  if (deadline !== null && deadline > starts) return errors.deadlineAfterStart
+  return null
+}
+
+// Тело запроса из формы; withPinned = false (предложка автора) — без pinned
+export function payloadOf(f, withPinned = true) {
+  const common = { title: f.title.trim(), body: f.body, color: f.color, ...(withPinned ? { pinned: f.pinned } : {}) }
+  if (f.kind === 'news') return common
+  return {
+    ...common,
+    place: f.place.trim() || null,
+    startsAt: fromLocalInput(f.startsAt),
+    endsAt: fromLocalInput(f.endsAt),
+    rsvpEnabled: f.rsvpEnabled,
+    rsvpDeadline: fromLocalInput(f.rsvpDeadline),
+    rsvpNamesPublic: f.rsvpNamesPublic,
   }
 }
 

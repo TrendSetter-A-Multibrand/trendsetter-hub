@@ -3,10 +3,12 @@ import { Link, Outlet, useLocation } from 'react-router-dom'
 import { CloseOutlined, DownOutlined, MenuOutlined, SearchOutlined } from '@ant-design/icons'
 import { useAuth } from '../auth/useAuth.js'
 import { DEMO_MODE } from '../config.js'
+import { isModuleHidden } from '../access.js'
 import { MODULES } from '../../modules/registry.js'
 import strings from '../strings.js'
 import DemoUserSwitcher from './DemoUserSwitcher.jsx'
 import Logo from './Logo.jsx'
+import { moduleNumber } from './moduleNumber.js'
 import NotificationsBell from './NotificationsBell.jsx'
 import ThemeToggle from './ThemeToggle.jsx'
 import logoWhite from './logo-white.svg'
@@ -14,7 +16,6 @@ import logoWhite from './logo-white.svg'
 const s = strings.layout
 const YEAR = new Date().getFullYear()
 
-const pad2 = (n) => String(n).padStart(2, '0')
 const initials = (name) =>
   name
     .split(' ')
@@ -63,10 +64,10 @@ export default function AppLayout() {
     if (menuOpen) setMenuOpen(false)
   }
 
-  // Все модули, кроме скрытых (hidden), остаются в меню; недоступные открываются заглушкой «Нет доступа» (ModulePage)
-  const navModules = MODULES.filter((m) => !m.hidden).map((m, i) => ({
+  // Все модули, кроме скрытых (hidden: boolean или (me) => boolean), остаются в меню; недоступные открываются заглушкой «Нет доступа» (ModulePage)
+  const navModules = MODULES.filter((m) => !isModuleHidden(m, me)).map((m) => ({
     ...m,
-    num: pad2(i + 1),
+    num: moduleNumber(m.id),
     allowed: (me.module_access[m.id] ?? 'none') !== 'none',
   }))
   const crumbs = useCrumbs(navModules)

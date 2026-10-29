@@ -112,6 +112,8 @@ const news = createNewsHandlers({
   userFromToken,
   accessTo,
   isEditor: (u) => isModuleResponsible(u, groupPermissionsOf(u, 'news')) || canManageUsers(u),
+  notify: notifications.notify,
+  userById: (id) => data.users.find((u) => u.id === Number(id)) ?? null,
   errors: getModule('news').strings.errors,
 })
 // WB «Маркировка»: демо-данные сверки, права как у бэкенда (view/run — данные, run — запись документа)
@@ -121,6 +123,7 @@ const wb = createWbHandlers({ userFromToken, accessTo })
 function moduleBadges(user) {
   const badges = { ...team.moduleBadges(user) }
   for (const [id, n] of Object.entries(hr.moduleBadges(user))) badges[id] = (badges[id] ?? 0) + n
+  for (const [id, n] of Object.entries(news.moduleBadges(user))) badges[id] = (badges[id] ?? 0) + n
   return badges
 }
 

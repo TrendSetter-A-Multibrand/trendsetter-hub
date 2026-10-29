@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { useParams } from 'react-router-dom'
 import { Spin } from 'antd'
 import { useAuth } from '../auth/useAuth.js'
+import { isModuleHidden } from '../access.js'
 import { getModule } from '../../modules/registry.js'
 import NotFoundPage from './NotFoundPage.jsx'
 import ForbiddenPage from './ForbiddenPage.jsx'
@@ -12,7 +13,7 @@ export default function ModulePage() {
   const { me } = useAuth()
   const module = getModule(moduleId)
 
-  if (!module || module.hidden) return <NotFoundPage />
+  if (!module || isModuleHidden(module, me)) return <NotFoundPage />
   const access = me.module_access[module.id] ?? 'none'
   if (access === 'none') return <ForbiddenPage />
   if (module.status === 'roadmap' || module.Component === null) {
