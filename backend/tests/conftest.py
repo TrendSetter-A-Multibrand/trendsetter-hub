@@ -71,7 +71,9 @@ def engine(database):
 def clean(database):
     """Пользователи, привязки, журнал и данные склада очищаются перед каждым тестом (отделы и модули — стартовые)."""
     from app.core.routes_auth import reset_password_attempts
+    from app.modules.feedback.service import reset_limits
 
+    reset_limits()  # лимит обратной связи в памяти: id пользователей после TRUNCATE повторяются
     reset_password_attempts()  # id пользователей после TRUNCATE начинаются с 1: счётчик попыток не должен «переезжать» между тестами
     with psycopg.connect(database["db_dsn"], autocommit=True) as conn:
         conn.execute(
