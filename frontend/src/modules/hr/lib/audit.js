@@ -20,7 +20,10 @@ export const ACTION_GROUPS = {
     'hr.plan_add', 'hr.plan_cancel', 'hr.plan_convert', 'hr.policy_update',
   ],
   checklists: ['hr.checklist_start', 'hr.checklist_item', 'hr.checklist_close', 'hr.checklist_cancel', 'hr.template_update'],
-  access: ['core.user_permission_set', 'core.password_change', 'core.password_reset'],
+  access: ['core.user_permission_set', 'core.password_change', 'core.password_reset',
+    'core.onboarding_self_register', 'core.onboarding_password_set', 'core.onboarding_password_clear',
+    'user.onboarding_extend', 'user.onboarding_finish', 'user.onboarding_delete',
+  ],
   export: ['hr.export'],
 }
 

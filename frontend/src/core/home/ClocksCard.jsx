@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import strings from '../strings.js'
-import { CLOCK_ZONES, formatClock, msUntilNextMinute } from './clocks.js'
+import { formatClock, msUntilNextMinute } from './clocks.js'
+import { clockZones } from './myCity.js'
+import CityPicker from './CityPicker.jsx'
 
 const s = strings.hub.home
 
-export default function ClocksCard() {
+export default function ClocksCard({ myCity, onMyCity }) {
   const [now, setNow] = useState(() => new Date())
 
   // Тик по границе минуты, затем раз в 60 с; таймеры очищаются при размонтировании
@@ -20,8 +22,8 @@ export default function ClocksCard() {
     }
   }, [])
 
-  // В шапке главной — только два города (остальные решения демо-витрины не требуют): Ереван и Москва
-  const zones = CLOCK_ZONES.slice(0, 2)
+  // В шапке всегда два блока: без «моего города» — Ереван и Москва (TODO(Q-P2): правило второго блока — в clockZones)
+  const zones = clockZones(myCity ?? null, now)
 
   return (
     <div className="hero-clocks" role="group" aria-label={s.clocksTitle}>
@@ -33,6 +35,7 @@ export default function ClocksCard() {
           <span className="hero-clock-time">{formatClock(now, z.timeZone)}</span>
         </div>
       ))}
+      {onMyCity && <CityPicker className="hero-clocks-gear" value={myCity} onChange={onMyCity} />}
     </div>
   )
 }

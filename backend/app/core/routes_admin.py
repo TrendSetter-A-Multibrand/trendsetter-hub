@@ -1,3 +1,5 @@
+from datetime import UTC, datetime, timedelta
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import func, select
@@ -5,12 +7,22 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core import messages as m
+from app.core import onboarding
 from app.core.access import ACCESS_LEVELS, GROUP_PERMISSIONS
 from app.core.audit import log_action
 from app.core.deps import require_manager
-from app.core.models import AccessGroup, AccessGroupMember, AccessGroupPermission, Department, User, UserDepartment, UserModulePermission
+from app.core.models import (
+    AccessGroup,
+    AccessGroupMember,
+    AccessGroupPermission,
+    Department,
+    OnboardingSettings,
+    User,
+    UserDepartment,
+    UserModulePermission,
+)
 from app.core.registry import MODULES
-from app.core.security import hash_password, password_is_valid
+from app.core.security import MAX_PASSWORD_BYTES, CHANGE_MAX_CHARS, hash_password, password_is_valid
 from app.core.validation import validate_department_code, validate_department_name, validate_group_name, validate_new_user
 from app.db.database import get_session
 
@@ -34,6 +46,9 @@ def _public_user(user: User, department_ids: list[int]) -> dict:
         "access_level": user.access_level,
         "department_ids": department_ids,
         "is_active": user.is_active,
+        "must_change_password": user.must_change_password,
+        "onboarding": user.onboarding,
+        "onboarding_expires_at": user.onboarding_expires_at.isoformat() if user.onboarding_expires_at else None,
     }
 
 
@@ -141,6 +156,121 @@ def reset_password(user_id: int, body: PasswordBody, me: User = Depends(require_
     user.password_hash = hash_password(body.password)
     user.token_version = (user.token_version or 0) + 1  # сессии пользователя закрыты
     log_action(session, me.id, "core.password_reset", target_user_id=user.id)
+    session.commit()
+    return {}
+
+
+# ---------- онбординг нового сотрудника ----------
+
+
+def _onboarding_out(session: Session) -> dict:
+    row = onboarding.settings_row(session)
+    updated_by = session.get(User, row.updated_by) if row and row.updated_by else None
+    return {
+        "passwordSet": bool(row and row.password_hash),
+        "domain": onboarding.SELF_REGISTER_DOMAINS[0],
+        "domains": list(onboarding.SELF_REGISTER_DOMAINS),
+        "updatedAt": row.updated_at.isoformat() if row and row.password_hash and row.updated_at else None,
+        "updatedBy": updated_by.full_name if updated_by else None,
+        "ttlDays": onboarding.ONBOARDING_TTL_DAYS,
+        "dailyLimit": onboarding.SELF_REGISTER_DAILY_LIMIT,
+        "registeredToday": onboarding.self_register_count_24h(session),
+    }
+
+
+@router.get("/onboarding")
+def get_onboarding(_: User = Depends(require_manager), session: Session = Depends(get_session)) -> dict:
+    return _onboarding_out(session)
+
+
+class OnboardingPasswordBody(BaseModel):
+    password: str
+
+
+@router.post("/onboarding/password")
+def set_onboarding_password(body: OnboardingPasswordBody, me: User = Depends(require_manager), session: Session = Depends(get_session)) -> dict:
+    pw = body.password
+    if pw == "":  # пусто = очистить общий пароль: самосоздание и вход общим паролем выключены
+        row = onboarding.settings_row(session)
+        if row is not None:
+            row.password_hash = None
+            row.updated_at = datetime.now(UTC)
+            row.updated_by = me.id
+        log_action(session, me.id, "core.onboarding_password_clear")
+        session.commit()
+        return _onboarding_out(session)
+    if len(pw) < onboarding.SHARED_PASSWORD_MIN_LEN or len(pw) > CHANGE_MAX_CHARS or len(pw.encode()) > MAX_PASSWORD_BYTES:
+        raise HTTPException(422, m.ONBOARDING_PASSWORD_INVALID)
+    row = onboarding.settings_row(session)
+    if row is None:  # строка создаётся миграцией; на случай её отсутствия создаём
+        row = OnboardingSettings(id=1)
+        session.add(row)
+    row.password_hash = hash_password(pw)
+    row.updated_at = datetime.now(UTC)
+    row.updated_by = me.id
+    log_action(session, me.id, "core.onboarding_password_set")  # без значения
+    session.commit()
+    return _onboarding_out(session)
+
+
+def _get_onboarding_user(session: Session, user_id: int) -> User:
+    user = _get_user(session, user_id)
+    if not user.onboarding:
+        raise HTTPException(422, m.ONBOARDING_NOT_ACTIVE)
+    return user
+
+
+@router.post("/users/{user_id}/onboarding/extend")
+def extend_onboarding(user_id: int, me: User = Depends(require_manager), session: Session = Depends(get_session)) -> dict:
+    user = _get_user(session, user_id)
+    if not (user.onboarding and user.must_change_password):
+        raise HTTPException(422, m.ONBOARDING_EXTEND_NOT_ALLOWED)
+    user.onboarding_expires_at = datetime.now(UTC) + timedelta(days=onboarding.ONBOARDING_TTL_DAYS)
+    log_action(session, me.id, "user.onboarding_extend", target_user_id=user.id)
+    session.commit()
+    return _public_user(user, _department_ids_by_user(session).get(user.id, []))
+
+
+class FinishOnboardingBody(BaseModel):
+    access_level: str
+    department_ids: list[int] = []
+
+
+@router.post("/users/{user_id}/onboarding/finish")
+def finish_user_onboarding(
+    user_id: int, body: FinishOnboardingBody, me: User = Depends(require_manager), session: Session = Depends(get_session)
+) -> dict:
+    user = _get_onboarding_user(session, user_id)
+    if user.must_change_password:
+        raise HTTPException(422, m.ONBOARDING_PASSWORD_PENDING)
+    try:
+        onboarding.finish_onboarding(session, user, body.access_level, body.department_ids, ACCESS_LEVELS)
+        log_action(
+            session, me.id, "user.onboarding_finish", target_user_id=user.id, access_level=user.access_level, department_ids=sorted(set(body.department_ids))
+        )
+        session.commit()
+    except IntegrityError:  # например, отдел удалён между проверкой и записью
+        session.rollback()
+        raise HTTPException(409, m.CONFLICT) from None
+    return _public_user(user, _department_ids_by_user(session).get(user.id, []))
+
+
+@router.post("/users/{user_id}/onboarding/delete")
+def delete_onboarding_user(user_id: int, me: User = Depends(require_manager), session: Session = Depends(get_session)) -> dict:
+    user = _get_onboarding_user(session, user_id)
+    if user.id == me.id:
+        raise HTTPException(422, m.SELF_DISABLE)
+    # Запись для разбора пишется до удаления; user_id в журнале после удаления станет NULL
+    log_action(
+        session,
+        me.id,
+        "user.onboarding_delete",
+        target_user_id=user.id,
+        email=user.email,
+        created_at=user.created_at.isoformat() if user.created_at else None,
+        last_login_at=user.last_login_at.isoformat() if user.last_login_at else None,
+    )
+    session.delete(user)
     session.commit()
     return {}
 

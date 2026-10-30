@@ -40,7 +40,7 @@ export const data = {
   ],
 
   // Личные права на модули (поверх групповых; итог — максимум): { userId: { moduleId: 'view' | 'run' | 'responsible' } }
-  userModulePermissions: { 13: { hr: 'responsible' }, 9: { news: 'responsible' } },
+  userModulePermissions: { 13: { hr: 'responsible', feedback: 'responsible' }, 9: { news: 'responsible', holidays: 'responsible' } },
 
   groups: [{ id: 1, name: 'Ответственные склада', permissions: { warehouse: 'responsible' }, user_ids: [8] }],
 
@@ -165,6 +165,10 @@ export const data = {
   // Смена пароля в демо: пароль пользователя (нет записи — DEMO_PASSWORD) и версия токена (нет записи — 0; смена пароля закрывает старые токены)
   passwords: {},
   tokenVersions: {},
+
+  // Онбординг: общий стартовый пароль (null = самосоздание выключено), время его задания, кто задал; registeredAt — моменты самосозданий (суточный лимит).
+  // Флаги онбординга (must_change_password, onboarding, onboarding_expires_at) у пользователей появляются при самосоздании; нет флага = false.
+  onboarding: { password: 'Start-demo-2026', updatedAt: '2026-10-29T09:00:00.000Z', updatedBy: 1, registeredAt: [] },
 
   nextId: { user: 15, department: 6, preset: 4, group: 2 },
 }

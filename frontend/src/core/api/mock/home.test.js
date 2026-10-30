@@ -31,6 +31,24 @@ test('погода: 7 дней от сегодня у обоих городов'
   }
 })
 
+test('погода: ?city — третий город, дефолтные/неизвестные/мусор — 2 города', async () => {
+  const ids = async (q) => (await call(`/core/home/weather${q}`)).cities.map((c) => c.id)
+  assert.deepEqual(await ids('?city=kazan'), ['yerevan', 'moscow', 'kazan'])
+  assert.deepEqual(await ids('?city=moscow'), ['yerevan', 'moscow'])
+  assert.deepEqual(await ids('?city=yerevan'), ['yerevan', 'moscow'])
+  assert.deepEqual(await ids('?city=zzz'), ['yerevan', 'moscow'])
+  assert.deepEqual(await ids('?city='), ['yerevan', 'moscow'])
+})
+
+test('погода: slots только у days[0], 4 окна по порядку', async () => {
+  const out = await call('/core/home/weather?city=dubai')
+  for (const city of out.cities) {
+    assert.deepEqual(city.days[0].slots.map((sl) => sl.id), ['morning', 'noon', 'lunch', 'evening'])
+    assert.ok(city.days.slice(1).every((d) => !('slots' in d)))
+    assert.ok(city.days[0].slots.every((sl) => typeof sl.past === 'boolean' && sl.temp !== null))
+  }
+})
+
 test('курсы: порядок USD, EUR, AMD и номинал AMD', async () => {
   const out = await call('/core/home/rates')
   assert.deepEqual(out.rates.map((r) => r.code), ['USD', 'EUR', 'AMD'])

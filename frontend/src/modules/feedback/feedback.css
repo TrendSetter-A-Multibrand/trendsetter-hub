@@ -1,0 +1,22 @@
+/* Модуль «Обратная связь»: окно отправки, карточка на главной, раздел читателя, вкладка профиля. Только токены ядра (core/styles.css). */
+.fb-form { display: flex; flex-direction: column; gap: var(--space-16); }
+.fb-field { display: flex; flex-direction: column; gap: var(--space-8); }
+.fb-label { font-size: var(--fs-small); color: var(--text-secondary); }
+.fb-counter { align-self: flex-end; font-size: var(--fs-caption); color: var(--text-tertiary); }
+.fb-hint { font-size: var(--fs-small); color: var(--text-secondary); }
+.fb-card-action { margin-top: var(--space-12); }
+
+.fb-admin { display: flex; flex-direction: column; gap: var(--space-16); min-width: 0; }
+.fb-bar { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-12); }
+.fb-empty { font-size: var(--fs-body); color: var(--text-secondary); padding: var(--space-12) 0; }
+.fb-item {
+  display: flex; flex-direction: column; gap: var(--space-8); min-width: 0; padding: var(--space-16);
+  border-top: 1px solid var(--border-default);
+}
+.fb-meta { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-8); }
+.fb-when { font-family: var(--font-mono); font-size: var(--fs-caption); color: var(--text-secondary); }
+.fb-author { font-size: var(--fs-small); font-weight: var(--fw-medium); color: var(--text-primary); }
+.fb-body { font-size: var(--fs-body); color: var(--text-primary); white-space: pre-wrap; overflow-wrap: anywhere; }
+.fb-review { display: flex; flex-direction: column; gap: var(--space-8); padding-top: var(--space-8); border-top: 1px solid var(--border-default); }
+.fb-review .ant-select { align-self: flex-start; min-width: 160px; }
+.fb-review-actions { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-12); }

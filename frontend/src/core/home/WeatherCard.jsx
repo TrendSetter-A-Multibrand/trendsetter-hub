@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react'
 import { Spin } from 'antd'
-import { api } from '../api/index.js'
 import strings from '../strings.js'
 import SectionHead from '../layout/SectionHead.jsx'
 import { dayLabel, formatTemp, weatherKind } from './weather.js'
+import CityPicker from './CityPicker.jsx'
 
 const s = strings.hub.home
 const BAR_H = 88
@@ -36,22 +35,9 @@ function Week({ days }) {
   )
 }
 
-export default function WeatherCard() {
-  const [state, setState] = useState({ loading: true, data: null })
-  const [cityId, setCityId] = useState(null)
-
-  useEffect(() => {
-    let alive = true
-    api
-      .get('/core/home/weather')
-      .then((data) => alive && setState({ loading: false, data }))
-      .catch(() => alive && setState({ loading: false, data: null }))
-    return () => {
-      alive = false
-    }
-  }, [])
-
-  const cities = state.data?.cities ?? []
+// Данные и активный город приходят из useHomeWeather (один запрос на HubPage)
+export default function WeatherCard({ loading, data, cityId, onCity, myCity, onMyCity }) {
+  const cities = data?.cities ?? []
   const city = cities.find((c) => c.id === cityId) ?? cities[0]
   const today = city?.days[0]
   const kind = today ? weatherKind(today.symbol) : null
@@ -67,15 +53,16 @@ export default function WeatherCard() {
                 type="button"
                 className="seg-btn"
                 aria-pressed={c.id === city.id}
-                onClick={() => setCityId(c.id)}
+                onClick={() => onCity(c.id)}
               >
                 {s.cities[c.id]}
               </button>
             ))}
           </span>
         )}
+        <CityPicker className="weather-gear" value={myCity} onChange={onMyCity} />
       </SectionHead>
-      {state.loading ? (
+      {loading ? (
         <Spin size="small" />
       ) : !today ? (
         <div className="home-empty">{city ? s.noData : s.weatherUnavailable}</div>

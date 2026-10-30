@@ -19,7 +19,7 @@ export default function DemoUserSwitcher() {
       placeholder={strings.layout.loginAsPlaceholder}
       value={users.some((u) => u.id === me.id) ? me.id : undefined}
       onChange={(id) => demoLogin(id)}
-      options={users.map((u) => ({ value: u.id, label: `${u.full_name} · ${strings.levels[u.access_level]}` }))}
+      options={users.map((u) => ({ value: u.id, label: `${u.full_name} · ${strings.levels[u.access_level] ?? strings.dash}` }))}
     />
   )
 }

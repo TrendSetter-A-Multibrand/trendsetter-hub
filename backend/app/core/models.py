@@ -27,11 +27,25 @@ class User(Base):
     email: Mapped[str] = mapped_column(Text)
     full_name: Mapped[str] = mapped_column(Text)
     password_hash: Mapped[str] = mapped_column(Text)
-    access_level: Mapped[str] = mapped_column(Text)
+    access_level: Mapped[str | None] = mapped_column(Text, nullable=True)  # NULL — только на онбординге
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     token_version: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    must_change_password: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    onboarding: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    onboarding_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class OnboardingSettings(Base):
+    """Общий стартовый пароль новичков: одна строка (id = 1); password_hash IS NULL — самосоздание выключено."""
+
+    __tablename__ = "onboarding_settings"
+
+    id: Mapped[int] = mapped_column(SmallInteger, primary_key=True, default=1)
+    password_hash: Mapped[str | None] = mapped_column(Text, nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_by: Mapped[int | None] = mapped_column(ForeignKey(f"{SCHEMA}.users.id", ondelete="SET NULL"), nullable=True)
 
 
 class UserDepartment(Base):

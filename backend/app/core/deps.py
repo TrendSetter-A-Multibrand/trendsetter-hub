@@ -11,8 +11,17 @@ from app.db.database import get_session
 
 bearer = HTTPBearer(auto_error=False)
 
+ONBOARDING_CODE = "onboarding_required"
 
-def get_current_user(
+
+class OnboardingRequired(HTTPException):
+    """403 для новичка, который ещё не завершил первый вход: сменил пароль, отправил анкету и получил одобрение HR."""
+
+    def __init__(self) -> None:
+        super().__init__(403, m.ONBOARDING_REQUIRED)
+
+
+def get_authenticated_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
     session: Session = Depends(get_session),
 ) -> User:
@@ -22,6 +31,13 @@ def get_current_user(
     # Смена/сброс пароля увеличивает token_version: прежние токены перестают действовать
     if user is None or not user.is_active or claims[1] != (user.token_version or 0):
         raise HTTPException(401, m.UNAUTHORIZED)
+    return user
+
+
+def get_current_user(user: User = Depends(get_authenticated_user)) -> User:
+    """Все маршруты, кроме /core/me, /auth/change-password и анкеты новичка (own_profile_user), закрыты для новичка здесь."""
+    if user.must_change_password or user.onboarding:
+        raise OnboardingRequired()
     return user
 
 

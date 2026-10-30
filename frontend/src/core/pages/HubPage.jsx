@@ -5,6 +5,9 @@ import { HOME_WIDGETS } from '../../modules/registry.js'
 import ClocksCard from '../home/ClocksCard.jsx'
 import RatesCard from '../home/RatesCard.jsx'
 import WeatherCard from '../home/WeatherCard.jsx'
+import WeatherAdvice from '../home/WeatherAdvice.jsx'
+import { useHomeWeather } from '../home/useHomeWeather.js'
+import { loadMyCity, saveMyCity } from '../home/myCity.js'
 import { api } from '../api/index.js'
 import { ASIDE_WIDGETS } from '../home/asideWidgets.js'
 import { applyWidgetConfig } from '../home/widgetConfig.js'
@@ -20,6 +23,13 @@ export default function HubPage() {
   const [today] = useState(formatToday)
   // Настройка правой колонки (порядок и включение): undefined — грузится, null — не удалось (порядок по умолчанию)
   const [config, setConfig] = useState(undefined)
+  // «Мой город»: общий для часов и погоды (localStorage hub.myCity); null — не выбран, вид как в V1
+  const [myCity, setMyCity] = useState(() => loadMyCity(window.localStorage))
+  const weather = useHomeWeather(myCity)
+  const changeMyCity = (id) => {
+    saveMyCity(window.localStorage, id)
+    setMyCity(id)
+  }
 
   useEffect(() => {
     let alive = true
@@ -59,15 +69,23 @@ export default function HubPage() {
           <h1 className="hero-title">
             {greeting.part}, <span className="hero-name">{greeting.name}</span>!
           </h1>
+          <WeatherAdvice data={weather.data} cityId={weather.cityId} />
         </div>
-        <ClocksCard />
+        <ClocksCard myCity={myCity} onMyCity={changeMyCity} />
         <img className="hero-mascot" src={mascot} alt="" aria-hidden="true" />
       </section>
 
       <div className="home-row">
         {left.length > 0 && <div className="home-main">{left}</div>}
         <div className="home-side">
-          <WeatherCard />
+          <WeatherCard
+            loading={weather.loading}
+            data={weather.data}
+            cityId={weather.cityId}
+            onCity={weather.setCityId}
+            myCity={myCity}
+            onMyCity={changeMyCity}
+          />
         </div>
       </div>
 

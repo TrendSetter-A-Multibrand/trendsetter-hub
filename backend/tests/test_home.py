@@ -2,6 +2,7 @@
 
 from datetime import datetime, timedelta, timezone
 from email.utils import format_datetime
+from zoneinfo import ZoneInfo
 
 import httpx
 import pytest
@@ -64,6 +65,17 @@ def point(time, temp, six=None, one=None):
     if one:
         data["next_1_hours"] = {"summary": {"symbol_code": one}}
     return {"time": time, "data": data}
+
+
+def hour_point(time, temp, symbol="cloudy_day", precip=None, wind=None):
+    """Почасовая точка: есть next_1_hours (символ, осадки), ветер — в instant."""
+    details = {"air_temperature": temp}
+    if wind is not None:
+        details["wind_speed"] = wind
+    one = {"summary": {"symbol_code": symbol}}
+    if precip is not None:
+        one["details"] = {"precipitation_amount": precip}
+    return {"time": time, "data": {"instant": {"details": details}, "next_1_hours": one}}
 
 
 def met(timeseries=None, updated="2026-10-26T07:17:39Z"):
@@ -173,6 +185,59 @@ def test_parse_rates():
 def test_parse_rates_skips_missing_currency():
     payload = {**CBR, "Valute": {k: v for k, v in CBR["Valute"].items() if k != "EUR"}}
     assert [r["code"] for r in home.parse_rates(payload)["rates"]] == ["USD", "AMD"]
+
+
+def _slot_ids(series, tz="Asia/Yerevan"):
+    out = home.aggregate_slots(series, tz)
+    return {d: [s["id"] for s in slots] for d, slots in out.items()}
+
+
+def test_aggregate_slots_boundaries():
+    # Ереван UTC+4: 06:59Z... берём местные часы: 05:00, 06:00, 10:59 (в 10:00 час), 11:00, 21:00, 22:00
+    def at(h):  # местный час h -> UTC
+        return f"2026-10-27T{(h - 4) % 24:02d}:00:00Z"
+
+    series = [hour_point(at(h), 5.0) for h in (5, 6, 10, 11, 12, 13, 16, 17, 21, 22)]
+    assert _slot_ids(series) == {"2026-10-27": ["morning", "noon", "lunch", "evening"]}
+    for h, expected in ((5, None), (6, "morning"), (10, "morning"), (11, "noon"), (13, "lunch"), (16, "lunch"), (17, "evening"), (21, "evening"), (22, None)):
+        got = _slot_ids([hour_point(at(h), 5.0)])
+        assert got == ({"2026-10-27": [expected]} if expected else {}), h
+
+
+def test_aggregate_slots_uses_city_timezone_and_ignores_points_without_next_1_hours():
+    # 07:00Z = 11:00 Ереван (noon), но 07:00 в UTC (morning)
+    series = [hour_point("2026-10-27T07:00:00Z", 5.0)]
+    assert _slot_ids(series, "Asia/Yerevan") == {"2026-10-27": ["noon"]}
+    assert _slot_ids(series, "UTC") == {"2026-10-27": ["morning"]}
+    no_hourly = [point("2026-10-27T07:00:00Z", 5.0, ("cloudy", 4.0, 6.0)), {"time": "bad", "data": {}}, {"data": {}}]
+    assert home.aggregate_slots(no_hourly, "Asia/Yerevan") == {}
+
+
+def test_aggregate_slots_temp_reference_hour_and_fallback():
+    # окно lunch 13-17, опорный час 14:00 (10:00Z)
+    series = [hour_point("2026-10-27T09:00:00Z", 10.0), hour_point("2026-10-27T10:00:00Z", 12.0), hour_point("2026-10-27T11:00:00Z", 8.4)]
+    slot = home.aggregate_slots(series, "Asia/Yerevan")["2026-10-27"][0]
+    assert (slot["temp"], slot["tempMin"], slot["tempMax"]) == (12, 8, 12)
+    # опорной точки нет — первая по времени
+    series = [hour_point("2026-10-27T11:00:00Z", 8.5), hour_point("2026-10-27T09:00:00Z", 10.0)]
+    slot = home.aggregate_slots(series, "Asia/Yerevan")["2026-10-27"][0]
+    assert (slot["temp"], slot["tempMin"], slot["tempMax"]) == (10, 9, 10)  # 8.5 -> 9 (half up)
+
+
+def test_aggregate_slots_symbols_precip_wind():
+    series = [
+        hour_point("2026-10-27T09:00:00Z", 10.0, "cloudy", precip=0.04, wind=2.0),
+        hour_point("2026-10-27T10:00:00Z", 10.0, "rain_day", precip=0.3, wind=4.46),
+        hour_point("2026-10-27T11:00:00Z", 10.0, "cloudy_night", precip=0.26, wind=3.0),
+        hour_point("2026-10-27T12:00:00Z", 10.0, "heavyrain", precip=1.0),
+    ]
+    slot = home.aggregate_slots(series, "Asia/Yerevan")["2026-10-27"][0]
+    assert slot["symbols"] == ["cloudy", "rain", "heavyrain"]
+    assert slot["precip"] == 1.6  # 0.04 + 0.3 + 0.26 + 1.0 = 1.6
+    assert slot["wind"] == 4.5
+    # нет ветра и осадков
+    slot = home.aggregate_slots([hour_point("2026-10-27T09:00:00Z", 10.0)], "Asia/Yerevan")["2026-10-27"][0]
+    assert slot["wind"] is None and slot["precip"] == 0
 
 
 # ---- кэш погоды ----
@@ -366,6 +431,85 @@ def test_home_endpoints_do_not_fail_when_source_down(client, db):
     assert [c["days"] for c in weather.json()["cities"]] == [[], []]
     rates = client.get("/core/home/rates", headers=headers)
     assert rates.status_code == 200 and rates.json()["rates"] == []
+
+
+# ---- параметр city и slots (home-city) ----
+
+
+def _urls(fake):
+    return [c[0] for c in fake.calls]
+
+
+def test_cities_whitelist_17_and_defaults():
+    ids = [c["id"] for c in home.CITIES]
+    assert len(ids) == 17 and len(set(ids)) == 17
+    assert home.DEFAULT_CITY_IDS == ("yerevan", "moscow") and ids[:2] == ["yerevan", "moscow"]
+    for c in home.CITIES:
+        ZoneInfo(c["timezone"])
+
+
+def test_weather_city_param_adds_third_city(clock, monkeypatch):
+    fake = FakeHttp(met_response())
+    monkeypatch.setattr(home, "_http_get", fake)
+    out = home.weather_payload("kazan")
+    assert [c["id"] for c in out["cities"]] == ["yerevan", "moscow", "kazan"]
+    assert len(fake.calls) == 3 and "lat=55.7961&lon=49.1064" in _urls(fake)[2]
+
+
+@pytest.mark.parametrize("city", [None, "", "yerevan", "moscow", "zzz", "../../x", "Kazan"])
+def test_weather_city_param_default_or_unknown_gives_two(clock, monkeypatch, city):
+    monkeypatch.setattr(home, "_http_get", FakeHttp(met_response()))
+    assert [c["id"] for c in home.weather_payload(city)["cities"]] == ["yerevan", "moscow"]
+
+
+def test_weather_city_cached_per_city(clock, monkeypatch):
+    fake = FakeHttp(met_response())
+    monkeypatch.setattr(home, "_http_get", fake)
+    home.weather_payload("kazan")
+    assert len(fake.calls) == 3
+    home.weather_payload("kazan")
+    assert len(fake.calls) == 3
+    home.weather_payload()
+    assert len(fake.calls) == 3
+
+
+def _day_series():
+    """Ереван 27.10 (UTC+4): почасовые точки 11:00..21:00 местного (07:00Z..17:00Z)."""
+    return [hour_point(f"2026-10-27T{h:02d}:00:00Z", 10.0 + h - 7, "cloudy_day", precip=0.1, wind=2.0) for h in range(7, 18)]
+
+
+def test_weather_slots_only_in_first_day(clock, monkeypatch):
+    clock.now = datetime(2026, 10, 27, 11, 30, tzinfo=UTC)  # 15:30 в Ереване
+    series = _day_series() + [hour_point("2026-10-28T08:00:00Z", 9.0)]
+    monkeypatch.setattr(home, "_http_get", FakeHttp(met_response(payload=met(series), now=clock.now)))
+    days = home.weather_payload()["cities"][0]["days"]
+    assert [d["date"] for d in days] == ["2026-10-27", "2026-10-28"]
+    slots = days[0]["slots"]
+    assert [s["id"] for s in slots] == ["morning", "noon", "lunch", "evening"]
+    assert [s["past"] for s in slots] == [True, True, False, False]
+    assert slots[0]["temp"] is None and slots[1]["temp"] == 11 and slots[2]["precip"] == 0.4
+    assert "slots" not in days[1]
+    assert "past" not in next(iter(home._weather["yerevan"]["slots_by_date"].values()))[0]
+
+
+def test_weather_no_slots_when_first_day_is_not_today(clock, monkeypatch):
+    # данные только на завтра: days[0] — не «сегодня» города
+    clock.now = datetime(2026, 10, 26, 8, 0, tzinfo=UTC)
+    monkeypatch.setattr(home, "_http_get", FakeHttp(met_response(payload=met([hour_point("2026-10-27T08:00:00Z", 9.0)]))))
+    days = home.weather_payload()["cities"][0]["days"]
+    assert days[0]["date"] == "2026-10-27" and "slots" not in days[0]
+
+
+def test_weather_city_param_endpoint(client, db, monkeypatch):
+    make_user(db, "city@x.ru", "employee")
+    headers = login(client, "city@x.ru")
+    monkeypatch.setattr(home, "_http_get", FakeHttp(met_response()))
+    ids = lambda r: [c["id"] for c in r.json()["cities"]]  # noqa: E731
+    assert ids(client.get("/core/home/weather", headers=headers)) == ["yerevan", "moscow"]
+    assert ids(client.get("/core/home/weather?city=kazan", headers=headers)) == ["yerevan", "moscow", "kazan"]
+    assert ids(client.get("/core/home/weather?city=moscow", headers=headers)) == ["yerevan", "moscow"]
+    assert ids(client.get("/core/home/weather?city=zzz", headers=headers)) == ["yerevan", "moscow"]
+    assert client.get("/core/home/weather?city=" + "a" * 41, headers=headers).status_code == 422
 
 
 # ---- виджеты главной ----

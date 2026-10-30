@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 
 from app.config import get_settings
 from app.core import messages
+from app.core.deps import ONBOARDING_CODE, OnboardingRequired
 from app.core.routes_admin import router as admin_router
 from app.core.routes_auth import router as auth_router
 from app.core.registry import MODULES
@@ -28,6 +29,10 @@ def create_app() -> FastAPI:
     async def invalid_request(_: Request, __: RequestValidationError) -> JSONResponse:
         # Фронтенд показывает detail как текст: отдаём русское сообщение, а не структуру pydantic
         return JSONResponse(status_code=422, content={"detail": messages.INVALID})
+
+    @app.exception_handler(OnboardingRequired)
+    async def onboarding_required(_: Request, exc: OnboardingRequired) -> JSONResponse:
+        return JSONResponse(status_code=403, content={"detail": exc.detail, "code": ONBOARDING_CODE})
 
     @app.get("/health")
     def health() -> dict:

@@ -7,10 +7,14 @@ import strings from '../strings.js'
 import { formatValue } from '../lib/values.js'
 import { directionOptions, managerOptions } from '../lib/options.js'
 import { useAutoChecklist } from '../lib/useAutoChecklist.js'
+import { useLoad } from '../lib/useLoad.js'
 import AutoChecklistOption from './AutoChecklistOption.jsx'
 
 const s = strings.submissions
 const BASE = '/modules/team/hr'
+
+// Уровни, которые может выдать HR при одобрении (admin назначает только администратор)
+const HR_LEVELS = ['employee', 'viewer', 'superuser']
 
 const STATUS_COLORS = { pending: 'gold', approved: 'green', rejected: 'red' }
 export const StatusTag = ({ status }) => <Tag color={STATUS_COLORS[status]}>{s.statuses[status]}</Tag>
@@ -31,6 +35,26 @@ function usePhoto(path) {
   }, [path])
   if (!path) return null
   return state.path === path ? state.data : undefined
+}
+
+// Доступ новичка: уровень и отделы (отделы — справочник для HR, администраторский для HR закрыт)
+function OnboardingAccessFields() {
+  const departments = useLoad(`${BASE}/departments`)
+  return (
+    <>
+      <Form.Item name="accessLevel" label={s.accessLevel} rules={[{ required: true, message: s.accessLevelRequired }]} extra={s.accessAdminHint}>
+        <Select placeholder={s.accessLevelPlaceholder} options={HR_LEVELS.map((l) => ({ value: l, label: coreStrings.levels[l] }))} />
+      </Form.Item>
+      <Form.Item name="departmentIds" label={s.accessDepartments} extra={departments.error ? s.accessDepartmentsLoadFailed : undefined}>
+        <Select
+          mode="multiple"
+          loading={!departments.data && !departments.error}
+          placeholder={s.accessDepartmentsPlaceholder}
+          options={(departments.data ?? []).map((d) => ({ value: d.id, label: d.name }))}
+        />
+      </Form.Item>
+    </>
+  )
 }
 
 function ApproveModal({ sub, people, directions, onClose, onDone }) {
@@ -57,6 +81,10 @@ function ApproveModal({ sub, people, directions, onClose, onDone }) {
     const body = { directionId: v.directionId, tag: v.tag?.trim() || null, team: v.team?.trim() || null, showInMap: v.showInMap }
     if (sub.personId === null && v.personId) body.personId = v.personId
     if (v.managerId !== undefined && v.managerId !== null) body.managerId = v.managerId
+    if (sub.userOnboarding) {
+      body.accessLevel = v.accessLevel
+      body.departmentIds = v.departmentIds ?? []
+    }
     setSaving(true)
     try {
       const person = await api.post(`${BASE}/submissions/${sub.id}/approve`, body)
@@ -91,8 +119,10 @@ function ApproveModal({ sub, people, directions, onClose, onDone }) {
           tag: existing?.tag ?? '',
           team: existing?.team ?? '',
           showInMap: existing?.showInMap ?? true,
+          departmentIds: [],
         }}
       >
+        {sub.userOnboarding && <OnboardingAccessFields />}
         {sub.personId === null && (
           <Form.Item name="personId" label={s.linkPerson} extra={s.linkPersonHint}>
             <Select
@@ -211,7 +241,12 @@ export default function SubmissionDrawer({ sub, fields, people, directions, onCl
       size={760}
       title={s.drawerTitle(name)}
       onClose={onClose}
-      extra={<StatusTag status={sub.status} />}
+      extra={
+        <Space>
+          {sub.userOnboarding && <Tag color="blue">{s.newEmployee}</Tag>}
+          <StatusTag status={sub.status} />
+        </Space>
+      }
       footer={
         isPending && (
           <Space>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Alert, Button, Segmented, Spin, Table, Typography } from 'antd'
+import { Alert, Button, Segmented, Space, Spin, Table, Tag, Typography } from 'antd'
 import strings from '../strings.js'
 import { useLoad } from '../lib/useLoad.js'
 import { formatDateTime } from '../../../core/format.js'
@@ -30,7 +30,15 @@ export default function SubmissionsTab({ pending, onChanged }) {
     { title: s.status, render: (_, x) => <StatusTag status={x.status} /> },
     { title: s.sent, render: (_, x) => formatDateTime(x.createdAt) },
     ...(mode === 'history' ? [{ title: s.reviewed, render: (_, x) => (x.reviewedAt ? formatDateTime(x.reviewedAt) : strings.none) }] : []),
-    { title: '', render: (_, x) => (x.personId === null ? <Typography.Text type="secondary">{s.newCard}</Typography.Text> : null) },
+    {
+      title: '',
+      render: (_, x) => (
+        <Space size={4}>
+          {x.personId === null && <Typography.Text type="secondary">{s.newCard}</Typography.Text>}
+          {x.userOnboarding && <Tag color="blue">{s.newEmployee}</Tag>}
+        </Space>
+      ),
+    },
     {
       title: strings.actions,
       render: (_, x) => (

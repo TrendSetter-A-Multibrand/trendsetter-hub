@@ -11,6 +11,7 @@ import Logo from './Logo.jsx'
 import { moduleNumber } from './moduleNumber.js'
 import NotificationsBell from './NotificationsBell.jsx'
 import ThemeToggle from './ThemeToggle.jsx'
+import VersionButton from './VersionButton.jsx'
 import logoWhite from './logo-white.svg'
 
 const s = strings.layout
@@ -228,6 +229,7 @@ export default function AppLayout() {
           </nav>
           <div className="topline-actions">
             {DEMO_MODE && <span className="demo-flag">{s.demoData}</span>}
+            <VersionButton />
             <NotificationsBell />
             <ThemeToggle />
             {DEMO_MODE && <DemoUserSwitcher />}

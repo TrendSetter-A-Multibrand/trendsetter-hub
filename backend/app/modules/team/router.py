@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.core import messages as m
 from app.core.access import can_see_data
-from app.core.deps import get_current_user
+from app.core.deps import OnboardingRequired, get_authenticated_user, get_current_user
 from app.core.models import User
 from app.db.database import get_session
 from app.modules.team import service
@@ -27,6 +27,17 @@ def team_viewer(user_access: tuple[User, str] = Depends(_team_access)) -> User:
     """Team: доступ к модулю не ниже view (structure — 403)."""
     user, access = user_access
     if not can_see_data(access):
+        raise HTTPException(403, m.FORBIDDEN)
+    return user
+
+
+def own_profile_user(user: User = Depends(get_authenticated_user), session: Session = Db) -> User:
+    """Своя анкета: на шаге «анкета» новичка — без проверки доступа к team (уровня ещё нет); остальным — как Team."""
+    if user.must_change_password:
+        raise OnboardingRequired()
+    if user.onboarding:
+        return user
+    if not can_see_data(service.team_access(session, user)):
         raise HTTPException(403, m.FORBIDDEN)
     return user
 
@@ -58,6 +69,8 @@ class ApproveBody(BaseModel):
     tag: str | None = None
     team: str | None = None
     showInMap: bool | None = None
+    accessLevel: str | None = None  # только для заявки новичка на онбординге; иначе игнорируется
+    departmentIds: list[int] | None = None
 
 
 class RejectBody(BaseModel):
@@ -134,7 +147,7 @@ def get_map(access: tuple[User, str] = Depends(_team_access), session: Session =
 
 
 @router.get("/fields")
-def fields(_: User = Team, session: Session = Db) -> list[dict]:
+def fields(_: User = Depends(own_profile_user), session: Session = Db) -> list[dict]:
     return service.list_fields(session, True)
 
 
@@ -147,22 +160,22 @@ def person_photo(person_id: int, _: User = Team, session: Session = Db) -> dict:
 
 
 @router.get("/me")
-def me(user: User = Team, session: Session = Db) -> dict:
+def me(user: User = Depends(own_profile_user), session: Session = Db) -> dict:
     return service.get_me(session, user)
 
 
 @router.post("/me/submission")
-def submit(body: SubmissionBody, user: User = Team, session: Session = Db) -> dict:
+def submit(body: SubmissionBody, user: User = Depends(own_profile_user), session: Session = Db) -> dict:
     return service.submit(session, user, body.values, body.photo.model_dump() if body.photo else None, replace=False)
 
 
 @router.patch("/me/submission")
-def replace_submission(body: SubmissionBody, user: User = Team, session: Session = Db) -> dict:
+def replace_submission(body: SubmissionBody, user: User = Depends(own_profile_user), session: Session = Db) -> dict:
     return service.submit(session, user, body.values, body.photo.model_dump() if body.photo else None, replace=True)
 
 
 @router.post("/me/submission/cancel")
-def cancel_submission(user: User = Team, session: Session = Db) -> dict:
+def cancel_submission(user: User = Depends(own_profile_user), session: Session = Db) -> dict:
     return service.cancel_submission(session, user)
 
 
@@ -202,6 +215,11 @@ def hr_people(_: User = Hr, session: Session = Db) -> list[dict]:
 @router.get("/hr/directions")
 def hr_directions(_: User = Hr, session: Session = Db) -> list[dict]:
     return service.list_directions(session)
+
+
+@router.get("/hr/departments")
+def hr_departments(_: User = Hr, session: Session = Db) -> list[dict]:
+    return service.hr_departments(session)
 
 
 @router.get("/hr/users")

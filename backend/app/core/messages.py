@@ -38,5 +38,13 @@ TOO_MANY_ATTEMPTS = "Слишком много попыток, попробуй�
 NEW_PASSWORD_SHORT = "Новый пароль: не короче 10 символов"
 NEW_PASSWORD_LONG = "Новый пароль слишком длинный: не более 128 символов и 72 байт"
 NEW_PASSWORD_SAME = "Новый пароль должен отличаться от текущего"
+# Онбординг нового сотрудника (docs/TZ-onboarding.md)
+ONBOARDING_REQUIRED = "Сначала завершите первый вход: смените пароль и отправьте анкету"
+ONBOARDING_LIMIT = "Регистрация новых сотрудников временно недоступна, обратитесь к HR"
+ONBOARDING_PASSWORD_INVALID = "Стартовый пароль: от 12 символов, не длиннее 72 байт"
+ONBOARDING_NOT_ACTIVE = "Пользователь не на онбординге"
+ONBOARDING_EXTEND_NOT_ALLOWED = "Продлить можно только до первой смены пароля"
+ONBOARDING_PASSWORD_PENDING = "Новичок ещё не сменил стартовый пароль"
+ONBOARDING_LEVEL_REQUIRED = "Выберите уровень доступа"
 ENCRYPTION_NOT_CONFIGURED = "Ключ шифрования не настроен"
 DECRYPT_FAILED = "Не удалось прочитать защищённые данные"

@@ -181,6 +181,41 @@ docker exec -u root trendsetter-hub-api rm -rf /tmp/team-import                 
 
 **Откат** (`alembic downgrade 0014`): удаляются `home_widgets` и `news_items.sort` (ручной порядок закреплённых и настройки виджетов теряются).
 
+## Производственный календарь (ревизия 0016)
+`16_holidays.sql`: таблица `holidays_days` (`country` RU/AM, `day`, `kind` holiday/day_off/workday/short, `name`, `updated_by`, `updated_at`; ключ `(country, day)`) — праздники и переносы РФ и Армении, которые вручную ведёт ответственный за календарь. В БД только исключения: суббота и воскресенье без строки — выходной автоматически, пн–пт без строки — рабочий. Сидов и привязки к отделам нет (модуль `for_all`). Права hub_app — автоматически (`ALTER DEFAULT PRIVILEGES` из `01_core_hub.sql`). Скрипт идемпотентен. SQL лежит в корне `db/` по решению пользователя, вопреки конвенции `db/modules/<id>/`.
+
+**Выкат 0016** (как у `0015`; `deploy.sh` миграции не выполняет):
+1. Под doadmin в `defaultdb` выполнить `db/16_holidays.sql` (после `db/15_home_widgets.sql`).
+2. Под doadmin выполнить `deploy/stamp_alembic_0016.sql` (версия миграции `0015` → `0016`).
+3. Только после этого — merge в `main`. Иначе `/modules/holidays/*` отвечает 500.
+4. Администратор в «Особых правах» (или в группе) выдаёт Аревик право «Ответственный» на модуле «Производственный календарь».
+5. Аревик вносит праздники текущего и следующего года по обеим странам.
+
+**Откат** (`alembic downgrade 0015`): таблица `holidays_days` и все внесённые дни удаляются.
+
+## Онбординг нового сотрудника (ревизия 0017)
+`17_onboarding.sql`: в `users` уровень доступа теперь может быть `NULL` (только на онбординге), добавлены `must_change_password`, `onboarding`, `onboarding_expires_at` и два ограничения: `users_level_or_onboarding_check` (`access_level IS NOT NULL OR onboarding`) и `users_must_change_password_check` (`NOT must_change_password OR onboarding`). Таблица `onboarding_settings` — ровно одна строка (`id = 1`): хэш общего стартового пароля, кто и когда его задал; пока `password_hash IS NULL`, самосоздание и вход общим паролем выключены. Права hub_app — автоматически (`ALTER DEFAULT PRIVILEGES` из `01_core_hub.sql`). Скрипт идемпотентен.
+
+**Новые столбцы модели `User` читаются на каждом запросе, включая `/auth/login`. Если код выкачен раньше SQL, весь хаб отвечает 500 и войти нельзя.**
+
+**Выкат 0017** (как у `0016`; `deploy.sh` миграции не выполняет):
+1. Под doadmin в `defaultdb` выполнить `db/17_onboarding.sql` (после `db/16_holidays.sql`; порядок выката БД: `0014` → `0015` → `0016` → `0017`).
+2. Под doadmin выполнить `deploy/stamp_alembic_0017.sql` (версия миграции `0016` → `0017`).
+3. Только после этого — merge в `main`.
+4. **Общий пароль не задавать до выката PR 2** (экран онбординга). Потом администратор задаёт его на вкладке «Онбординг»; до этого самосоздание выключено.
+
+**Откат** (`alembic downgrade 0016`): учётки без уровня отключаются и получают `viewer`; флаги, срок и общий пароль теряются.
+
+## Обратная связь (ревизия 0018)
+`18_feedback.sql`: таблица `feedback_messages` — сообщения сотрудников (благодарность, предложение, жалоба, другое). Столбцы: `kind` — тип; `body` — текст; `is_anonymous`; `author_id` — автор (у анонимных всегда `NULL`); `contact_ok` — «разрешаю HR связаться» (только у неанонимных); `recipient_id` — адресат (только у благодарности); `status` — `new` / `in_progress` / `closed`; `note` — внутренний комментарий читателя; `created_at`, `updated_at`, `updated_by` — кто из читателей разбирал (при создании `NULL`). **У анонимных сообщений автор не хранится нигде**: ни в таблице, ни в `audit_log`, ни в уведомлениях. Текст и комментарий хранятся только зашифрованными (`HUB_PII_KEY`, формат `enc:v1:…`): `CHECK … LIKE 'enc:v1:%'` отвергает открытый текст. Права hub_app — автоматически (`ALTER DEFAULT PRIVILEGES` из `01_core_hub.sql`). Скрипт идемпотентен.
+
+**Выкат 0018** (`deploy.sh` миграции не выполняет):
+1. Под doadmin в `defaultdb` выполнить `db/18_feedback.sql` (после `db/17_onboarding.sql`; порядок выката БД: `0014` → … → `0017` → `0018`).
+2. Под doadmin выполнить `deploy/stamp_alembic_0018.sql` (версия миграции `0017` → `0018`).
+3. Только после этого — merge в `main`. Иначе `/modules/feedback/*` и `/core/me` (бейдж) отвечают 500. На сервере должен быть задан `HUB_PII_KEY`, иначе отправка вернёт 503.
+
+**Откат** (`alembic downgrade 0017`): таблица `feedback_messages` и **все сообщения удаляются безвозвратно**.
+
 ## Модуль «Склад»
 Листы Google Таблицы «Склад-приёмка» стали таблицами: Приемки → `warehouse_receipts`, Раскладки → `warehouse_receipt_plans`, Счётчики → `warehouse_box_counters` и `warehouse_pallet_pointers`, Сканы → `warehouse_scans`, Короба → `warehouse_boxes`, Хранение → `warehouse_storage_boxes`, Хранение — архив → `warehouse_storage_archive`, Секции → `warehouse_extra_sections`, Коды ЧЗ → `warehouse_marks`, Сводка → представление `warehouse_receipt_summary`. Условия, которые раньше защищал `LockService`, держит база: уникальность кода ЧЗ, одно место на короб, уникальное имя приёмки, номера коробов через функцию `warehouse_next_box_number()`, повтор отправки скана отсекается по id.
 
