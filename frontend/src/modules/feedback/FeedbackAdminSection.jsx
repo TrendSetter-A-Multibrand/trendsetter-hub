@@ -66,7 +66,7 @@ function MessageCard({ item, onSaved }) {
   )
 }
 
-// Раздел «Обратная связь» (/modules/feedback, только читатель): вкладки по статусам со счётчиками, фильтр по типу, список с пагинацией.
+// Сообщения обратной связи (вкладка «Персонала» или запасная страница /modules/feedback, только читатель): вкладки по статусам со счётчиками, фильтр по типу, список с пагинацией.
 export default function FeedbackAdminSection({ module }) {
   const { refreshMe } = useAuth()
   const [status, setStatus] = useState('new')
@@ -97,7 +97,7 @@ export default function FeedbackAdminSection({ module }) {
 
   return (
     <div className="stack module feedback">
-      <PageHead module={module} title={module.strings.tool} />
+      {module && <PageHead module={module} title={module.strings.tool} />}
       <section className="fb-admin" aria-labelledby="fb-messages">
         <SectionHead id="fb-messages" title={s.pageTitle}>
           <span className="seg" role="group" aria-label={s.statusLabel}>

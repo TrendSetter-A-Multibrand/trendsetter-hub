@@ -21,9 +21,14 @@ import { canReadHolidays, isHolidaysEditor } from './holidays/lib/holidays.js'
 import feedbackStrings from './feedback/strings.js'
 import { canSendFeedback, isFeedbackReader } from './feedback/lib/feedback.js'
 
+// «Запуск» на HR: вкладка «Сообщения» в «Персонале» доступна только при нём (HrPage пускает только run)
+const hrRun = (me) => me.module_access?.hr === 'run'
+
 // hidden: boolean или (me) => boolean (isModuleHidden в core/access.js). Скрытый модуль есть в реестре (особые права, группы, права в /core/me),
 // но не показывается в меню, а его страница /modules/<id> — «Не найдено». Нужен модулям без своей страницы (pricing)
-// и страницам только для части пользователей (новости: «Редактор новостей» — только редактору; блоки на главной и «Мои предложения» в профиле — всем читателям).
+// и страницам только для части пользователей (обратная связь — только читателю; блоки новостей на главной и «Мои предложения» в профиле — всем читателям).
+// redirect: строка или (me) => строка | null (resolveRedirect в core/access.js). Страница /modules/<id> сразу перенаправляет на этот адрес
+// (до проверки hidden и доступа): старые ссылки и адреса из уведомлений.
 export const MODULES = [
   { id: 'purchasing', status: 'roadmap', strings: purchasingStrings, Component: lazy(() => import('./purchasing/PurchasingPage.jsx')) },
   { id: 'warehouse', status: 'mvp', wide: true, strings: warehouseStrings, Component: lazy(() => import('./warehouse/WarehousePage.jsx')) },
@@ -35,23 +40,44 @@ export const MODULES = [
   { id: 'analytics', status: 'roadmap', strings: analyticsStrings, Component: null },
   // Ценообразование — раздел модуля WB (решение 2026-10-28); модуль скрыт из меню, права и отдел остаются
   { id: 'pricing', status: 'roadmap', hidden: true, strings: pricingStrings, Component: null },
-  { id: 'hr', status: 'mvp', wide: true, strings: hrStrings, Component: lazy(() => import('./hr/HrPage.jsx')) },
+  // extraTabs: вкладки, которые другие модули добавляют в «Персонал» (HrPage сам ничего не импортирует из feedback):
+  //   { key, group, groupLabel, label, visible(me), badge(me), Component } — вставляются перед группой «Безопасность»;
+  // menuBadge(me): число у пункта меню вместо me.module_badges[id] (к HR добавляются новые сообщения, если читатель попадает в «Персонал»)
+  {
+    id: 'hr', status: 'mvp', wide: true, strings: hrStrings, Component: lazy(() => import('./hr/HrPage.jsx')),
+    extraTabs: [
+      {
+        key: 'feedback', group: 'feedback', groupLabel: feedbackStrings.hr.group, label: feedbackStrings.hr.tab,
+        visible: isFeedbackReader, badge: (me) => me.module_badges?.feedback ?? 0,
+        Component: lazy(() => import('./feedback/FeedbackAdminSection.jsx')),
+      },
+    ],
+    menuBadge: (me) => (me.module_badges?.hr ?? 0) + (isFeedbackReader(me) && hrRun(me) ? (me.module_badges?.feedback ?? 0) : 0),
+  },
   // forAll: виден всем активным сотрудникам (просмотр), без привязки к отделу; анкета — в настройках профиля (позже)
-  { id: 'team', status: 'mvp', forAll: true, wide: true, strings: teamStrings, Component: lazy(() => import('./team/TeamPage.jsx')) },
+  // calendar: производственный календарь, который «Карта команды» открывает в окне (team не импортирует holidays)
+  {
+    id: 'team', status: 'mvp', forAll: true, wide: true, strings: teamStrings, Component: lazy(() => import('./team/TeamPage.jsx')),
+    calendar: { visible: canReadHolidays, label: holidaysStrings.title, Component: lazy(() => import('./holidays/components/CalendarModal.jsx')) },
+  },
   // последней строкой: номера пунктов меню остальных модулей не сдвигаются
+  // Редактор новостей и Производственный календарь теперь вкладки страницы «Администрация» (OFFICE_SECTIONS ниже, /office);
+  // строки остаются в реестре для прав и групп (бэкенд проверяет id модулей), а старые адреса /modules/<id> ведут на вкладки.
   // TODO(Q-N4): опции view/run у «Новостей» в особых правах и группах ни на что не влияют (кроме viewer через Q-G1)
   {
-    id: 'news', status: 'mvp', homeEditor: true, hidden: (me) => !isNewsEditor(me), forAll: true, wide: true, strings: newsStrings,
-    Component: lazy(() => import('./news/NewsAdminSection.jsx')),
+    id: 'news', status: 'mvp', homeEditor: true, hidden: true, forAll: true, wide: true, strings: newsStrings,
+    Component: null, redirect: '/office?tab=news',
   },
-  // Производственный календарь: пункт меню — только редактору (ответственный или admin); читатели видят календарь в виджете главной
   {
-    id: 'holidays', status: 'mvp', hidden: (me) => !isHolidaysEditor(me), forAll: true, wide: true, strings: holidaysStrings,
-    Component: lazy(() => import('./holidays/HolidaysAdminSection.jsx')),
+    id: 'holidays', status: 'mvp', hidden: true, forAll: true, wide: true, strings: holidaysStrings,
+    Component: null, redirect: '/office?tab=holidays',
   },
-  // Обратная связь: пункт меню — только читателю (ответственный или admin); отправка — карточка на главной и вкладка профиля
+  // Обратная связь: основное место — вкладка «Сообщения» в «Персонале». Пункт меню остаётся читателю без «Запуска» на HR;
+  // с «Запуском» /modules/feedback ведёт во вкладку (ссылки уведомлений). Отправка — кнопка в верхней строке и вкладка профиля.
+  // TODO(Q-AP5): читатель обратной связи без доступа run к HR сохраняет старый пункт меню; иначе ему нужен доступ к HR
   {
-    id: 'feedback', status: 'mvp', hidden: (me) => !isFeedbackReader(me), forAll: true, wide: true, strings: feedbackStrings,
+    id: 'feedback', status: 'mvp', hidden: (me) => !isFeedbackReader(me) || hrRun(me), forAll: true, wide: true, strings: feedbackStrings,
+    redirect: (me) => (isFeedbackReader(me) && hrRun(me) ? '/modules/hr?tab=feedback' : null),
     Component: lazy(() => import('./feedback/FeedbackAdminSection.jsx')),
   },
 ]
@@ -154,5 +180,26 @@ export const HOME_WIDGETS = [
   { id: 'news-banner', slot: 'banner', visible: canReadNews, Component: lazy(() => import('./news/components/HomeBanner.jsx')) },
   { id: 'news-feed', slot: 'left', visible: canReadNews, Component: lazy(() => import('./news/components/HomeNewsFeed.jsx')) },
   { id: 'news-events', slot: 'center', visible: canReadNews, Component: lazy(() => import('./news/components/HomeEvents.jsx')) },
-  { id: 'feedback', label: feedbackStrings.home.widgetLabel, visible: canSendFeedback, Component: lazy(() => import('./feedback/components/HomeFeedbackCard.jsx')) },
+]
+
+// Кнопки верхней строки (правее переключателя темы). Ядро само ничего не знает про модули: порядок = как здесь.
+//   id        — ключ кнопки;
+//   visible   — (me) => показывать ли кнопку;
+//   Component — получает { me }; сам открывает своё окно.
+export const TOPLINE_ACTIONS = [
+  { id: 'feedback', visible: canSendFeedback, Component: lazy(() => import('./feedback/components/FeedbackButton.jsx')) },
+]
+
+// Вкладки страницы «Администрация» (/office, страница ядра, не модуль). Ядро само ничего не знает про модули: порядок вкладок = порядок здесь.
+//   id        — значение ?tab= в адресе;
+//   label     — подпись вкладки;
+//   visible   — (me) => показывать ли вкладку (нет видимых вкладок — нет и пункта меню, страница — «Не найдено»);
+//   badge     — (me) => число рядом с вкладкой и в сумме у пункта меню (необязательно);
+//   Component — получает { me }; сам рисует содержимое вкладки (без PageHead).
+export const OFFICE_SECTIONS = [
+  {
+    id: 'news', label: newsStrings.office.tab, visible: isNewsEditor, badge: (me) => me.module_badges?.news ?? 0,
+    Component: lazy(() => import('./news/NewsAdminSection.jsx')),
+  },
+  { id: 'holidays', label: holidaysStrings.tool, visible: isHolidaysEditor, Component: lazy(() => import('./holidays/HolidaysAdminSection.jsx')) },
 ]

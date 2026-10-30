@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Alert, App, Button, Popconfirm, Spin } from 'antd'
 import { api } from '../../core/api/index.js'
 import { addDays, countDays } from '../../core/dates.js'
-import PageHead from '../../core/layout/PageHead.jsx'
 import SectionHead from '../../core/layout/SectionHead.jsx'
 import { COUNTRIES, formatRange, groupRanges, indexDays, isWeekend, todayIn } from './lib/holidays.js'
 import { useYearDays } from './lib/useYearDays.js'
@@ -14,8 +13,8 @@ import './holidays.css'
 const s = strings.admin
 const CHUNK_DAYS = 31 // сервер принимает не больше 31 дня за раз; длинный склеенный диапазон удаляется частями
 
-// Раздел «Производственный календарь» (/modules/holidays, только редактор): календарь года, клик по дню, диапазоны, список с правкой и удалением.
-export default function HolidaysAdminSection({ module }) {
+// Вкладка «Производственный календарь» страницы «Администрация» (/office?tab=holidays, только редактор): календарь года, клик по дню, диапазоны, список с правкой и удалением.
+export default function HolidaysAdminSection() {
   const { message } = App.useApp()
   const [country, setCountry] = useState(COUNTRIES[0].id)
   const [year, setYear] = useState(() => new Date().getFullYear())
@@ -46,12 +45,11 @@ export default function HolidaysAdminSection({ module }) {
 
   return (
     <div className="stack module holidays hc-admin">
-      <PageHead module={module} title={module.strings.tool}>
+      <YearToolbar country={country} onCountry={setCountry} year={year} onYear={setYear}>
         <Button type="primary" onClick={() => setEditing({ country, start: '', end: '', kind: 'holiday', name: '' })}>
           {s.markDays}
         </Button>
-      </PageHead>
-      <YearToolbar country={country} onCountry={setCountry} year={year} onYear={setYear} />
+      </YearToolbar>
       {error ? (
         <Alert type="error" showIcon title={strings.calendar.loadError} />
       ) : !index ? (

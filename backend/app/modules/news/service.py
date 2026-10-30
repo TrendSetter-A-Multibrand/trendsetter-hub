@@ -239,13 +239,17 @@ def feed(session: Session, user: User, editor: bool) -> dict:
     return {"events": _items(session, events, user, editor, now), "news": _items(session, news, user, editor, now)}
 
 
-def list_items(session: Session, user: User, tab: str, limit: int, offset: int) -> dict:
+def list_items(session: Session, user: User, tab: str, limit: int, offset: int, kind: str | None = None) -> dict:
     now = _now()
     where, order = TABS[tab]
-    total = session.execute(text(f"SELECT count(*) FROM {N}items WHERE {where}"), {"now": now}).scalar_one()
+    params = {"now": now}
+    if kind:
+        where = f"({where}) AND kind = :kind"  # скобки обязательны: в условиях past и current есть OR
+        params["kind"] = kind
+    total = session.execute(text(f"SELECT count(*) FROM {N}items WHERE {where}"), params).scalar_one()
     rows = session.execute(
         text(f"SELECT * FROM {N}items WHERE {where} ORDER BY {order} LIMIT :limit OFFSET :offset"),
-        {"now": now, "limit": limit, "offset": offset},
+        {**params, "limit": limit, "offset": offset},
     ).mappings().all()
     return {"items": _items(session, rows, user, True, now, review=True), "total": total}
 

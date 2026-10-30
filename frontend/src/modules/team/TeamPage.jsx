@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Alert, Spin } from 'antd'
 import strings from './strings.js'
@@ -13,13 +13,18 @@ import { useMyProfile, useTeamMap } from './lib/useTeamMap.js'
 import { useLeaveRange } from './lib/useLeave.js'
 import { awayMap, monthEnd, monthStart } from './lib/leave.js'
 import { todayIso } from '../../core/dates.js'
+import { useAuth } from '../../core/auth/useAuth.js'
 import './team.css'
 
-function TeamMap({ map, access }) {
+function TeamMap({ map, access, module }) {
   const [params, setParams] = useSearchParams()
   const [query, setQuery] = useState('')
   const [collapsed, setCollapsed] = useState({})
   const [formOpen, setFormOpen] = useState(false)
+  const [calendarOpen, setCalendarOpen] = useState(false)
+  const { me: authMe } = useAuth()
+  // производственный календарь приходит из реестра (module.calendar), team не знает про holidays
+  const calendar = module.calendar?.visible(authMe) ? module.calendar : null
   const limited = access === 'structure'
   const { me, reload: reloadMe } = useMyProfile(!limited)
   const idx = useMemo(() => buildIndex(map.people, map.directions), [map])
@@ -94,6 +99,8 @@ function TeamMap({ map, access }) {
           update({ view: v === 'cards' ? null : v })
         }}
         canLeave={!limited}
+        calendar={calendar}
+        onCalendar={() => setCalendarOpen(true)}
         dirs={idx.dirs}
         total={idx.totalPeople}
         dirFilter={dirFilter}
@@ -142,12 +149,17 @@ function TeamMap({ map, access }) {
         </SchemeView>
       )}
       {view !== 'scheme' && drawer}
+      {calendar && calendarOpen && (
+        <Suspense fallback={null}>
+          <calendar.Component onClose={() => setCalendarOpen(false)} />
+        </Suspense>
+      )}
       {formOpen && me && <MyProfileDrawer me={me} onClose={() => setFormOpen(false)} onChanged={reloadMe} />}
     </div>
   )
 }
 
-export default function TeamPage({ access }) {
+export default function TeamPage({ module, access }) {
   const { status, map, error } = useTeamMap()
   return (
     <div className="tm">
@@ -158,7 +170,7 @@ export default function TeamPage({ access }) {
         </div>
       )}
       {status === 'error' && <Alert type="error" showIcon title={strings.state.loadError} description={error} style={{ margin: 28 }} />}
-      {status === 'ready' && <TeamMap map={map} access={access} />}
+      {status === 'ready' && <TeamMap map={map} access={access} module={module} />}
     </div>
   )
 }

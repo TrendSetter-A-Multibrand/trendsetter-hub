@@ -62,7 +62,7 @@ export default function HomeWidgetsEditor() {
       {list && (
         <>
           {list.map((w, i) => (
-            <div key={w.id} className="people-row widget-row">
+            <div key={w.id} className="widget-row">
               <span className="widget-label">{w.label}</span>
               <Switch checked={w.enabled} onChange={(value) => toggle(i, value)} aria-label={`${s.show}: ${w.label}`} />
               <Button size="small" icon={<ArrowUpOutlined />} disabled={i === 0} aria-label={s.up(w.label)} onClick={() => move(i, -1)} />

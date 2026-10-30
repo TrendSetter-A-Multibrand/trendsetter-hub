@@ -781,3 +781,19 @@ a:hover { color: var(--accent-fill-hover); }
 :root { --sidebar-w: 288px; }
 .nav-title { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
 .version-btn, .changelog-head { text-transform: none; }
+
+/* Часы: шестерёнка в каждом блоке; кнопки верхней строки (TOPLINE_ACTIONS) */
+.hero-clock { position: relative; }
+.hero-clock-gear { position: absolute; top: var(--space-8); right: var(--space-8); z-index: 2; color: #FFFFFF; }
+.hero-clock.prime .hero-clock-gear { color: var(--accent-fill); }
+.hero-clock-label { padding-right: var(--space-24); }
+.zone-auto { margin-top: var(--space-8); }
+.topline-btn {
+  flex: none; height: var(--control-s); padding: 0 var(--space-8); border: 1px solid var(--border-default); background: transparent; cursor: pointer;
+  color: var(--text-secondary); font-family: var(--font-mono); font-size: var(--fs-label); letter-spacing: var(--track-mono);
+  white-space: nowrap; transition: border-color var(--motion-hover) var(--motion-ease);
+}
+.topline-btn:hover { border-color: var(--border-strong); color: var(--text-primary); }
+
+/* Администрация (/office): число на вкладке */
+.office-tab-badge { margin-left: var(--space-8); vertical-align: middle; }

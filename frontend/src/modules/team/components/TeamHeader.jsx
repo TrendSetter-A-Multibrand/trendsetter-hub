@@ -3,7 +3,7 @@ import logoUrl from '../assets/trendsetter-logo.svg'
 
 const s = strings.header
 
-export default function TeamHeader({ query, onQuery, found, onLeaders, onExpand, view, onView, lastStruct, canLeave, dirs, total, dirFilter, onDir, onMyProfile }) {
+export default function TeamHeader({ query, onQuery, found, onLeaders, onExpand, view, onView, lastStruct, canLeave, calendar, onCalendar, dirs, total, dirFilter, onDir, onMyProfile }) {
   const chips = [
     { id: null, label: s.all, color: '#A22325', count: total },
     ...dirs.map((d) => ({ id: d.id, label: d.shortName, color: d.color, count: d.count })),
@@ -44,16 +44,25 @@ export default function TeamHeader({ query, onQuery, found, onLeaders, onExpand,
         </div>
       </div>
       <div className="tm-head-row tm-head-row2">
-        {canLeave && (
-          <button
-            type="button"
-            className={`tm-leave-toggle${view === 'leave' ? ' on' : ''}`}
-            aria-pressed={view === 'leave'}
-            title={s.viewLeaveTitle}
-            onClick={() => onView(view === 'leave' ? lastStruct : 'leave')}
-          >
-            {s.viewLeave}
-          </button>
+        {(canLeave || calendar) && (
+          <div className="tm-views tm-cals" role="group" aria-label={s.calendarsLabel}>
+            {canLeave && (
+              <button
+                type="button"
+                className={view === 'leave' ? 'on' : ''}
+                aria-pressed={view === 'leave'}
+                title={s.viewLeaveTitle}
+                onClick={() => onView(view === 'leave' ? lastStruct : 'leave')}
+              >
+                {s.viewLeave}
+              </button>
+            )}
+            {calendar && (
+              <button type="button" onClick={onCalendar}>
+                {calendar.label}
+              </button>
+            )}
+          </div>
         )}
         <div className="tm-views" role="group" aria-label={s.viewsLabel}>
           {[
