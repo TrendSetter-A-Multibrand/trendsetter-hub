@@ -5,8 +5,10 @@ from email.utils import format_datetime
 
 import httpx
 import pytest
+from sqlalchemy import text
 
 from app.core import home
+from app.core.models import UserModulePermission
 from tests.conftest import login, make_user
 
 UTC = timezone.utc
@@ -364,3 +366,87 @@ def test_home_endpoints_do_not_fail_when_source_down(client, db):
     assert [c["days"] for c in weather.json()["cities"]] == [[], []]
     rates = client.get("/core/home/rates", headers=headers)
     assert rates.status_code == 200 and rates.json()["rates"] == []
+
+
+# ---- виджеты главной ----
+
+WIDGETS = "/core/home/widgets"
+
+
+def _audit(db):
+    return db.execute(text("SELECT action, module_id, details FROM trendsetter_hub.audit_log WHERE action = 'home.widgets_update' ORDER BY id")).all()
+
+
+def test_widgets_require_token(client):
+    assert client.get(WIDGETS).status_code == 401
+    assert client.post(WIDGETS, json={"widgets": [{"id": "a", "enabled": True}]}).status_code == 401
+
+
+@pytest.mark.parametrize("level", ["employee", "viewer", "superuser", "admin"])
+def test_widgets_get_for_everyone_empty_by_default(client, db, level):
+    make_user(db, f"{level}@example.com", level)
+    r = client.get(WIDGETS, headers=login(client, f"{level}@example.com"))
+    assert r.status_code == 200 and r.json() == {"widgets": []}
+
+
+@pytest.fixture()
+def roles(client, db):
+    make_user(db, "admin@example.com", "admin")
+    make_user(db, "emp@example.com", "employee")
+    make_user(db, "sup@example.com", "superuser")
+    make_user(db, "viewer@example.com", "viewer")
+    editor = make_user(db, "editor@example.com", "employee")
+    db.add(UserModulePermission(user_id=editor.id, module_id="news", permission="responsible"))
+    hr_resp = make_user(db, "hr@example.com", "employee")
+    db.add(UserModulePermission(user_id=hr_resp.id, module_id="hr", permission="responsible"))
+    db.commit()
+    return lambda role: login(client, f"{role}@example.com")
+
+
+@pytest.mark.parametrize("role", ["emp", "sup", "viewer", "hr"])
+def test_widgets_post_forbidden_without_right(client, roles, role):
+    r = client.post(WIDGETS, json={"widgets": [{"id": "leave", "enabled": False}]}, headers=roles(role))
+    assert r.status_code == 403
+    assert client.get(WIDGETS, headers=roles("emp")).json() == {"widgets": []}
+
+
+@pytest.mark.parametrize("role", ["admin", "editor"])
+def test_widgets_post_replaces_all_and_logs(client, db, roles, role):
+    headers = roles(role)
+    first = [{"id": "weather", "enabled": True}, {"id": "leave", "enabled": False}, {"id": "clocks", "enabled": True}]
+    r = client.post(WIDGETS, json={"widgets": first}, headers=headers)
+    assert r.status_code == 200 and r.json() == {"widgets": first}
+    assert client.get(WIDGETS, headers=roles("viewer")).json() == {"widgets": first}
+    second = [{"id": "rates", "enabled": False}, {"id": "clocks", "enabled": True}]
+    assert client.post(WIDGETS, json={"widgets": second}, headers=headers).json() == {"widgets": second}
+    assert client.get(WIDGETS, headers=headers).json() == {"widgets": second}
+    rows = _audit(db)
+    assert [(a, mod, d) for a, mod, d in rows] == [
+        ("home.widgets_update", None, {"count": 3, "disabled": ["leave"]}),
+        ("home.widgets_update", None, {"count": 2, "disabled": ["rates"]}),
+    ]
+
+
+@pytest.mark.parametrize(
+    "widgets",
+    [
+        [],
+        [{"id": "a", "enabled": True}, {"id": "a", "enabled": False}],
+        [{"id": "Bad_Id", "enabled": True}],
+        [{"id": "", "enabled": True}],
+        [{"id": "x" * 41, "enabled": True}],
+        [{"id": f"w{i}", "enabled": True} for i in range(31)],
+        [{"id": "a"}],
+    ],
+)
+def test_widgets_post_validation(client, roles, widgets):
+    headers = roles("admin")
+    assert client.post(WIDGETS, json={"widgets": [{"id": "keep", "enabled": True}]}, headers=headers).status_code == 200
+    assert client.post(WIDGETS, json={"widgets": widgets}, headers=headers).status_code == 422
+    assert client.get(WIDGETS, headers=headers).json() == {"widgets": [{"id": "keep", "enabled": True}]}
+
+
+def test_widgets_post_accepts_30_and_unknown_ids(client, roles):
+    widgets = [{"id": f"unknown-{i}", "enabled": i % 2 == 0} for i in range(30)]
+    assert client.post(WIDGETS, json={"widgets": widgets}, headers=roles("admin")).json() == {"widgets": widgets}
+

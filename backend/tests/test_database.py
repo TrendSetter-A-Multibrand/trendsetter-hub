@@ -55,12 +55,97 @@ def test_app_role_can_use_news_tables(db):
     db.rollback()
 
 
+def test_app_role_can_use_home_widgets(db):
+    """Права hub_app на home_widgets выданы автоматически (ALTER DEFAULT PRIVILEGES); сид-данных нет."""
+    assert db.execute(text("SELECT count(*) FROM trendsetter_hub.home_widgets")).scalar_one() == 0
+    db.execute(text("INSERT INTO trendsetter_hub.home_widgets (widget_id, position) VALUES ('birthdays', 0)"))
+    db.execute(text("UPDATE trendsetter_hub.home_widgets SET enabled = false WHERE widget_id = 'birthdays'"))
+    assert db.execute(text("SELECT enabled FROM trendsetter_hub.home_widgets WHERE widget_id = 'birthdays'")).scalar_one() is False
+    db.execute(text("DELETE FROM trendsetter_hub.home_widgets WHERE widget_id = 'birthdays'"))
+    db.rollback()
+
+
+def test_home_widgets_script_is_rerunnable(database):
+    """0015: повторный прогон SQL не падает; столбец sort и таблица на месте."""
+    import psycopg
+    from pathlib import Path
+
+    script = (Path(__file__).resolve().parents[2] / "db" / "15_home_widgets.sql").read_text(encoding="utf-8")
+    with psycopg.connect(database["db_dsn"], autocommit=True) as conn:
+        conn.execute(script)
+        conn.execute(script)
+        assert conn.execute("SELECT to_regclass('trendsetter_hub.home_widgets')").fetchone()[0] is not None
+        assert conn.execute(
+            "SELECT 1 FROM information_schema.columns WHERE table_name = 'news_items' AND column_name = 'sort'"
+        ).fetchone()
+
+
 def test_alembic_version_in_hub_schema(database):
     import psycopg
 
     with psycopg.connect(database["db_dsn"]) as conn:
-        assert conn.execute("SELECT version_num FROM trendsetter_hub.alembic_version").fetchone() == ("0013",)
+        assert conn.execute("SELECT version_num FROM trendsetter_hub.alembic_version").fetchone() == ("0015",)
         assert conn.execute("SELECT to_regclass('public.alembic_version')").fetchone() == (None,)
+
+
+def _status_checks(conn):
+    return conn.execute(
+        "SELECT conname, pg_get_constraintdef(oid) FROM pg_constraint "
+        "WHERE conrelid = 'trendsetter_hub.news_items'::regclass AND contype = 'c' AND pg_get_constraintdef(oid) LIKE '%status%'"
+    ).fetchall()
+
+
+def test_news_moderation_constraints_and_rerun(database):
+    """0014: старое CHECK статуса снято (T-NM1), новые есть, повторный прогон SQL не падает и ничего не меняет."""
+    import psycopg
+    from pathlib import Path
+
+    script = (Path(__file__).resolve().parents[2] / "db" / "14_news_moderation.sql").read_text(encoding="utf-8")
+    with psycopg.connect(database["db_dsn"], autocommit=True) as conn:
+        before = _status_checks(conn)
+        conn.execute(script)
+        conn.execute(script)
+        assert _status_checks(conn) == before
+        names = {name for name, _ in before}
+        assert "news_items_status_v2_check" in names
+        assert not [n for n, d in before if "'published'" in d and "'pending'" not in d]
+        all_names = {r[0] for r in conn.execute("SELECT conname FROM pg_constraint WHERE conrelid = 'trendsetter_hub.news_items'::regclass")}
+        assert {"news_items_review_comment_check", "news_items_proposal_check"} <= all_names
+        indexes = {r[0] for r in conn.execute("SELECT indexname FROM pg_indexes WHERE tablename = 'news_items'")}
+        assert {"news_items_author_idx", "news_items_pending_idx"} <= indexes
+
+
+def test_news_moderation_downgrade_keeps_pending_as_draft(database):
+    """alembic downgrade 0013 при наличии pending-строки: строка становится draft; затем upgrade обратно."""
+    import os
+    import subprocess
+    import sys
+
+    import psycopg
+
+    from tests.conftest import BACKEND, _replace_db
+
+    env = {**os.environ, "HUB_MIGRATION_DATABASE_URL": _replace_db(database["admin_dsn"], database["name"]).replace("postgresql://", "postgresql+psycopg://", 1)}
+
+    def alembic(*args):
+        subprocess.run([sys.executable, "-m", "alembic", *args], cwd=BACKEND, env=env, check=True)
+
+    with psycopg.connect(database["db_dsn"], autocommit=True) as conn:
+        item_id = conn.execute(
+            "INSERT INTO trendsetter_hub.news_items (kind, title, status, submitted_at) VALUES ('news', 'Тест', 'pending', now()) RETURNING id"
+        ).fetchone()[0]
+        try:
+            alembic("downgrade", "0013")
+            assert conn.execute("SELECT status FROM trendsetter_hub.news_items WHERE id = %s", (item_id,)).fetchone() == ("draft",)
+            assert conn.execute("SELECT version_num FROM trendsetter_hub.alembic_version").fetchone() == ("0013",)
+            assert not conn.execute(
+                "SELECT 1 FROM information_schema.columns WHERE table_name = 'news_items' AND column_name = 'submitted_at'"
+            ).fetchone()
+        finally:
+            alembic("upgrade", "head")
+            conn.execute("DELETE FROM trendsetter_hub.news_items WHERE id = %s", (item_id,))
+        assert conn.execute("SELECT version_num FROM trendsetter_hub.alembic_version").fetchone() == ("0015",)
+        assert "news_items_status_v2_check" in {name for name, _ in _status_checks(conn)}
 
 
 def test_create_superadmin(db, client):

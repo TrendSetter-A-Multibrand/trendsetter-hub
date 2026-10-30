@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { HIDDEN_BANNER_KEY, NEWS_COLORS, canReadNews, colorClass, excerpt, fromLocalInput, hideBanner, isBannerHidden, isNewsEditor, toLocalInput } from './news.js'
+import { HIDDEN_BANNER_KEY, NEWS_COLORS, canReadNews, colorClass, excerpt, fromLocalInput, hideBanner, initialOf, isBannerHidden, isNewsEditor, payloadOf, toLocalInput, validate } from './news.js'
 
 test('colorClass: известные ключи дают модификатор, null и мусор — пусто', () => {
   assert.deepEqual(NEWS_COLORS, ['red', 'green', 'yellow', 'blue', 'pink', 'gray'])
@@ -61,4 +61,23 @@ test('isBannerHidden / hideBanner: storage бросает исключение �
   const broken = { getItem: () => { throw new Error('denied') }, setItem: () => { throw new Error('denied') } }
   assert.equal(isBannerHidden(broken, 5), false)
   assert.doesNotThrow(() => hideBanner(broken, 5))
+})
+
+test('initialOf / validate / payloadOf: новость, событие, предложка без pinned', () => {
+  const empty = initialOf(null)
+  assert.equal(empty.kind, 'news')
+  assert.ok(validate(empty))
+  const news = { ...empty, title: '  Заголовок ', pinned: true, color: 'red' }
+  assert.equal(validate(news), null)
+  assert.deepEqual(payloadOf(news), { title: 'Заголовок', body: '', color: 'red', pinned: true })
+  assert.deepEqual(payloadOf(news, false), { title: 'Заголовок', body: '', color: 'red' })
+  const event = { ...empty, kind: 'event', title: 'Событие' }
+  assert.ok(validate(event)) // нет начала
+  assert.ok(validate({ ...event, startsAt: '2026-11-02T10:00', endsAt: '2026-11-02T09:00' })) // окончание раньше начала
+  assert.ok(validate({ ...event, startsAt: '2026-11-02T10:00', rsvpDeadline: '2026-11-03T10:00' })) // срок позже начала
+  const ok = { ...event, startsAt: '2026-11-02T10:00', place: ' Офис ' }
+  assert.equal(validate(ok), null)
+  assert.equal(payloadOf(ok, false).place, 'Офис')
+  assert.ok(!('pinned' in payloadOf(ok, false)))
+  assert.equal(initialOf({ kind: 'event', title: 'Т', pinned: true }).pinned, true)
 })

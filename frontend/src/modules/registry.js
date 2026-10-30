@@ -17,8 +17,9 @@ import teamStrings from './team/strings.js'
 import newsStrings from './news/strings.js'
 import { canReadNews, isNewsEditor } from './news/lib/news.js'
 
-// hidden: модуль есть в реестре (особые права, группы, права в /core/me), но не показывается в меню,
-// а его страница /modules/<id> — «Не найдено». Нужен модулям без своей страницы (новости: блоки на главной и вкладка профиля).
+// hidden: boolean или (me) => boolean (isModuleHidden в core/access.js). Скрытый модуль есть в реестре (особые права, группы, права в /core/me),
+// но не показывается в меню, а его страница /modules/<id> — «Не найдено». Нужен модулям без своей страницы (pricing)
+// и страницам только для части пользователей (новости: «Редактор новостей» — только редактору; блоки на главной и «Мои предложения» в профиле — всем читателям).
 export const MODULES = [
   { id: 'purchasing', status: 'roadmap', strings: purchasingStrings, Component: lazy(() => import('./purchasing/PurchasingPage.jsx')) },
   { id: 'warehouse', status: 'mvp', wide: true, strings: warehouseStrings, Component: lazy(() => import('./warehouse/WarehousePage.jsx')) },
@@ -35,7 +36,10 @@ export const MODULES = [
   { id: 'team', status: 'mvp', forAll: true, wide: true, strings: teamStrings, Component: lazy(() => import('./team/TeamPage.jsx')) },
   // последней строкой: номера пунктов меню остальных модулей не сдвигаются
   // TODO(Q-N4): опции view/run у «Новостей» в особых правах и группах ни на что не влияют (кроме viewer через Q-G1)
-  { id: 'news', status: 'mvp', hidden: true, forAll: true, strings: newsStrings, Component: null },
+  {
+    id: 'news', status: 'mvp', homeEditor: true, hidden: (me) => !isNewsEditor(me), forAll: true, wide: true, strings: newsStrings,
+    Component: lazy(() => import('./news/NewsAdminSection.jsx')),
+  },
 ]
 
 export const getModule = (id) => MODULES.find((m) => m.id === id)
@@ -98,24 +102,29 @@ export const PROFILE_SECTIONS = [
     Component: lazy(() => import('./hr/leave/MyDocumentsSection.jsx')),
   },
   {
-    // только редактор новостей (ответственный за news или администратор)
-    id: 'news',
-    label: newsStrings.profile.title,
-    visible: (me) => isNewsEditor(me),
-    Component: lazy(() => import('./news/NewsAdminSection.jsx')),
+    // свои предложения новостей: читатель news (viewer — нет)
+    id: 'proposals',
+    label: newsStrings.proposals.title,
+    load: ownData((api) => api.get('/modules/news/proposals/mine')),
+    visible: (me, data) => canReadNews(me) && data != null,
+    badge: (data) => data.items.filter((i) => ['needs_changes', 'rejected'].includes(i.status)).length,
+    Component: lazy(() => import('./news/MyProposalsSection.jsx')),
   },
 ]
 
+// homeEditor: «Ответственный» этого модуля может настраивать виджеты главной (зеркало home_editor в бэкенд-манифесте).
+
 // Блоки главной страницы (/). Ядро само ничего не знает про модули: место и порядок = как здесь.
 //   id        — ключ блока;
+//   label     — подпись в настройке виджетов главной (у виджетов без slot; редактор новостей меняет их порядок и включение);
 //   slot      — место (необязательно): 'banner' — над шапкой; 'left' и 'center' — левая и центральная колонки под шапкой
 //               (новости и события; без них главная — одна колонка виджетов); не указано — столбиком с часами, погодой и курсами;
 //   visible   — (me) => показывать ли блок (скрытый не рендерится и не делает запросов);
 //   Component — получает { me }; сам грузит свои данные.
 // Данные людей (дни рождения, отпуска) видят только уровни view/run; наблюдатель (structure) — нет.
 export const HOME_WIDGETS = [
-  { id: 'birthdays', visible: (me) => canSeeData(me.module_access.team), Component: lazy(() => import('./team/components/HomeBirthdays.jsx')) },
-  { id: 'leave', visible: (me) => canSeeData(me.module_access.team), Component: lazy(() => import('./team/components/HomeLeave.jsx')) },
+  { id: 'birthdays', label: teamStrings.birthdays.title, visible: (me) => canSeeData(me.module_access.team), Component: lazy(() => import('./team/components/HomeBirthdays.jsx')) },
+  { id: 'leave', label: teamStrings.home.widgetLabel, visible: (me) => canSeeData(me.module_access.team), Component: lazy(() => import('./team/components/HomeLeave.jsx')) },
   { id: 'news-banner', slot: 'banner', visible: canReadNews, Component: lazy(() => import('./news/components/HomeBanner.jsx')) },
   { id: 'news-feed', slot: 'left', visible: canReadNews, Component: lazy(() => import('./news/components/HomeNewsFeed.jsx')) },
   { id: 'news-events', slot: 'center', visible: canReadNews, Component: lazy(() => import('./news/components/HomeEvents.jsx')) },

@@ -46,5 +46,8 @@ export const canSeeData = (access) => access === 'view' || access === 'run'
 
 export const canRun = (access) => access === 'run'
 
+// Скрыт ли модуль в меню и на /modules/<id>: hidden в реестре — boolean или (me) => boolean
+export const isModuleHidden = (module, me) => (typeof module.hidden === 'function' ? Boolean(module.hidden(me)) : Boolean(module.hidden))
+
 export const canManageUsers = (user) =>
   Boolean(user) && user.is_active !== false && user.access_level === 'admin'

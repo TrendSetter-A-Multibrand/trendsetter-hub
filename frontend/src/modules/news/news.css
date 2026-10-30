@@ -75,6 +75,10 @@
 .news-who-group { font-size: 13px; overflow-wrap: anywhere; }
 .news-who-title { font-size: 11px; letter-spacing: .02em; color: var(--muted); }
 .news-note { font-size: 13px; color: var(--muted); }
+.news-hint { font-size: 13px; color: var(--muted); }
+.widget-row { display: flex; align-items: center; gap: 12px; }
+.widget-label { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.news-move { display: inline-flex; gap: 4px; }
 
 .news-admin { display: flex; flex-direction: column; gap: 24px; }
 .news-panel { display: flex; flex-direction: column; gap: 12px; padding: 16px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card); }
@@ -94,6 +98,8 @@
 .news-swatch.blue { background: var(--blue); }
 .news-swatch.pink { background: var(--data-4); }
 .news-swatch.gray { background: var(--text-tertiary); }
+.news-col-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; }
+.news-col-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: 13px; font-weight: 400; letter-spacing: 0; }
 .news-admin-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
 .news-admin-item { display: flex; flex-direction: column; gap: 6px; padding: 12px 0; border-top: 1px solid var(--border); min-width: 0; }
 .news-admin-item:first-of-type { border-top: 0; }
@@ -105,4 +111,21 @@
   .news-row { grid-template-columns: 1fr; gap: 6px; }
   .news-featured { padding: var(--space-24); }
   .news-featured-title { font-size: 28px; }
+}
+
+/* Кнопка «Предложить» в шапке блока новостей: выглядит как ссылка sec-link */
+.news-propose { background: none; border: 0; padding: 0; cursor: pointer; font: inherit; margin-left: var(--space-16); }
+
+/* Рестайл под V1: редактор новостей. Только токены */
+.news-admin-item { border-top-color: var(--border-default); }
+.news-when, .news-admin-head .news-pin { font-family: var(--font-mono); }
+.news-tab-badge { margin-left: var(--space-8); vertical-align: middle; }
+.news-panel { border-color: var(--border-default); border-radius: 0; }
+.widget-row.people-row { gap: var(--space-12); }
+.news-save { padding-top: var(--space-12); }
+.news-propose + .news-propose, .sec-link + .news-propose { margin-left: var(--space-16); }
+.news-propose { color: var(--text-primary); }
+.news-propose:hover { color: var(--accent-primary); }
+@media (max-width: 767px) {
+  .sec-head .news-propose { white-space: normal; text-align: left; }
 }

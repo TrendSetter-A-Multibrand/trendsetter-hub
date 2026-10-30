@@ -82,7 +82,7 @@ export default function NewsItemModal({ item, canManage, onChange, onClose }) {
       )}
       {canManage && (
         <div className="news-who">
-          <Link to="/profile?section=news" onClick={onClose}>
+          <Link to="/modules/news" onClick={onClose}>
             {strings.home.manage}
           </Link>
         </div>

@@ -106,12 +106,18 @@ const hrOps = createHrOpsHandlers({ userFromToken, accessTo, isResponsible: isHr
 const hrPlans = createPlanHandlers({ userFromToken, accessTo, team, hr })
 // Сводка над таблицей «Сотрудники»: считается из тех же хранилищ; создаётся после hrPlans (дописывает демо-даты рождения поверх его)
 const hrStats = createHrStatsHandlers({ userFromToken, accessTo, team, hr })
-const home = createHomeHandlers({ userFromToken })
+// Виджеты главной настраивают администраторы и ответственные модулей с флагом homeEditor (как бэкенд home_editor)
+const home = createHomeHandlers({
+  userFromToken,
+  canEditWidgets: (u) => canManageUsers(u) || MODULES.some((m) => m.homeEditor && isModuleResponsible(u, groupPermissionsOf(u, m.id))),
+})
 // Новости: редактор — ответственный за news или администратор (как бэкенд is_editor)
 const news = createNewsHandlers({
   userFromToken,
   accessTo,
   isEditor: (u) => isModuleResponsible(u, groupPermissionsOf(u, 'news')) || canManageUsers(u),
+  notify: notifications.notify,
+  userById: (id) => data.users.find((u) => u.id === Number(id)) ?? null,
   errors: getModule('news').strings.errors,
 })
 // WB «Маркировка»: демо-данные сверки, права как у бэкенда (view/run — данные, run — запись документа)
@@ -121,6 +127,7 @@ const wb = createWbHandlers({ userFromToken, accessTo })
 function moduleBadges(user) {
   const badges = { ...team.moduleBadges(user) }
   for (const [id, n] of Object.entries(hr.moduleBadges(user))) badges[id] = (badges[id] ?? 0) + n
+  for (const [id, n] of Object.entries(news.moduleBadges(user))) badges[id] = (badges[id] ?? 0) + n
   return badges
 }
 

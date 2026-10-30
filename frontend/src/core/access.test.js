@@ -7,6 +7,7 @@ import {
   canSeeData,
   canRun,
   canManageUsers,
+  isModuleHidden,
 } from './access.js'
 
 const u = (access_level, department_ids, extra = {}) => ({
@@ -104,4 +105,14 @@ test('canManageUsers', () => {
 test('canSeeData / canRun для всех значений', () => {
   assert.deepEqual(['none', 'structure', 'view', 'run'].map(canSeeData), [false, false, true, true])
   assert.deepEqual(['none', 'structure', 'view', 'run'].map(canRun), [false, false, false, true])
+})
+
+test('isModuleHidden: boolean, функция и отсутствие флага', () => {
+  const me = { id: 1 }
+  assert.equal(isModuleHidden({ hidden: true }, me), true)
+  assert.equal(isModuleHidden({ hidden: false }, me), false)
+  assert.equal(isModuleHidden({}, me), false)
+  assert.equal(isModuleHidden({ hidden: (m) => m.id === 1 }, me), true)
+  assert.equal(isModuleHidden({ hidden: (m) => m.id === 2 }, me), false)
+  assert.equal(isModuleHidden({ hidden: () => undefined }, me), false)
 })

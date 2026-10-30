@@ -108,6 +108,7 @@ ENDPOINTS = [
     ("post", "/items/1/delete", None),
     ("post", "/banner", {"text": "Т"}),
     ("post", "/banner/off", None),
+    ("post", "/pinned-order", {"kind": "news", "ids": []}),
 ]
 EDITOR_ENDPOINTS = ENDPOINTS[4:]
 
@@ -496,7 +497,7 @@ def test_banner_validation(client, h):
 # ---------- 9. журнал ----------
 
 SECRETS = ("СекретныйЗаголовок", "СекретныйТекст", "СекретноеМесто", "СекретнаяПлашка")
-ALLOWED_KEYS = {"news_id", "banner_id", "kind", "status", "fields"}
+ALLOWED_KEYS = {"news_id", "banner_id", "kind", "status", "fields", "count"}
 
 
 def test_audit_actions_and_no_texts(client, h, db):
@@ -546,3 +547,351 @@ def test_patch_without_changes_is_not_logged(client, h, db):
     r = client.patch(f"{BASE}/items/{news['id']}", json={"title": "Т", "pinned": False, "status": "published"}, headers=h.admin)
     assert r.status_code == 200
     assert len(audit(db)) == before
+
+
+# ---------- предложка и модерация (PR 1, docs/TZ-news-moderation.md) ----------
+
+PROPOSAL_ENDPOINTS = [
+    ("get", "/proposals/mine", None),
+    ("post", "/proposals", {"kind": "news", "title": "Т"}),
+    ("patch", "/proposals/1", {"title": "Т"}),
+]
+REVIEW_ENDPOINTS = [
+    ("get", "/items?tab=review", None),
+    ("post", "/items/1/approve", {"expectedUpdatedAt": NOW.isoformat()}),
+    ("post", "/items/1/return", {"comment": "К", "expectedUpdatedAt": NOW.isoformat()}),
+    ("post", "/items/1/reject", {"comment": "К", "expectedUpdatedAt": NOW.isoformat()}),
+]
+
+
+def propose(client, headers, **over):
+    r = post(client, "/proposals", headers, {"kind": "news", "title": "Предложение", **over})
+    assert r.status_code == 200, r.text
+    return r.json()
+
+
+def decide(client, headers, item, action, comment="Комментарий", expected=None):
+    body = {"expectedUpdatedAt": expected or item["updatedAt"]}
+    if action != "approve":
+        body["comment"] = comment
+    return client.post(f"{BASE}/items/{item['id']}/{action}", json=body, headers=headers)
+
+
+def mine(client, headers):
+    return client.get(BASE + "/proposals/mine", headers=headers).json()["items"]
+
+
+def notifications(db):
+    db.rollback()
+    return db.execute(text("SELECT user_id, kind, title, body, link FROM trendsetter_hub.notifications ORDER BY id")).all()
+
+
+@pytest.mark.parametrize("method,path,body", PROPOSAL_ENDPOINTS + REVIEW_ENDPOINTS)
+def test_proposals_no_token_is_401(client, method, path, body):
+    assert call(client, method, path, None, body).status_code == 401
+
+
+@pytest.mark.parametrize("method,path,body", PROPOSAL_ENDPOINTS + REVIEW_ENDPOINTS)
+def test_proposals_viewer_is_403(client, h, method, path, body):
+    assert call(client, method, path, h.viewer, body).status_code == 403
+
+
+@pytest.mark.parametrize("method,path,body", REVIEW_ENDPOINTS)
+@pytest.mark.parametrize("role", ["emp", "sup"])
+def test_review_endpoints_forbidden_for_non_editor(client, h, role, method, path, body):
+    assert call(client, method, path, getattr(h, role), body).status_code == 403
+
+
+def test_proposal_endpoints_open_for_readers_and_editors(client, h):
+    for role in ("emp", "editor", "admin"):
+        assert client.get(BASE + "/proposals/mine", headers=getattr(h, role)).json() == {"items": []}
+        assert propose(client, getattr(h, role))["status"] == "pending"
+    for role in ("editor", "admin"):
+        assert tab(client, getattr(h, role), "review")["total"] == 3
+
+
+def test_proposal_is_created_pending(client, h):
+    p = propose(client, h.emp, color="green", body="Текст")
+    assert p["status"] == "pending" and p["pinned"] is False and p["color"] == "green" and p["publishedAt"] is None
+    assert p["review"]["submittedAt"] == NOW.isoformat()
+    assert p["review"]["author"]["name"] == "Борис Сотрудников"
+    assert p["review"]["reviewComment"] is None and p["review"]["reviewedAt"] is None
+    for extra in ({"pinned": True}, {"status": "published"}):
+        assert post(client, "/proposals", h.emp, {"kind": "news", "title": "Т", **extra}).status_code == 422
+    assert post(client, "/proposals", h.emp, {"kind": "event", "title": "Т"}).status_code == 422
+    assert post(client, "/proposals", h.emp, {"kind": "news", "title": "Т", "place": "М"}).status_code == 422
+
+
+def test_review_key_only_in_editor_lists_and_proposals(client, h):
+    make_news(client, h.editor)
+    p = propose(client, h.emp)
+    current = tab(client, h.editor, "current")["items"]
+    assert [i["review"] for i in current] == [None]
+    assert tab(client, h.editor, "review")["items"][0]["review"]["author"]["name"] == "Борис Сотрудников"
+    assert p["id"] not in ids(current)
+    decide(client, h.editor, p, "approve")
+    f = feed(client, h.emp)
+    assert len(f["news"]) == 2 and all("review" not in i for i in f["news"] + f["events"])
+
+
+def test_proposal_hidden_until_approved(client, h):
+    p = propose(client, h.emp)
+    assert feed(client, h.emp) == {"events": [], "news": []}
+    for name in ("current", "past", "drafts"):
+        assert tab(client, h.editor, name)["items"] == []
+    assert ids(tab(client, h.editor, "review")["items"]) == [p["id"]]
+    r = decide(client, h.editor, p, "approve")
+    assert r.status_code == 200 and r.json()["status"] == "published" and r.json()["publishedAt"] == NOW.isoformat()
+    assert ids(feed(client, h.emp)["news"]) == [p["id"]]
+    assert tab(client, h.editor, "review")["items"] == []
+
+
+def test_author_rules(client, h, clock):
+    own = propose(client, h.emp)
+    other = propose(client, h.emp2)
+    editors_item = make_news(client, h.editor)
+    assert ids(mine(client, h.emp)) == [own["id"]]
+    for item_id in (other["id"], editors_item["id"], 9999):
+        assert client.patch(f"{BASE}/proposals/{item_id}", json={"title": "Х"}, headers=h.emp).status_code == 404
+    # pending -> pending, submittedAt прежний
+    clock["now"] = NOW + timedelta(hours=1)
+    r = client.patch(f"{BASE}/proposals/{own['id']}", json={"title": "Новое"}, headers=h.emp)
+    assert r.status_code == 200 and r.json()["status"] == "pending" and r.json()["title"] == "Новое"
+    assert r.json()["review"]["submittedAt"] == NOW.isoformat()
+    # needs_changes -> pending, submittedAt новый, снова в очереди
+    assert decide(client, h.editor, r.json(), "return", "Добавьте место").status_code == 200
+    row = mine(client, h.emp)[0]
+    assert row["status"] == "needs_changes" and row["review"]["reviewComment"] == "Добавьте место"
+    clock["now"] = NOW + timedelta(hours=2)
+    r = client.patch(f"{BASE}/proposals/{own['id']}", json={}, headers=h.emp)  # без изменений — всё равно переотправка
+    assert r.json()["status"] == "pending" and r.json()["review"]["submittedAt"] == clock["now"].isoformat()
+    assert r.json()["review"]["reviewComment"] == "Добавьте место"
+    assert own["id"] in ids(tab(client, h.editor, "review")["items"])
+    # rejected -> pending
+    assert decide(client, h.editor, r.json(), "reject", "Не подходит").status_code == 200
+    clock["now"] = NOW + timedelta(hours=3)
+    r = client.patch(f"{BASE}/proposals/{own['id']}", json={"body": "Доработано"}, headers=h.emp)
+    assert r.json()["status"] == "pending" and r.json()["review"]["submittedAt"] == clock["now"].isoformat()
+    # published -> 409; pinned/status/archived/kind — 422
+    done = decide(client, h.editor, r.json(), "approve").json()
+    assert client.patch(f"{BASE}/proposals/{done['id']}", json={"title": "Х"}, headers=h.emp).status_code == 409
+    for extra in ({"pinned": True}, {"status": "draft"}, {"archived": True}, {"kind": "event"}):
+        assert client.patch(f"{BASE}/proposals/{other['id']}", json=extra, headers=h.emp2).status_code == 422
+
+
+def test_pending_patch_without_changes_is_not_logged(client, h, db):
+    p = propose(client, h.emp)
+    before = len(audit(db))
+    assert client.patch(f"{BASE}/proposals/{p['id']}", json={"title": p["title"]}, headers=h.emp).status_code == 200
+    assert len(audit(db)) == before
+
+
+def test_proposal_patch_validates_final_state(client, h):
+    p = propose(client, h.emp, kind="event", startsAt=iso(48))
+    assert client.patch(f"{BASE}/proposals/{p['id']}", json={"endsAt": iso(1)}, headers=h.emp).status_code == 422
+
+
+def test_review_only_from_pending_and_stale_check(client, h):
+    p = propose(client, h.emp)
+    assert decide(client, h.editor, p, "approve", expected=iso(-1)).status_code == 409
+    assert decide(client, h.editor, p, "return", "   ").status_code == 422
+    assert decide(client, h.editor, p, "return", "").status_code == 422
+    assert decide(client, h.editor, p, "reject", "я" * 1001).status_code == 422
+    assert decide(client, h.editor, p, "reject", "я" * 1000).status_code == 200
+    for action in ("approve", "return", "reject"):
+        assert decide(client, h.editor, p, action).status_code == 409  # уже не pending
+    assert decide(client, h.editor, {"id": 99999, "updatedAt": p["updatedAt"]}, "approve").status_code == 404
+    assert ids(tab(client, h.editor, "past")["items"]) == [p["id"]]  # rejected — во вкладке past
+    assert tab(client, h.editor, "past")["items"][0]["status"] == "rejected"
+    assert tab(client, h.editor, "review")["items"] == []
+
+
+def test_microsecond_updated_at_round_trip(client, h, clock):
+    clock["now"] = NOW + timedelta(microseconds=123456)
+    p = propose(client, h.emp)
+    assert p["updatedAt"].endswith(".123456+00:00")
+    clock["now"] = NOW + timedelta(hours=1, microseconds=654321)
+    patched = client.patch(f"{BASE}/items/{p['id']}", json={"title": "Правка"}, headers=h.editor)  # «поправить и опубликовать»
+    assert patched.status_code == 200 and patched.json()["status"] == "pending"
+    assert patched.json()["updatedAt"].endswith(".654321+00:00")
+    assert decide(client, h.editor, p, "approve").status_code == 409  # старый updatedAt устарел
+    assert decide(client, h.editor, patched.json(), "approve").status_code == 200
+
+
+def test_review_list_order(client, h, clock):
+    a = propose(client, h.emp, title="A")
+    clock["now"] = NOW + timedelta(hours=1)
+    b = propose(client, h.emp2, title="B")
+    clock["now"] = NOW + timedelta(hours=2)
+    c = propose(client, h.emp2, title="C")
+    decide(client, h.editor, a, "return", "Доработать")  # needs_changes — после pending
+    assert ids(tab(client, h.editor, "review")["items"]) == [b["id"], c["id"], a["id"]]
+    assert tab(client, h.editor, "review")["total"] == 3
+
+
+def test_editor_patch_cannot_bypass_review(client, h):
+    p = propose(client, h.emp)
+    url = f"{BASE}/items/{p['id']}"
+    assert client.patch(url, json={"status": "published"}, headers=h.editor).status_code == 409
+    assert client.patch(url, json={"archived": True}, headers=h.admin).status_code == 409
+    r = client.patch(url, json={"title": "Правка", "pinned": True, "color": "red"}, headers=h.editor)
+    assert r.status_code == 200 and r.json()["status"] == "pending" and r.json()["pinned"] is True
+    returned = decide(client, h.editor, r.json(), "return", "Доработайте").json()
+    assert returned["status"] == "needs_changes"
+    assert client.patch(url, json={"title": "Х"}, headers=h.editor).status_code == 409
+    assert client.patch(url, json={"status": "draft"}, headers=h.editor).status_code == 409
+    client.patch(f"{BASE}/proposals/{p['id']}", json={}, headers=h.emp)
+    rejected = decide(client, h.editor, mine(client, h.emp)[0], "reject").json()
+    assert rejected["status"] == "rejected"
+    assert client.patch(url, json={"title": "Х"}, headers=h.admin).status_code == 409
+
+
+def test_review_notifications(client, h, db):
+    p = propose(client, h.emp, title="Субботник")
+    decide(client, h.editor, p, "return", "Добавьте место")
+    again = client.patch(f"{BASE}/proposals/{p['id']}", json={}, headers=h.emp).json()
+    decide(client, h.editor, again, "reject", "Не подходит")
+    again = client.patch(f"{BASE}/proposals/{p['id']}", json={}, headers=h.emp).json()
+    decide(client, h.editor, again, "approve")
+    rows = notifications(db)
+    emp_id = db.execute(text("SELECT id FROM trendsetter_hub.users WHERE email = 'emp@example.com'")).scalar_one()
+    link = "/profile?section=proposals"
+    assert [(r[0], r[1], r[2], r[4]) for r in rows] == [
+        (emp_id, "news_review", "Новость нужно доработать", link),
+        (emp_id, "news_review", "Новость отклонена", link),
+        (emp_id, "news_review", "Ваша новость опубликована", link),
+    ]
+    assert rows[0][3] == "«Субботник»: Добавьте место"
+    assert rows[1][3] == "«Субботник». Причина: Не подходит. Можно доработать и отправить снова."
+    assert rows[2][3] == "Субботник"
+    own = propose(client, h.editor)  # редактор проверяет своё — себе не шлём
+    decide(client, h.editor, own, "approve")
+    gone = propose(client, h.emp2)
+    db.execute(text("UPDATE trendsetter_hub.users SET is_active = false WHERE email = 'emp2@example.com'"))
+    db.commit()
+    decide(client, h.editor, gone, "approve")  # неактивный автор — не шлём
+    assert len(notifications(db)) == 3
+
+
+def test_proposal_limits(client, h, clock):
+    first = [propose(client, h.emp, title=f"П{i}") for i in range(3)]
+    r = post(client, "/proposals", h.emp, {"kind": "news", "title": "4"})
+    assert r.status_code == 429 and "3" in r.json()["detail"]
+    assert decide(client, h.editor, first[0], "approve").status_code == 200
+    propose(client, h.emp, title="после approve")  # открытых снова 3, создано 4
+    # повторная подача отклонённого считается в лимите открытых
+    assert decide(client, h.editor, first[1], "reject").status_code == 200
+    propose(client, h.emp, title="пятое")  # создано 5, открытых 3
+    assert client.patch(f"{BASE}/proposals/{first[1]['id']}", json={}, headers=h.emp).status_code == 429
+    # needs_changes -> pending лимит открытых не увеличивает
+    target = next(i for i in mine(client, h.emp) if i["id"] == first[2]["id"])
+    assert decide(client, h.editor, target, "return", "Доработать").status_code == 200
+    assert client.patch(f"{BASE}/proposals/{first[2]['id']}", json={}, headers=h.emp).status_code == 200
+    # суточный лимит: создано 5 за 24 ч
+    for item in tab(client, h.editor, "review")["items"]:
+        decide(client, h.editor, item, "approve")
+    r = post(client, "/proposals", h.emp, {"kind": "news", "title": "шестое"})
+    assert r.status_code == 429 and "5" in r.json()["detail"]
+    clock["now"] = NOW + timedelta(hours=24, minutes=1)
+    assert post(client, "/proposals", h.emp, {"kind": "news", "title": "шестое"}).status_code == 200
+
+
+def test_module_badge_counts_pending_for_editors_only(client, h):
+    assert client.get("/core/me", headers=h.editor).json()["module_badges"].get("news") is None
+    propose(client, h.emp)
+    second = propose(client, h.emp2)
+    for role, expected in (("editor", 2), ("admin", 2), ("emp", None), ("sup", None)):
+        assert client.get("/core/me", headers=getattr(h, role)).json()["module_badges"].get("news") == expected
+    decide(client, h.editor, second, "return", "Доработать")
+    assert client.get("/core/me", headers=h.editor).json()["module_badges"]["news"] == 1
+
+
+def test_proposal_audit_actions_without_texts(client, h, db):
+    p = propose(client, h.emp, title=SECRETS[0], body=SECRETS[1], place=SECRETS[2], kind="event", startsAt=iso(48))
+    p = decide(client, h.editor, p, "return", SECRETS[3]).json()
+    p = client.patch(f"{BASE}/proposals/{p['id']}", json={"title": SECRETS[0] + "2"}, headers=h.emp).json()
+    p = decide(client, h.editor, p, "reject", SECRETS[3]).json()
+    p = client.patch(f"{BASE}/proposals/{p['id']}", json={}, headers=h.emp).json()
+    assert decide(client, h.editor, p, "approve").status_code == 200
+    rows = audit(db)
+    assert [a for a, _, _ in rows] == ["news.submit", "news.return", "news.resubmit", "news.reject", "news.resubmit", "news.approve"]
+    assert rows[0][2] == {"news_id": p["id"], "kind": "event"}
+    assert rows[2][2]["fields"] == ["title"] and rows[4][2]["fields"] == []
+    for _, module_id, details in rows:
+        assert module_id == "news" and set(details) <= ALLOWED_KEYS
+        assert not any(secret in json.dumps(details, ensure_ascii=False) for secret in SECRETS)
+
+
+# ---------- PR 2: порядок закреплённых ----------
+
+
+def order(client, headers, kind, ids_):
+    return post(client, "/pinned-order", headers, {"kind": kind, "ids": ids_})
+
+
+def test_pinned_order_forbidden_for_employee_and_viewer(client, h):
+    for role in ("emp", "viewer", "sup"):
+        assert order(client, getattr(h, role), "news", []).status_code == 403
+
+
+def test_pinned_order_sets_feed_and_current_order(client, h):
+    n = [make_news(client, h.editor, title=f"Н{i}", pinned=True) for i in range(3)]
+    plain = make_news(client, h.editor, title="Обычная")
+    e = [make_event(client, h.editor, title=f"С{i}", pinned=True, startsAt=iso(48 + i)) for i in range(2)]
+    new_news = [n[2]["id"], n[0]["id"], n[1]["id"]]
+    assert order(client, h.editor, "news", new_news).status_code == 200
+    assert order(client, h.editor, "event", [e[1]["id"], e[0]["id"]]).status_code == 200
+    f = feed(client, h.emp)
+    assert ids(f["news"]) == new_news + [plain["id"]]
+    assert ids(f["events"]) == [e[1]["id"], e[0]["id"]]
+    current = ids(tab(client, h.editor, "current")["items"])
+    assert current == [e[1]["id"], e[0]["id"]] + new_news + [plain["id"]]
+
+
+def test_pinned_order_requires_exact_set(client, h):
+    a = make_news(client, h.editor, title="А", pinned=True)
+    b = make_news(client, h.editor, title="Б", pinned=True)
+    plain = make_news(client, h.editor, title="Обычная")
+    event = make_event(client, h.editor, pinned=True)
+    for bad in ([a["id"]], [a["id"], b["id"], plain["id"]], [a["id"], a["id"]], [a["id"], b["id"], event["id"]], []):
+        r = order(client, h.editor, "news", bad)
+        assert r.status_code == 409, bad
+    assert order(client, h.editor, "event", [a["id"]]).status_code == 409
+    assert order(client, h.editor, "news", [b["id"], a["id"]]).status_code == 200
+    assert ids(feed(client, h.emp)["news"])[:2] == [b["id"], a["id"]]
+
+
+def test_pinned_order_ignores_archived_and_unpublished(client, h):
+    a = make_news(client, h.editor, title="А", pinned=True)
+    b = make_news(client, h.editor, title="Б", pinned=True)
+    draft = make_news(client, h.editor, title="Ч", pinned=True, status="draft")
+    assert client.patch(f"{BASE}/items/{b['id']}", json={"archived": True}, headers=h.editor).status_code == 200
+    assert order(client, h.editor, "news", [a["id"]]).status_code == 200
+    assert order(client, h.editor, "news", [a["id"], draft["id"]]).status_code == 409
+
+
+def test_pinned_change_resets_sort(client, h, db):
+    a = make_news(client, h.editor, title="А", pinned=True)
+    b = make_news(client, h.editor, title="Б", pinned=True)
+    assert order(client, h.editor, "news", [b["id"], a["id"]]).status_code == 200
+
+    def sort_of(item):
+        return db.execute(text("SELECT sort FROM trendsetter_hub.news_items WHERE id = :i"), {"i": item["id"]}).scalar_one()
+
+    db.rollback()
+    assert (sort_of(b), sort_of(a)) == (0, 1)
+    assert client.patch(f"{BASE}/items/{b['id']}", json={"pinned": False}, headers=h.editor).status_code == 200
+    db.rollback()
+    assert sort_of(b) is None and sort_of(a) == 1
+    assert client.patch(f"{BASE}/items/{b['id']}", json={"pinned": True}, headers=h.editor).status_code == 200
+    db.rollback()
+    assert sort_of(b) is None
+    assert ids(feed(client, h.emp)["news"])[0] == a["id"]  # со sort — раньше закреплённой без sort
+
+
+def test_pinned_order_audit_without_texts(client, h, db):
+    a = make_news(client, h.editor, title=SECRETS[0], pinned=True)
+    b = make_news(client, h.editor, title=SECRETS[1], pinned=True)
+    assert order(client, h.editor, "news", [b["id"], a["id"]]).status_code == 200
+    rows = [r for r in audit(db) if r[0] == "news.reorder"]
+    assert rows == [("news.reorder", "news", {"kind": "news", "count": 2})]
