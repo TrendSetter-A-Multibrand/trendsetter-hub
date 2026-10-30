@@ -4,7 +4,6 @@
 .fb-label { font-size: var(--fs-small); color: var(--text-secondary); }
 .fb-counter { align-self: flex-end; font-size: var(--fs-caption); color: var(--text-tertiary); }
 .fb-hint { font-size: var(--fs-small); color: var(--text-secondary); }
-.fb-card-action { margin-top: var(--space-12); }
 
 .fb-admin { display: flex; flex-direction: column; gap: var(--space-16); min-width: 0; }
 .fb-bar { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-12); }

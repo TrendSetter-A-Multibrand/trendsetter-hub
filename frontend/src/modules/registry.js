@@ -154,5 +154,12 @@ export const HOME_WIDGETS = [
   { id: 'news-banner', slot: 'banner', visible: canReadNews, Component: lazy(() => import('./news/components/HomeBanner.jsx')) },
   { id: 'news-feed', slot: 'left', visible: canReadNews, Component: lazy(() => import('./news/components/HomeNewsFeed.jsx')) },
   { id: 'news-events', slot: 'center', visible: canReadNews, Component: lazy(() => import('./news/components/HomeEvents.jsx')) },
-  { id: 'feedback', label: feedbackStrings.home.widgetLabel, visible: canSendFeedback, Component: lazy(() => import('./feedback/components/HomeFeedbackCard.jsx')) },
+]
+
+// Кнопки верхней строки (правее переключателя темы). Ядро само ничего не знает про модули: порядок = как здесь.
+//   id        — ключ кнопки;
+//   visible   — (me) => показывать ли кнопку;
+//   Component — получает { me }; сам открывает своё окно.
+export const TOPLINE_ACTIONS = [
+  { id: 'feedback', visible: canSendFeedback, Component: lazy(() => import('./feedback/components/FeedbackButton.jsx')) },
 ]

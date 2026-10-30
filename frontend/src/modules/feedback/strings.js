@@ -26,8 +26,7 @@ const strings = {
     bodyLabel: 'Сообщение',
     bodyPlaceholder: 'Напишите, что вы хотите сказать',
     counter: (n, limit) => `${n} / ${limit}`,
-    authorLabel: 'От чьего имени',
-    named: 'С моим именем',
+    from: (name) => `От: ${name}`,
     anonymous: 'Анонимно',
     contactOk: 'Разрешаю HR связаться со мной',
     anonymousWarning: 'Анонимное сообщение без имени. Отследить ответ на него вы не сможете.',
@@ -37,13 +36,6 @@ const strings = {
     bodyRequired: 'Напишите сообщение',
     sent: 'Отправлено',
     sentAnonymous: 'Отправлено анонимно',
-  },
-
-  home: {
-    widgetLabel: 'Обратная связь',
-    title: 'Обратная связь',
-    text: 'Благодарность, предложение или жалоба — можно анонимно',
-    write: 'Написать',
   },
 
   profile: {

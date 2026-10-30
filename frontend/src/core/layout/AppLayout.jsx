@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import { CloseOutlined, DownOutlined, MenuOutlined, SearchOutlined } from '@ant-design/icons'
 import { useAuth } from '../auth/useAuth.js'
 import { DEMO_MODE } from '../config.js'
 import { isModuleHidden } from '../access.js'
-import { MODULES } from '../../modules/registry.js'
+import { MODULES, TOPLINE_ACTIONS } from '../../modules/registry.js'
 import strings from '../strings.js'
 import DemoUserSwitcher from './DemoUserSwitcher.jsx'
 import Logo from './Logo.jsx'
@@ -232,6 +232,11 @@ export default function AppLayout() {
             <VersionButton />
             <NotificationsBell />
             <ThemeToggle />
+            {TOPLINE_ACTIONS.filter((a) => a.visible(me)).map(({ id, Component }) => (
+              <Suspense key={id} fallback={null}>
+                <Component me={me} />
+              </Suspense>
+            ))}
             {DEMO_MODE && <DemoUserSwitcher />}
           </div>
         </div>

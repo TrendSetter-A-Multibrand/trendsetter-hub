@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Alert, App, Button, Checkbox, Input, Modal, Radio, Select, Space, Switch } from 'antd'
+import { Alert, App, Button, Checkbox, Input, Modal, Radio, Select, Space } from 'antd'
 import { api } from '../../../core/api/index.js'
+import { useAuth } from '../../../core/auth/useAuth.js'
 import { BODY_LIMIT, FEEDBACK_KINDS, buildPayload } from '../lib/feedback.js'
 import strings from '../strings.js'
 import '../feedback.css'
@@ -10,6 +11,7 @@ const s = strings.form
 // Окно «Обратная связь». onSent() вызывается после успешной отправки; ошибки 422/429/503 показываются текстом сервера, окно остаётся открытым.
 export default function FeedbackModal({ onClose, onSent }) {
   const { message } = App.useApp()
+  const { me } = useAuth()
   const [form, setForm] = useState({ kind: 'thanks', body: '', anonymous: false, contactOk: false, recipientId: null })
   const [people, setPeople] = useState([])
   const [error, setError] = useState(null)
@@ -98,19 +100,14 @@ export default function FeedbackModal({ onClose, onSent }) {
           />
           <span className="fb-counter">{s.counter(form.body.length, BODY_LIMIT)}</span>
         </div>
-        <div className="fb-field">
-          <span className="fb-label">{s.authorLabel}</span>
-          <Switch
-            checked={form.anonymous}
-            onChange={(anonymous) => patch({ anonymous, contactOk: false })}
-            checkedChildren={s.anonymous}
-            aria-label={s.authorLabel}
-          />
-        </div>
+        <Checkbox checked={form.anonymous} onChange={(e) => patch({ anonymous: e.target.checked, contactOk: false })}>
+          {s.anonymous}
+        </Checkbox>
         {form.anonymous ? (
           <Alert type="warning" showIcon title={s.anonymousWarning} />
         ) : (
           <>
+            <div className="fb-hint">{s.from(me.full_name)}</div>
             <Checkbox checked={form.contactOk} onChange={(e) => patch({ contactOk: e.target.checked })}>
               {s.contactOk}
             </Checkbox>
