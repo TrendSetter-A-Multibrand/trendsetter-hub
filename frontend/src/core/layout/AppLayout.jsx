@@ -4,7 +4,7 @@ import { CloseOutlined, DownOutlined, MenuOutlined, SearchOutlined } from '@ant-
 import { useAuth } from '../auth/useAuth.js'
 import { DEMO_MODE } from '../config.js'
 import { isModuleHidden } from '../access.js'
-import { MODULES, TOPLINE_ACTIONS } from '../../modules/registry.js'
+import { MODULES, OFFICE_SECTIONS, TOPLINE_ACTIONS } from '../../modules/registry.js'
 import strings from '../strings.js'
 import DemoUserSwitcher from './DemoUserSwitcher.jsx'
 import Logo from './Logo.jsx'
@@ -36,11 +36,16 @@ function NavTitle({ text, active }) {
 }
 
 // Хлебные крошки верхней строки: Хаб / Отдел / Раздел
-function useCrumbs(navModules) {
+function useCrumbs(navModules, officeTabs) {
   const location = useLocation()
   const { pathname, search } = location
   if (pathname === '/') return [s.hub, s.home]
   if (pathname === '/profile') return [s.hub, strings.profile.title]
+  if (pathname === '/office') {
+    const key = new URLSearchParams(search).get('tab')
+    const tab = officeTabs.find((x) => x.id === key) ?? officeTabs[0]
+    return tab ? [s.hub, strings.office.title, tab.label] : [s.hub, strings.office.title]
+  }
   const m = navModules.find((x) => pathname === `/modules/${x.id}`)
   if (!m) return [s.hub]
   const crumbs = [s.hub, m.strings.dept, m.strings.tool]
@@ -71,14 +76,19 @@ export default function AppLayout() {
     num: moduleNumber(m.id),
     allowed: (me.module_access[m.id] ?? 'none') !== 'none',
   }))
-  const crumbs = useCrumbs(navModules)
+  // «Администрация» (/office): пункт виден, если видна хоть одна вкладка; число у пункта — сумма чисел видимых вкладок
+  const officeTabs = OFFICE_SECTIONS.filter((x) => x.visible(me))
+  const officeBadge = officeTabs.reduce((sum, x) => sum + (x.badge?.(me) ?? 0), 0)
+  const crumbs = useCrumbs(navModules, officeTabs)
 
   const q = query.trim().toLowerCase()
   const matches = (...texts) => !q || texts.some((t) => t.toLowerCase().includes(q))
   const homeVisible = matches(s.home, s.homeSub)
   const shownModules = navModules.filter((m) => matches(m.strings.tool, m.strings.dept, ...(m.sections ?? []).map((x) => x.label)))
 
-  const wide = Boolean(navModules.find((m) => m.allowed && m.wide && location.pathname === `/modules/${m.id}`))
+  const officeShown = officeTabs.length > 0 && matches(strings.office.title, strings.office.dept, ...officeTabs.map((x) => x.label))
+  const officeActive = location.pathname === '/office'
+  const wide = officeActive || Boolean(navModules.find((m) => m.allowed && m.wide && location.pathname === `/modules/${m.id}`))
   const homeActive = location.pathname === '/'
 
   // ⌘K / Ctrl+K — фокус в поиск по разделам
@@ -200,7 +210,21 @@ export default function AppLayout() {
               </div>
             )
           })}
-          {!homeVisible && shownModules.length === 0 && <div className="nav-empty">{s.searchEmpty}</div>}
+          {officeShown && (
+            <Link to="/office" className={`nav-item${officeActive ? ' active' : ''}`} aria-current={officeActive ? 'page' : undefined}>
+              <span className="nav-num">—</span>
+              <span className="nav-text">
+                <NavTitle text={strings.office.title} active={officeActive} />
+                <span className="nav-dept">{strings.office.dept}</span>
+              </span>
+              {officeBadge > 0 && (
+                <span className="nav-badge" aria-label={s.moduleBadge(officeBadge)}>
+                  {officeBadge}
+                </span>
+              )}
+            </Link>
+          )}
+          {!homeVisible && shownModules.length === 0 && !officeShown && <div className="nav-empty">{s.searchEmpty}</div>}
         </nav>
         <div className="user-slot">
           <Link to="/profile" className="user-link" aria-label={s.openProfile}>

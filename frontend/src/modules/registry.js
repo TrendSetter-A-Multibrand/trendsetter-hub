@@ -23,7 +23,9 @@ import { canSendFeedback, isFeedbackReader } from './feedback/lib/feedback.js'
 
 // hidden: boolean или (me) => boolean (isModuleHidden в core/access.js). Скрытый модуль есть в реестре (особые права, группы, права в /core/me),
 // но не показывается в меню, а его страница /modules/<id> — «Не найдено». Нужен модулям без своей страницы (pricing)
-// и страницам только для части пользователей (новости: «Редактор новостей» — только редактору; блоки на главной и «Мои предложения» в профиле — всем читателям).
+// и страницам только для части пользователей (обратная связь — только читателю; блоки новостей на главной и «Мои предложения» в профиле — всем читателям).
+// redirect: строка или (me) => строка | null (resolveRedirect в core/access.js). Страница /modules/<id> сразу перенаправляет на этот адрес
+// (до проверки hidden и доступа): старые ссылки и адреса из уведомлений.
 export const MODULES = [
   { id: 'purchasing', status: 'roadmap', strings: purchasingStrings, Component: lazy(() => import('./purchasing/PurchasingPage.jsx')) },
   { id: 'warehouse', status: 'mvp', wide: true, strings: warehouseStrings, Component: lazy(() => import('./warehouse/WarehousePage.jsx')) },
@@ -39,15 +41,16 @@ export const MODULES = [
   // forAll: виден всем активным сотрудникам (просмотр), без привязки к отделу; анкета — в настройках профиля (позже)
   { id: 'team', status: 'mvp', forAll: true, wide: true, strings: teamStrings, Component: lazy(() => import('./team/TeamPage.jsx')) },
   // последней строкой: номера пунктов меню остальных модулей не сдвигаются
+  // Редактор новостей и Производственный календарь теперь вкладки страницы «Администрация» (OFFICE_SECTIONS ниже, /office);
+  // строки остаются в реестре для прав и групп (бэкенд проверяет id модулей), а старые адреса /modules/<id> ведут на вкладки.
   // TODO(Q-N4): опции view/run у «Новостей» в особых правах и группах ни на что не влияют (кроме viewer через Q-G1)
   {
-    id: 'news', status: 'mvp', homeEditor: true, hidden: (me) => !isNewsEditor(me), forAll: true, wide: true, strings: newsStrings,
-    Component: lazy(() => import('./news/NewsAdminSection.jsx')),
+    id: 'news', status: 'mvp', homeEditor: true, hidden: true, forAll: true, wide: true, strings: newsStrings,
+    Component: null, redirect: '/office?tab=news',
   },
-  // Производственный календарь: пункт меню — только редактору (ответственный или admin); читатели видят календарь в виджете главной
   {
-    id: 'holidays', status: 'mvp', hidden: (me) => !isHolidaysEditor(me), forAll: true, wide: true, strings: holidaysStrings,
-    Component: lazy(() => import('./holidays/HolidaysAdminSection.jsx')),
+    id: 'holidays', status: 'mvp', hidden: true, forAll: true, wide: true, strings: holidaysStrings,
+    Component: null, redirect: '/office?tab=holidays',
   },
   // Обратная связь: пункт меню — только читателю (ответственный или admin); отправка — карточка на главной и вкладка профиля
   {
@@ -162,4 +165,18 @@ export const HOME_WIDGETS = [
 //   Component — получает { me }; сам открывает своё окно.
 export const TOPLINE_ACTIONS = [
   { id: 'feedback', visible: canSendFeedback, Component: lazy(() => import('./feedback/components/FeedbackButton.jsx')) },
+]
+
+// Вкладки страницы «Администрация» (/office, страница ядра, не модуль). Ядро само ничего не знает про модули: порядок вкладок = порядок здесь.
+//   id        — значение ?tab= в адресе;
+//   label     — подпись вкладки;
+//   visible   — (me) => показывать ли вкладку (нет видимых вкладок — нет и пункта меню, страница — «Не найдено»);
+//   badge     — (me) => число рядом с вкладкой и в сумме у пункта меню (необязательно);
+//   Component — получает { me }; сам рисует содержимое вкладки (без PageHead).
+export const OFFICE_SECTIONS = [
+  {
+    id: 'news', label: newsStrings.office.tab, visible: isNewsEditor, badge: (me) => me.module_badges?.news ?? 0,
+    Component: lazy(() => import('./news/NewsAdminSection.jsx')),
+  },
+  { id: 'holidays', label: holidaysStrings.tool, visible: isHolidaysEditor, Component: lazy(() => import('./holidays/HolidaysAdminSection.jsx')) },
 ]

@@ -8,6 +8,7 @@ import {
   canRun,
   canManageUsers,
   isModuleHidden,
+  resolveRedirect,
 } from './access.js'
 
 const u = (access_level, department_ids, extra = {}) => ({
@@ -115,4 +116,13 @@ test('isModuleHidden: boolean, функция и отсутствие флага
   assert.equal(isModuleHidden({ hidden: (m) => m.id === 1 }, me), true)
   assert.equal(isModuleHidden({ hidden: (m) => m.id === 2 }, me), false)
   assert.equal(isModuleHidden({ hidden: () => undefined }, me), false)
+})
+
+test('resolveRedirect: нет поля, строка, функция', () => {
+  const me = { id: 1 }
+  assert.equal(resolveRedirect({}, me), null)
+  assert.equal(resolveRedirect({ redirect: '/office?tab=news' }, me), '/office?tab=news')
+  assert.equal(resolveRedirect({ redirect: (m) => (m.id === 1 ? '/x' : null) }, me), '/x')
+  assert.equal(resolveRedirect({ redirect: (m) => (m.id === 2 ? '/x' : null) }, me), null)
+  assert.equal(resolveRedirect({ redirect: () => undefined }, me), null)
 })

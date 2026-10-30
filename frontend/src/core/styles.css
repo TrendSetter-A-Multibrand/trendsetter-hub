@@ -794,3 +794,6 @@ a:hover { color: var(--accent-fill-hover); }
   white-space: nowrap; transition: border-color var(--motion-hover) var(--motion-ease);
 }
 .topline-btn:hover { border-color: var(--border-strong); color: var(--text-primary); }
+
+/* Администрация (/office): число на вкладке */
+.office-tab-badge { margin-left: var(--space-8); vertical-align: middle; }
