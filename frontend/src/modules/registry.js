@@ -21,6 +21,9 @@ import { canReadHolidays, isHolidaysEditor } from './holidays/lib/holidays.js'
 import feedbackStrings from './feedback/strings.js'
 import { canSendFeedback, isFeedbackReader } from './feedback/lib/feedback.js'
 
+// «Запуск» на HR: вкладка «Сообщения» в «Персонале» доступна только при нём (HrPage пускает только run)
+const hrRun = (me) => me.module_access?.hr === 'run'
+
 // hidden: boolean или (me) => boolean (isModuleHidden в core/access.js). Скрытый модуль есть в реестре (особые права, группы, права в /core/me),
 // но не показывается в меню, а его страница /modules/<id> — «Не найдено». Нужен модулям без своей страницы (pricing)
 // и страницам только для части пользователей (обратная связь — только читателю; блоки новостей на главной и «Мои предложения» в профиле — всем читателям).
@@ -37,9 +40,26 @@ export const MODULES = [
   { id: 'analytics', status: 'roadmap', strings: analyticsStrings, Component: null },
   // Ценообразование — раздел модуля WB (решение 2026-10-28); модуль скрыт из меню, права и отдел остаются
   { id: 'pricing', status: 'roadmap', hidden: true, strings: pricingStrings, Component: null },
-  { id: 'hr', status: 'mvp', wide: true, strings: hrStrings, Component: lazy(() => import('./hr/HrPage.jsx')) },
+  // extraTabs: вкладки, которые другие модули добавляют в «Персонал» (HrPage сам ничего не импортирует из feedback):
+  //   { key, group, groupLabel, label, visible(me), badge(me), Component } — вставляются перед группой «Безопасность»;
+  // menuBadge(me): число у пункта меню вместо me.module_badges[id] (к HR добавляются новые сообщения, если читатель попадает в «Персонал»)
+  {
+    id: 'hr', status: 'mvp', wide: true, strings: hrStrings, Component: lazy(() => import('./hr/HrPage.jsx')),
+    extraTabs: [
+      {
+        key: 'feedback', group: 'feedback', groupLabel: feedbackStrings.hr.group, label: feedbackStrings.hr.tab,
+        visible: isFeedbackReader, badge: (me) => me.module_badges?.feedback ?? 0,
+        Component: lazy(() => import('./feedback/FeedbackAdminSection.jsx')),
+      },
+    ],
+    menuBadge: (me) => (me.module_badges?.hr ?? 0) + (isFeedbackReader(me) && hrRun(me) ? (me.module_badges?.feedback ?? 0) : 0),
+  },
   // forAll: виден всем активным сотрудникам (просмотр), без привязки к отделу; анкета — в настройках профиля (позже)
-  { id: 'team', status: 'mvp', forAll: true, wide: true, strings: teamStrings, Component: lazy(() => import('./team/TeamPage.jsx')) },
+  // calendar: производственный календарь, который «Карта команды» открывает в окне (team не импортирует holidays)
+  {
+    id: 'team', status: 'mvp', forAll: true, wide: true, strings: teamStrings, Component: lazy(() => import('./team/TeamPage.jsx')),
+    calendar: { visible: canReadHolidays, label: holidaysStrings.title, Component: lazy(() => import('./holidays/components/CalendarModal.jsx')) },
+  },
   // последней строкой: номера пунктов меню остальных модулей не сдвигаются
   // Редактор новостей и Производственный календарь теперь вкладки страницы «Администрация» (OFFICE_SECTIONS ниже, /office);
   // строки остаются в реестре для прав и групп (бэкенд проверяет id модулей), а старые адреса /modules/<id> ведут на вкладки.
@@ -52,9 +72,12 @@ export const MODULES = [
     id: 'holidays', status: 'mvp', hidden: true, forAll: true, wide: true, strings: holidaysStrings,
     Component: null, redirect: '/office?tab=holidays',
   },
-  // Обратная связь: пункт меню — только читателю (ответственный или admin); отправка — карточка на главной и вкладка профиля
+  // Обратная связь: основное место — вкладка «Сообщения» в «Персонале». Пункт меню остаётся читателю без «Запуска» на HR;
+  // с «Запуском» /modules/feedback ведёт во вкладку (ссылки уведомлений). Отправка — кнопка в верхней строке и вкладка профиля.
+  // TODO(Q-AP5): читатель обратной связи без доступа run к HR сохраняет старый пункт меню; иначе ему нужен доступ к HR
   {
-    id: 'feedback', status: 'mvp', hidden: (me) => !isFeedbackReader(me), forAll: true, wide: true, strings: feedbackStrings,
+    id: 'feedback', status: 'mvp', hidden: (me) => !isFeedbackReader(me) || hrRun(me), forAll: true, wide: true, strings: feedbackStrings,
+    redirect: (me) => (isFeedbackReader(me) && hrRun(me) ? '/modules/hr?tab=feedback' : null),
     Component: lazy(() => import('./feedback/FeedbackAdminSection.jsx')),
   },
 ]

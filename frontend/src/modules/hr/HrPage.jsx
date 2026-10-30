@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { api } from '../../core/api/index.js'
 import { useAuth } from '../../core/auth/useAuth.js'
@@ -13,12 +13,14 @@ import PoliciesTab from './components/PoliciesTab.jsx'
 import ChecklistTemplatesTab from './components/ChecklistTemplatesTab.jsx'
 import AuditTab from './components/AuditTab.jsx'
 import PlanTab from './plan/PlanTab.jsx'
+import { mergeTabs } from './lib/tabs.js'
 import './hr.css'
 
 // Вкладки модуля. Новая вкладка (зарплаты…) = одна запись здесь. Component получает { pending, onChanged, actionsEl }
 // (actionsEl — место для кнопок в шапке страницы, вкладка выводит их туда порталом).
 // badge: 'pending' — число анкет на проверке, 'leavePending' — число заявок на отпуск, ждущих решения, рядом с названием.
 // visible(me): вкладка показывается только при true (нет поля — всем). Журнал: ответственный за HR или администратор.
+// badge также может быть функцией (me) => число (вкладки из module.extraTabs: реестр добавляет их перед группой «Безопасность»; groupLabel — подпись их группы).
 // group: ключ из strings.groups; вкладки одной группы должны идти подряд (новая группа, например «Зарплата» — новая запись + подпись в strings.groups).
 const TABS = [
   { key: 'people', group: 'staff', label: strings.tabs.people, Component: PeopleTab },
@@ -76,7 +78,7 @@ export default function HrPage({ module, access }) {
   if (access !== 'run') return <ForbiddenPage />
 
   const badges = { pending, leavePending }
-  const tabs = TABS.filter((t) => !t.visible || t.visible(me))
+  const tabs = mergeTabs(TABS, module.extraTabs ?? []).filter((t) => !t.visible || t.visible(me))
   const current = tabs.find((t) => t.key === params.get('tab')) ?? tabs[0]
   const groups = tabs.reduce((acc, t) => {
     const last = acc[acc.length - 1]
@@ -95,11 +97,11 @@ export default function HrPage({ module, access }) {
       <nav className="hr-nav" aria-label={strings.navLabel}>
         {groups.map((g) => (
           <div key={g.key} className="hr-nav-group">
-            <span className="hr-nav-title">{strings.groups[g.key]}</span>
+            <span className="hr-nav-title">{strings.groups[g.key] ?? g.items[0].groupLabel}</span>
             <div className="hr-nav-items">
               {g.items.map((t) => {
                 const on = t.key === current.key
-                const count = t.badge ? badges[t.badge] : 0
+                const count = typeof t.badge === 'function' ? t.badge(me) : t.badge ? badges[t.badge] : 0
                 return (
                   <button key={t.key} type="button" className={`hr-nav-item${on ? ' active' : ''}`} aria-current={on ? 'page' : undefined} onClick={() => pick(t.key)}>
                     {on ? (
@@ -117,7 +119,9 @@ export default function HrPage({ module, access }) {
           </div>
         ))}
       </nav>
-      <Component key={current.key} pending={pending} onChanged={onChanged} actionsEl={actionsEl} />
+      <Suspense fallback={null}>
+        <Component key={current.key} pending={pending} onChanged={onChanged} actionsEl={actionsEl} />
+      </Suspense>
     </div>
   )
 }

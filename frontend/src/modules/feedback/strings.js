@@ -45,6 +45,9 @@ const strings = {
     to: (name) => `Кому: ${name}`,
   },
 
+  // Вкладка в «Персонале» (extraTabs в registry.js)
+  hr: { group: 'Обратная связь', tab: 'Сообщения' },
+
   admin: {
     pageTitle: 'Обратная связь',
     kindFilterLabel: 'Тип',

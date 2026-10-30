@@ -24,6 +24,7 @@ const strings = {
     viewLeave: 'Календарь отпусков',
     viewLeaveTitle: 'Кто в отпуске и когда',
     viewsLabel: 'Вид карты',
+    calendarsLabel: 'Календари',
     all: 'Все',
     myProfile: 'Моя анкета',
   },

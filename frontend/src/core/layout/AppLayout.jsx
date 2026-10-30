@@ -158,7 +158,7 @@ export default function AppLayout() {
           {shownModules.map((m) => {
             const path = `/modules/${m.id}`
             const active = location.pathname === path
-            const badge = me.module_badges?.[m.id] ?? 0
+            const badge = m.menuBadge ? m.menuBadge(me) : (me.module_badges?.[m.id] ?? 0)
             const grouped = Boolean(m.sections && m.allowed && m.Component)
             const link = (
               <Link
