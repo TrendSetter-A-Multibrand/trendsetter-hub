@@ -140,3 +140,6 @@
 @media (max-width: 767px) {
   .news-cols { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* Виджеты главной: выключенный переключатель — явный цвет (в светлой теме по умолчанию 25% чернил, сливается с фоном) */
+.widget-row .ant-switch:not(.ant-switch-checked) { background: var(--text-secondary); }
