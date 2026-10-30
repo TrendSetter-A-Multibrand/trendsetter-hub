@@ -797,3 +797,7 @@ a:hover { color: var(--accent-fill-hover); }
 
 /* Администрация (/office): число на вкладке */
 .office-tab-badge { margin-left: var(--space-8); vertical-align: middle; }
+
+/* Производственный календарь: заливки видов дней (праздник — --accent-fill, сокращённый — --marker) */
+:root { --cal-dayoff-bg: #F6D9D9; --cal-work-bg: #CFE6D8; }
+:root[data-theme='dark'] { --cal-dayoff-bg: #3D2020; --cal-work-bg: #1F3A2B; }
