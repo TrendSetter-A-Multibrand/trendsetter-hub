@@ -759,6 +759,10 @@ a:hover { color: var(--accent-fill-hover); }
 .city-picker-select { width: 220px; max-width: 100%; }
 .hero-advice { margin: 0; max-width: 560px; font-family: var(--font-sans); font-size: 16px; color: var(--text-on-accent); opacity: .85; }
 .home-block .seg { flex-wrap: wrap; }
+.seg-label { display: inline-block; max-width: 128px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; }
+.seg-remove { display: inline-flex; align-items: center; justify-content: center; padding: 0 var(--space-8); color: var(--text-secondary); }
+.seg-remove:hover { color: var(--accent-primary); }
+.city-remove { margin-top: var(--space-8); }
 
 /* Версия хаба и «Что нового» */
 .version-btn {

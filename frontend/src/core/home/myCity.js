@@ -22,6 +22,9 @@ export const CITY_ZONES = [
   { id: 'belgrade', timeZone: 'Europe/Belgrade' },
 ]
 
+// Города погоды по умолчанию (совпадает с DEFAULT_CITY_IDS бэкенда): их вкладки не убираются
+export const DEFAULT_CITY_IDS = ['yerevan', 'moscow']
+
 export const MY_CITY_KEY = 'hub.myCity'
 
 const MOSCOW_TZ = 'Europe/Moscow'

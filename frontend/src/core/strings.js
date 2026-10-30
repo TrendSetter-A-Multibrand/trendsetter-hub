@@ -243,7 +243,8 @@ const strings = {
       myCityTitle: 'Мой город',
       myCityAria: 'Выбрать мой город',
       myCityPlaceholder: 'Найти город',
-      myCityNone: 'Не выбран',
+      removeCity: 'Убрать город',
+      removeCityAria: (name) => `Убрать город ${name} из погоды`,
       // Подсказки «Сегодня»: правила — в core/home/weather.js, здесь только тексты. when не стоит в начале фразы.
       adviceWhen: { morning: 'утром', noon: 'в полдень', lunch: 'в обед', evening: 'вечером после работы', allDay: 'весь день' },
       advice: {

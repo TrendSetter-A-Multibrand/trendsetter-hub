@@ -1,14 +1,14 @@
 import { useState } from 'react'
-import { Popover, Select } from 'antd'
+import { Button, Popover, Select } from 'antd'
 import { SettingOutlined } from '@ant-design/icons'
 import strings from '../strings.js'
 import { CITY_ZONES } from './myCity.js'
 
 const s = strings.hub.home
 
-const OPTIONS = [{ value: '', label: s.myCityNone }, ...CITY_ZONES.map((c) => ({ value: c.id, label: s.cities[c.id] }))]
+const OPTIONS = CITY_ZONES.map((c) => ({ value: c.id, label: s.cities[c.id] }))
 
-// Шестерёнка «Мой город»: Popover с поиском по 17 городам и пунктом сброса. Выбор для погоды (часы настраиваются отдельно, см. ZonePicker).
+// Шестерёнка «Мой город»: Popover с поиском по 17 городам и кнопкой «Убрать город». Выбор для погоды (часы настраиваются отдельно, см. ZonePicker).
 export default function CityPicker({ value, onChange, className = '' }) {
   const [open, setOpen] = useState(false)
 
@@ -25,15 +25,27 @@ export default function CityPicker({ value, onChange, className = '' }) {
         className="city-picker-select"
         aria-label={s.myCityTitle}
         placeholder={s.myCityPlaceholder}
-        value={value ?? ''}
+        value={value ?? undefined}
         options={OPTIONS}
         optionFilterProp="label"
         getPopupContainer={(node) => node.parentNode}
         onChange={(v) => {
-          onChange(v || null)
+          onChange(v)
           setOpen(false)
         }}
       />
+      {value && (
+        <Button
+          size="small"
+          className="city-remove"
+          onClick={() => {
+            onChange(null)
+            setOpen(false)
+          }}
+        >
+          {s.removeCity}
+        </Button>
+      )}
     </div>
   )
 

@@ -1,8 +1,11 @@
+import { Fragment, useRef } from 'react'
 import { Spin } from 'antd'
+import { CloseOutlined } from '@ant-design/icons'
 import strings from '../strings.js'
 import SectionHead from '../layout/SectionHead.jsx'
 import { dayLabel, formatTemp, weatherKind } from './weather.js'
 import CityPicker from './CityPicker.jsx'
+import { DEFAULT_CITY_IDS } from './myCity.js'
 
 const s = strings.hub.home
 const BAR_H = 88
@@ -41,22 +44,44 @@ export default function WeatherCard({ loading, data, cityId, onCity, myCity, onM
   const city = cities.find((c) => c.id === cityId) ?? cities[0]
   const today = city?.days[0]
   const kind = today ? weatherKind(today.symbol) : null
+  const firstTab = useRef(null)
+  // крестик — только у третьего города (не из умолчаний); у Еревана/Москвы убирается кнопкой в окне шестерёнки
+  const removable = myCity && !DEFAULT_CITY_IDS.includes(myCity) && cities.some((c) => c.id === myCity)
+  const remove = () => {
+    onMyCity(null)
+    firstTab.current?.focus()
+  }
 
   return (
     <section className="home-block" aria-labelledby="home-weather">
       <SectionHead id="home-weather" title={s.weatherTitle}>
         {cities.length > 1 && (
           <span className="seg" role="group" aria-label={s.cityLabel}>
-            {cities.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                className="seg-btn"
-                aria-pressed={c.id === city.id}
-                onClick={() => onCity(c.id)}
-              >
-                {s.cities[c.id]}
-              </button>
+            {cities.map((c, i) => (
+              <Fragment key={c.id}>
+                <button
+                  ref={i === 0 ? firstTab : null}
+                  type="button"
+                  className="seg-btn"
+                  aria-pressed={c.id === city.id}
+                  onClick={() => onCity(c.id)}
+                >
+                  <span className="seg-label" title={s.cities[c.id]}>
+                    {s.cities[c.id]}
+                  </span>
+                </button>
+                {removable && c.id === myCity && (
+                  <button
+                    type="button"
+                    className="seg-btn seg-remove"
+                    aria-label={s.removeCityAria(s.cities[c.id])}
+                    title={s.removeCityAria(s.cities[c.id])}
+                    onClick={remove}
+                  >
+                    <CloseOutlined aria-hidden="true" />
+                  </button>
+                )}
+              </Fragment>
             ))}
           </span>
         )}
