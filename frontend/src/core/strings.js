@@ -84,6 +84,14 @@ const strings = {
     closeMenu: 'Закрыть меню',
   },
 
+  version: {
+    title: 'Что нового',
+    versionLabel: (v) => `Версия ${v}`,
+    added: 'Добавлено',
+    changed: 'Изменено',
+    fixed: 'Исправлено',
+  },
+
   notifications: {
     title: 'Уведомления',
     open: 'Уведомления',
