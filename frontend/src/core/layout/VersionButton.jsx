@@ -17,14 +17,14 @@ export default function VersionButton() {
   return (
     <>
       <button type="button" className="version-btn" aria-label={`${s.title}. ${s.versionLabel(CURRENT_VERSION)}`} onClick={() => setOpen(true)}>
-        V{CURRENT_VERSION}
+        v {CURRENT_VERSION}
       </button>
       <Modal title={s.title} open={open} onCancel={() => setOpen(false)} footer={null} destroyOnHidden>
         <div className="changelog">
           {CHANGELOG.map((r) => (
             <section key={r.version} className="changelog-release">
               <div className="changelog-head mono">
-                <strong>V{r.version}</strong> <span>{r.date}</span>
+                <strong>v {r.version}</strong> <span>{r.date}</span>
               </div>
               {GROUPS.filter(([k]) => r[k]?.length).map(([k, label]) => (
                 <div key={k}>
