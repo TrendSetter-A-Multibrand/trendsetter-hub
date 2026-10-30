@@ -8,7 +8,7 @@ const s = strings.hub.home
 
 const OPTIONS = [{ value: '', label: s.myCityNone }, ...CITY_ZONES.map((c) => ({ value: c.id, label: s.cities[c.id] }))]
 
-// Шестерёнка «Мой город»: Popover с поиском по 17 городам и пунктом сброса. Общий выбор для часов и погоды.
+// Шестерёнка «Мой город»: Popover с поиском по 17 городам и пунктом сброса. Выбор для погоды (часы настраиваются отдельно, см. ZonePicker).
 export default function CityPicker({ value, onChange, className = '' }) {
   const [open, setOpen] = useState(false)
 

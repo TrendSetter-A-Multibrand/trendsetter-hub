@@ -71,7 +71,7 @@ export default function HubPage() {
           </h1>
           <WeatherAdvice data={weather.data} cityId={weather.cityId} />
         </div>
-        <ClocksCard myCity={myCity} onMyCity={changeMyCity} />
+        <ClocksCard myCity={myCity} />
         <img className="hero-mascot" src={mascot} alt="" aria-hidden="true" />
       </section>
 
