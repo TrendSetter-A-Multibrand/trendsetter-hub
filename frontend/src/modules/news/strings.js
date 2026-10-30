@@ -1,6 +1,7 @@
 const strings = {
   dept: 'Компания',
   tool: 'Редактор новостей',
+  office: { tab: 'Новости' },
   title: 'Новости',
   name: 'Новости',
   description: 'Новости компании, события с ответом «Кто пойдёт» и срочная плашка',
@@ -63,6 +64,9 @@ const strings = {
     tabs: { review: 'На проверке', current: 'Актуальное', past: 'Прошедшие и архив', drafts: 'Черновики' },
     tabsLabel: 'Разделы новостей',
     add: 'Добавить',
+    columns: { news: 'Новости', events: 'События' },
+    addNews: '+ Новость',
+    addEvent: '+ Событие',
     kinds: { news: 'Новость', event: 'Событие' },
     status: { draft: 'Черновик', published: 'Опубликовано', archived: 'В архиве', pending: 'На проверке', needs_changes: 'На доработке у автора', rejected: 'Отклонено' },
     actions: {

@@ -38,11 +38,12 @@ function DecisionModal({ title, okText, busy, onOk, onCancel }) {
   )
 }
 
+// defaultKind — тип новой записи по умолчанию (только при item === null); выбор типа в форме остаётся.
 // Создание и правка записи (mode 'edit', item — null для новой) и проверка предложения (mode 'review', item — запись в pending).
 // onSaved() вызывается после успешного сохранения или решения, а также после 409 (запись изменилась): список надо перечитать.
-export default function NewsEditorDrawer({ item, mode = 'edit', onClose, onSaved }) {
+export default function NewsEditorDrawer({ item, mode = 'edit', defaultKind, onClose, onSaved }) {
   const { message } = App.useApp()
-  const [form, setForm] = useState(() => initialOf(item))
+  const [form, setForm] = useState(() => (item || !defaultKind ? initialOf(item) : { ...initialOf(null), kind: defaultKind }))
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(false)
   const [decision, setDecision] = useState(null) // 'return' | 'reject' | null

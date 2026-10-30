@@ -46,6 +46,7 @@ export default function ZonePicker({ index, zone, onChange, className = '' }) {
         options={options}
         filterOption={(input, option) => option.search.includes(input.trim().toLowerCase())}
         getPopupContainer={(node) => node.parentNode}
+        popupMatchSelectWidth={false}
         onChange={pick}
       />
       <Button size="small" className="zone-auto" disabled={!auto} onClick={() => pick(auto)}>
