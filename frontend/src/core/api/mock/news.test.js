@@ -425,3 +425,25 @@ test('смена закрепления сбрасывает ручной пор
   call('PATCH /modules/news/items/:id', { token: EDITOR, params: { id: second }, body: { pinned: true } })
   assert.equal(pinnedIds(call, 'news')[0], first) // second снова закреплён без sort — после упорядоченного first
 })
+
+test('GET items: kind делит каждую вкладку на новости и события, неизвестный kind — 422', () => {
+  const { call } = setup()
+  call('POST /modules/news/items', { token: ADMIN, body: { kind: 'event', title: 'Событие-архив', startsAt: iso(48), status: 'published' } })
+  const rejected = call('POST /modules/news/proposals', { token: EMPLOYEE, body: { kind: 'event', title: 'Отклонённое событие', startsAt: iso(48) } })
+  call('POST /modules/news/items/:id/reject', { token: ADMIN, params: { id: rejected.id }, body: { comment: 'Нет', expectedUpdatedAt: rejected.updatedAt } })
+  for (const tab of ['current', 'past', 'drafts', 'review']) {
+    const all = call('GET /modules/news/items', { token: ADMIN, query: { tab, limit: '100' } })
+    const news = call('GET /modules/news/items', { token: ADMIN, query: { tab, kind: 'news', limit: '100' } })
+    const events = call('GET /modules/news/items', { token: ADMIN, query: { tab, kind: 'event', limit: '100' } })
+    assert.ok(news.items.every((i) => i.kind === 'news') && events.items.every((i) => i.kind === 'event'), tab)
+    assert.equal(news.total, news.items.length, tab)
+    assert.equal(events.total, events.items.length, tab)
+    assert.equal(news.total + events.total, all.total, tab)
+  }
+  // отклонённое событие (вкладка past) не попадает в kind=news
+  const pastNews = call('GET /modules/news/items', { token: ADMIN, query: { tab: 'past', kind: 'news', limit: '100' } })
+  assert.ok(!pastNews.items.some((i) => i.id === rejected.id))
+  const pastEvents = call('GET /modules/news/items', { token: ADMIN, query: { tab: 'past', kind: 'event', limit: '100' } })
+  assert.ok(pastEvents.items.some((i) => i.id === rejected.id))
+  status(() => call('GET /modules/news/items', { token: ADMIN, query: { tab: 'current', kind: 'x' } }), 422)
+})

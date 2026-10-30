@@ -263,6 +263,38 @@ def test_list_params_validation(client, h, params):
     assert client.get(BASE + "/items", params=params, headers=h.admin).status_code == 422
 
 
+def test_list_kind_filter_splits_every_tab(client, h):
+    cur_news, cur_event = make_news(client, h.admin), make_event(client, h.admin)
+    arch_news = make_news(client, h.admin, title="Архив")
+    client.patch(f"{BASE}/items/{arch_news['id']}", json={"archived": True}, headers=h.admin)
+    draft_news, draft_event = make_news(client, h.admin, status="draft"), make_event(client, h.admin, status="draft")
+    rev_news, rev_event = propose(client, h.emp), propose(client, h.emp, kind="event", startsAt=iso(48))
+    rej_news, rej_event = propose(client, h.emp2), propose(client, h.emp2, kind="event", startsAt=iso(48))
+    assert decide(client, h.editor, rej_news, "reject").status_code == 200
+    assert decide(client, h.editor, rej_event, "reject").status_code == 200
+    expected = {
+        "current": ([cur_news["id"]], [cur_event["id"]]),
+        "past": ([arch_news["id"], rej_news["id"]], [rej_event["id"]]),
+        "drafts": ([draft_news["id"]], [draft_event["id"]]),
+        "review": ([rev_news["id"]], [rev_event["id"]]),
+    }
+    for name, (news_ids, event_ids) in expected.items():
+        news = tab(client, h.admin, name, kind="news")
+        events = tab(client, h.admin, name, kind="event")
+        assert sorted(ids(news["items"])) == sorted(news_ids) and news["total"] == len(news_ids), name
+        assert sorted(ids(events["items"])) == sorted(event_ids) and events["total"] == len(event_ids), name
+        assert {i["kind"] for i in news["items"]} <= {"news"} and {i["kind"] for i in events["items"]} <= {"event"}
+        both = tab(client, h.admin, name)
+        assert sorted(ids(both["items"])) == sorted(news_ids + event_ids) and both["total"] == len(news_ids + event_ids)
+    # скобки в условии past: отклонённое событие не попадает в kind=news
+    assert rej_event["id"] not in ids(tab(client, h.admin, "past", kind="news")["items"])
+    assert tab(client, h.admin, "past", kind="news", limit=1)["total"] == 2
+
+
+def test_list_kind_validation(client, h):
+    assert client.get(BASE + "/items", params={"tab": "current", "kind": "x"}, headers=h.admin).status_code == 422
+
+
 def test_delete_missing_is_404(client, h):
     assert post(client, "/items/99999/delete", h.admin).status_code == 404
 

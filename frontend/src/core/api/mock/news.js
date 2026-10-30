@@ -306,10 +306,11 @@ export function createNewsHandlers({ userFromToken, accessTo, isEditor, notify, 
     'GET /modules/news/items': ({ token, query }) => {
       const user = editorOf(token)
       if (!TABS.includes(query.tab)) throw new ApiError(422, err.invalid)
+      if (query.kind !== undefined && !['news', 'event'].includes(query.kind)) throw new ApiError(422, err.invalid)
       const limit = pageParam(query.limit, 20, 1, 100)
       const offset = pageParam(query.offset, 0, 0, Number.MAX_SAFE_INTEGER)
       const n = now().getTime()
-      const all = items.filter((r) => TAB_FILTERS[query.tab](r, n)).sort(TAB_ORDER[query.tab])
+      const all = items.filter((r) => TAB_FILTERS[query.tab](r, n) && (!query.kind || r.kind === query.kind)).sort(TAB_ORDER[query.tab])
       return { items: all.slice(offset, offset + limit).map((r) => itemOut(r, user, true, n, true)), total: all.length }
     },
 

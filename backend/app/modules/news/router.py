@@ -187,10 +187,11 @@ def list_items(
     tab: Literal["current", "past", "drafts", "review"],
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
+    kind: Literal["news", "event"] | None = None,
     user: User = Editor,
     session: Session = Db,
 ):
-    return service.list_items(session, user, tab, limit, offset)
+    return service.list_items(session, user, tab, limit, offset, kind)
 
 
 @router.post("/items")
