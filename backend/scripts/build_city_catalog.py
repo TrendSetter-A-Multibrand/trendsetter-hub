@@ -80,7 +80,7 @@ def is_selected(c: dict) -> bool:
 def main() -> None:
     for stream in (sys.stdout, sys.stderr):  # русские сообщения на консоли Windows (cp1252)
         stream.reconfigure(encoding="utf-8")
-    ap =argparse.ArgumentParser()
+    ap = argparse.ArgumentParser()
     for a in ("cities", "alt", "overrides", "source-date", "backend-out", "frontend-out"):
         ap.add_argument(f"--{a}", required=True)
     args = ap.parse_args()

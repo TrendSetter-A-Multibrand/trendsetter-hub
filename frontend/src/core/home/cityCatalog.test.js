@@ -90,7 +90,7 @@ test('searchCities: пустой запрос — 17 популярных; limit
 })
 
 test('searchCities: страна и строки alt', () => {
-  assert.ok(searchCities('армения').some((c) => c.id === 'gyumri' || c.name === 'Гюмри'))
+  assert.ok(searchCities('армения').some((c) => c.id === 'g616635'))
   assert.equal(first('алма-ата').id, 'almaty')
 })
 
