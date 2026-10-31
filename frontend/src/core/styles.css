@@ -757,6 +757,8 @@ a:hover { color: var(--accent-fill-hover); }
 .weather-gear { color: var(--text-secondary); }
 .weather-gear:hover { color: var(--accent-primary); }
 .city-picker-select { width: 220px; max-width: 100%; }
+.city-source { display: block; margin-top: var(--space-8); font-family: var(--font-mono); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-secondary); }
+.city-source:hover { color: var(--accent-primary); }
 .hero-advice { margin: 0; max-width: 560px; font-family: var(--font-sans); font-size: 16px; color: var(--text-on-accent); opacity: .85; }
 .home-block .seg { flex-wrap: wrap; }
 .seg-label { display: inline-block; max-width: 128px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; }

@@ -147,27 +147,6 @@ const strings = {
     // Главная: сводка (часы, погода, курсы). Строки виджетов модуля team — в modules/team/strings.js
     home: {
       clocksTitle: 'Время',
-      cities: {
-        yerevan: 'Ереван',
-        moscow: 'Москва',
-        paris: 'Париж',
-        newYork: 'Нью-Йорк',
-        saintPetersburg: 'Санкт-Петербург',
-        kazan: 'Казань',
-        krasnodar: 'Краснодар',
-        yekaterinburg: 'Екатеринбург',
-        novosibirsk: 'Новосибирск',
-        minsk: 'Минск',
-        tbilisi: 'Тбилиси',
-        baku: 'Баку',
-        almaty: 'Алматы',
-        astana: 'Астана',
-        tashkent: 'Ташкент',
-        bishkek: 'Бишкек',
-        istanbul: 'Стамбул',
-        dubai: 'Дубай',
-        belgrade: 'Белград',
-      },
       // Часы: любой часовой пояс в каждом из двух блоков (localStorage hub.clock.1/2); погода — по «моему городу»
       clockTitle: (n) => `Часы ${String(n).padStart(2, '0')}`,
       clockAria: (n) => `Настроить часы ${String(n).padStart(2, '0')}`,
@@ -242,7 +221,9 @@ const strings = {
       // Мой город (часы и погода, localStorage hub.myCity): выбор через шестерёнку
       myCityTitle: 'Мой город',
       myCityAria: 'Выбрать мой город',
-      myCityPlaceholder: 'Найти город',
+      myCityPlaceholder: 'Город или страна',
+      cityNotFound: 'Город не найден',
+      citiesSource: 'Города: GeoNames (CC BY 4.0)',
       removeCity: 'Убрать город',
       removeCityAria: (name) => `Убрать город ${name} из погоды`,
       // Подсказки «Сегодня»: правила — в core/home/weather.js, здесь только тексты. when не стоит в начале фразы.

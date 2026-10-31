@@ -3,28 +3,21 @@
 import { ApiError } from '../client.js'
 import strings from '../../strings.js'
 import { addDays, todayIso } from '../../dates.js'
+import { cityById } from '../../home/cityCatalog.js'
 
 const SYMBOLS = ['clearsky', 'partlycloudy', 'cloudy', 'lightrain', 'rain', 'lightsnow', 'fog']
-// Белый список как в backend/app/core/home.py (17 городов, порядок тот же); base — условная «средняя» температура для демо
-const CITIES = [
-  { id: 'yerevan', timezone: 'Asia/Yerevan', base: 12 },
-  { id: 'moscow', timezone: 'Europe/Moscow', base: 4 },
-  { id: 'saintPetersburg', timezone: 'Europe/Moscow', base: 2 },
-  { id: 'kazan', timezone: 'Europe/Moscow', base: 1 },
-  { id: 'krasnodar', timezone: 'Europe/Moscow', base: 10 },
-  { id: 'yekaterinburg', timezone: 'Asia/Yekaterinburg', base: -2 },
-  { id: 'novosibirsk', timezone: 'Asia/Novosibirsk', base: -5 },
-  { id: 'minsk', timezone: 'Europe/Minsk', base: 3 },
-  { id: 'tbilisi', timezone: 'Asia/Tbilisi', base: 12 },
-  { id: 'baku', timezone: 'Asia/Baku', base: 15 },
-  { id: 'almaty', timezone: 'Asia/Almaty', base: 6 },
-  { id: 'astana', timezone: 'Asia/Almaty', base: -1 },
-  { id: 'tashkent', timezone: 'Asia/Tashkent', base: 14 },
-  { id: 'bishkek', timezone: 'Asia/Bishkek', base: 9 },
-  { id: 'istanbul', timezone: 'Europe/Istanbul', base: 16 },
-  { id: 'dubai', timezone: 'Asia/Dubai', base: 36 },
-  { id: 'belgrade', timezone: 'Europe/Belgrade', base: 11 },
-]
+// Белый список — справочник городов (cityCatalog.js, тот же состав, что home_cities.json бэкенда); base — условная «средняя» температура для демо:
+// для 17 прежних городов — фиксированная, для остальных детерминированно из хэша id (от -5 до +30)
+const LEGACY_BASE = {
+  yerevan: 12, moscow: 4, saintPetersburg: 2, kazan: 1, krasnodar: 10, yekaterinburg: -2, novosibirsk: -5, minsk: 3, tbilisi: 12,
+  baku: 15, almaty: 6, astana: -1, tashkent: 14, bishkek: 9, istanbul: 16, dubai: 36, belgrade: 11,
+}
+const LEGACY_IDS = Object.keys(LEGACY_BASE)
+const hashOf = (id) => [...id].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 0)
+const mockCity = (id) => {
+  const city = typeof id === 'string' ? cityById(id) : null
+  return city && { id, timezone: city.timeZone, base: LEGACY_BASE[id] ?? -5 + (hashOf(id) % 36), index: LEGACY_IDS.includes(id) ? LEGACY_IDS.indexOf(id) : hashOf(id) % SYMBOLS.length }
+}
 const DEFAULT_CITY_IDS = ['yerevan', 'moscow']
 // Окна дня: [id, начало, конец] по местному времени, как SLOTS на бэкенде
 const SLOTS = [['morning', 6, 11], ['noon', 11, 13], ['lunch', 13, 17], ['evening', 17, 22]]
@@ -69,16 +62,15 @@ export function createHomeHandlers({ userFromToken, canEditWidgets = () => false
       return { widgets: widgets.map((w) => ({ ...w })) }
     },
 
-    // ?city=<id>: известный город вне Еревана и Москвы приходит третьим; остальное — 2 города (как бэкенд)
+    // ?city=<id>: город справочника вне Еревана и Москвы приходит третьим; остальное — 2 города (как бэкенд)
     'GET /core/home/weather': ({ token, query }) => {
       userFromToken(token)
       const today = todayIso(now())
-      const extra = CITIES.find((c) => c.id === query?.city && !DEFAULT_CITY_IDS.includes(c.id))
-      const list = [...CITIES.filter((c) => DEFAULT_CITY_IDS.includes(c.id)), ...(extra ? [extra] : [])]
+      const extra = DEFAULT_CITY_IDS.includes(query?.city) ? null : mockCity(query?.city)
+      const list = [...DEFAULT_CITY_IDS.map(mockCity), ...(extra ? [extra] : [])]
       return {
         source: 'MET Norway',
         cities: list.map((c) => {
-          const ci = CITIES.indexOf(c)
           const days = Array.from({ length: DAYS }, (_, i) => {
             const max = c.base + Math.round(5 * Math.sin(i))
             return { date: addDays(today, i), min: max - 7, max, symbol: SYMBOLS[i % SYMBOLS.length] }
@@ -86,7 +78,7 @@ export function createHomeHandlers({ userFromToken, canEditWidgets = () => false
           // как бэкенд: слоты — только в days[0] («сегодня»), символы зависят от города, чтобы подсказки различались
           const hour = hourIn(c.timezone, now())
           days[0].slots = SLOTS.map(([id, , end], si) => {
-            const symbol = SYMBOLS[(ci + si) % SYMBOLS.length]
+            const symbol = SYMBOLS[(c.index + si) % SYMBOLS.length]
             const temp = days[0].max - 3 + si
             return {
               id,

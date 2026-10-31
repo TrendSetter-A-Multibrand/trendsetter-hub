@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import strings from '../strings.js'
 import { formatClock, loadClockZone, msUntilNextMinute, saveClockZone, zoneLabel } from './clocks.js'
 import { clockSlots } from './myCity.js'
+import { cityName } from './cityCatalog.js'
 import ZonePicker from './ZonePicker.jsx'
 
 const s = strings.hub.home
@@ -36,7 +37,7 @@ export default function ClocksCard({ myCity }) {
       {slots.map((z, i) => (
         <div className={`hero-clock${i === 0 ? ' prime' : ''}`} key={i}>
           <span className="hero-clock-label">
-            {String(i + 1).padStart(2, '0')} · {z.cityId ? s.cities[z.cityId] : zoneLabel(z.timeZone, s.zones)}
+            {String(i + 1).padStart(2, '0')} · {z.cityId ? cityName(z.cityId) : zoneLabel(z.timeZone, s.zones)}
           </span>
           <span className="hero-clock-time">{formatClock(now, z.timeZone)}</span>
           <ZonePicker className="hero-clock-gear" index={i + 1} zone={z.timeZone} onChange={(zone) => change(i, zone)} />

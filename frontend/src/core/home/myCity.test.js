@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { CITY_ZONES, DEFAULT_CITY_IDS, MY_CITY_KEY, clockSlots, loadMyCity, saveMyCity } from './myCity.js'
+import { DEFAULT_CITY_IDS, MY_CITY_KEY, clockSlots, loadMyCity, saveMyCity } from './myCity.js'
+import { POPULAR_CITY_IDS, cityById } from './cityCatalog.js'
 
 const NOW = new Date('2026-10-29T09:00:00Z')
 const ids = (zones) => zones.map((z) => z.cityId)
@@ -20,15 +21,10 @@ const fakeStorage = (initial = {}) => {
   }
 }
 
-test('CITY_ZONES: 17 городов, первые два — Ереван и Москва', () => {
-  assert.equal(CITY_ZONES.length, 17)
-  assert.equal(new Set(CITY_ZONES.map((c) => c.id)).size, 17)
-  assert.deepEqual(CITY_ZONES.slice(0, 2).map((c) => c.id), ['yerevan', 'moscow'])
-})
-
-test('DEFAULT_CITY_IDS: Ереван и Москва, оба есть в CITY_ZONES', () => {
+test('DEFAULT_CITY_IDS: Ереван и Москва, оба есть в справочнике, первые среди популярных', () => {
   assert.deepEqual(DEFAULT_CITY_IDS, ['yerevan', 'moscow'])
-  assert.ok(DEFAULT_CITY_IDS.every((id) => CITY_ZONES.some((c) => c.id === id)))
+  assert.ok(DEFAULT_CITY_IDS.every((id) => cityById(id)))
+  assert.deepEqual(POPULAR_CITY_IDS.slice(0, 2), DEFAULT_CITY_IDS)
 })
 
 test('clockSlots: без выбора и Ереван — как V1', () => {
@@ -54,6 +50,13 @@ test('clockSlots: сравнивается текущее время, а не id
   assert.deepEqual(ids(clockSlots('belgrade', NONE, new Date('2026-07-01T09:00:00Z'))), ['belgrade', 'moscow'])
 })
 
+test('clockSlots: город из справочника в чужой зоне — его зона и cityId', () => {
+  const [a, b] = clockSlots('g2643743', NONE, NOW) // Лондон
+  assert.deepEqual([a.timeZone, a.cityId], ['Europe/London', 'g2643743'])
+  assert.equal(b.cityId, 'moscow')
+  assert.deepEqual(clockSlots('g1275339', NONE, NOW)[0], { timeZone: 'Asia/Kolkata', cityId: 'g1275339' }) // Мумбаи
+})
+
 test('clockSlots: сохранённый слот 1 = Москва — слот 2 по умолчанию Ереван', () => {
   const slots = clockSlots('novosibirsk', ['Europe/Moscow', null], NOW)
   assert.deepEqual(slots.map((z) => z.timeZone), ['Europe/Moscow', 'Asia/Yerevan'])
@@ -75,6 +78,8 @@ test('clockSlots: у сохранённой зоны cityId === null, у умо�
 test('loadMyCity / saveMyCity', () => {
   assert.equal(loadMyCity(fakeStorage()), null)
   assert.equal(loadMyCity(fakeStorage({ [MY_CITY_KEY]: 'kazan' })), 'kazan')
+  assert.equal(loadMyCity(fakeStorage({ [MY_CITY_KEY]: 'g2643743' })), 'g2643743')
+  assert.equal(loadMyCity(fakeStorage({ [MY_CITY_KEY]: 'g0' })), null)
   assert.equal(loadMyCity(fakeStorage({ [MY_CITY_KEY]: 'paris' })), null)
   assert.equal(loadMyCity(fakeStorage({ [MY_CITY_KEY]: '{"x":1}' })), null)
   assert.equal(loadMyCity({ getItem: () => { throw new Error('denied') } }), null)
