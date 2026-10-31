@@ -1,0 +1,5667 @@
+{
+ "source": "GeoNames (https://www.geonames.org/)",
+ "license": "CC BY 4.0",
+ "modified": "данные изменены: выборка (столицы, от 1 млн, СНГ от 100 тыс., Армения от 15 тыс., города из старого списка), русские названия уточнены вручную",
+ "sourceDate": "2026-10-31",
+ "note": "данные, не UI-строки; сгенерировано backend/scripts/build_city_catalog.py — руками не править",
+ "cities": [
+  {
+   "id": "yerevan",
+   "lat": 40.1792,
+   "lon": 44.4991,
+   "timezone": "Asia/Yerevan"
+  },
+  {
+   "id": "moscow",
+   "lat": 55.7558,
+   "lon": 37.6173,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "saintPetersburg",
+   "lat": 59.9386,
+   "lon": 30.3141,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "kazan",
+   "lat": 55.7961,
+   "lon": 49.1064,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "krasnodar",
+   "lat": 45.0355,
+   "lon": 38.9753,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "yekaterinburg",
+   "lat": 56.8389,
+   "lon": 60.6057,
+   "timezone": "Asia/Yekaterinburg"
+  },
+  {
+   "id": "novosibirsk",
+   "lat": 55.0084,
+   "lon": 82.9357,
+   "timezone": "Asia/Novosibirsk"
+  },
+  {
+   "id": "minsk",
+   "lat": 53.9006,
+   "lon": 27.559,
+   "timezone": "Europe/Minsk"
+  },
+  {
+   "id": "tbilisi",
+   "lat": 41.7151,
+   "lon": 44.8271,
+   "timezone": "Asia/Tbilisi"
+  },
+  {
+   "id": "baku",
+   "lat": 40.4093,
+   "lon": 49.8671,
+   "timezone": "Asia/Baku"
+  },
+  {
+   "id": "almaty",
+   "lat": 43.222,
+   "lon": 76.8512,
+   "timezone": "Asia/Almaty"
+  },
+  {
+   "id": "astana",
+   "lat": 51.1605,
+   "lon": 71.4704,
+   "timezone": "Asia/Almaty"
+  },
+  {
+   "id": "tashkent",
+   "lat": 41.2995,
+   "lon": 69.2401,
+   "timezone": "Asia/Tashkent"
+  },
+  {
+   "id": "bishkek",
+   "lat": 42.8746,
+   "lon": 74.5698,
+   "timezone": "Asia/Bishkek"
+  },
+  {
+   "id": "istanbul",
+   "lat": 41.0082,
+   "lon": 28.9784,
+   "timezone": "Europe/Istanbul"
+  },
+  {
+   "id": "dubai",
+   "lat": 25.2048,
+   "lon": 55.2708,
+   "timezone": "Asia/Dubai"
+  },
+  {
+   "id": "belgrade",
+   "lat": 44.7866,
+   "lon": 20.4489,
+   "timezone": "Europe/Belgrade"
+  },
+  {
+   "id": "g1796236",
+   "lat": 31.2222,
+   "lon": 121.4581,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1814906",
+   "lat": 29.5603,
+   "lon": 106.5577,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1815286",
+   "lat": 30.6667,
+   "lon": 104.0667,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1816670",
+   "lat": 39.9075,
+   "lon": 116.3972,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1809858",
+   "lat": 23.1167,
+   "lon": 113.25,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1795565",
+   "lat": 22.5455,
+   "lon": 114.0683,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g2314302",
+   "lat": -4.3276,
+   "lon": 15.3136,
+   "timezone": "Africa/Kinshasa"
+  },
+  {
+   "id": "g2332459",
+   "lat": 6.4541,
+   "lon": 3.3947,
+   "timezone": "Africa/Lagos"
+  },
+  {
+   "id": "g1566083",
+   "lat": 10.823,
+   "lon": 106.6296,
+   "timezone": "Asia/Ho_Chi_Minh"
+  },
+  {
+   "id": "g1792947",
+   "lat": 39.1422,
+   "lon": 117.1767,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1791247",
+   "lat": 30.5833,
+   "lon": 114.2667,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1172451",
+   "lat": 31.558,
+   "lon": 74.3507,
+   "timezone": "Asia/Karachi"
+  },
+  {
+   "id": "g1790630",
+   "lat": 34.2583,
+   "lon": 108.9286,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1275339",
+   "lat": 19.0728,
+   "lon": 72.8826,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g3448439",
+   "lat": -23.5475,
+   "lon": -46.6361,
+   "timezone": "America/Sao_Paulo"
+  },
+  {
+   "id": "g3530597",
+   "lat": 19.4285,
+   "lon": -99.1277,
+   "timezone": "America/Mexico_City"
+  },
+  {
+   "id": "g1808926",
+   "lat": 30.2936,
+   "lon": 120.1614,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1174872",
+   "lat": 24.8608,
+   "lon": 67.0104,
+   "timezone": "Asia/Karachi"
+  },
+  {
+   "id": "g1273294",
+   "lat": 28.6519,
+   "lon": 77.2315,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g1185241",
+   "lat": 23.7104,
+   "lon": 90.4074,
+   "timezone": "Asia/Dhaka"
+  },
+  {
+   "id": "g1835848",
+   "lat": 37.566,
+   "lon": 126.9784,
+   "timezone": "Asia/Seoul"
+  },
+  {
+   "id": "g2037013",
+   "lat": 45.75,
+   "lon": 126.65,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1850147",
+   "lat": 35.6895,
+   "lon": 139.6917,
+   "timezone": "Asia/Tokyo"
+  },
+  {
+   "id": "g1812545",
+   "lat": 23.018,
+   "lon": 113.7487,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g360630",
+   "lat": 30.0626,
+   "lon": 31.2497,
+   "timezone": "Africa/Cairo"
+  },
+  {
+   "id": "g1808722",
+   "lat": 31.8639,
+   "lon": 117.2808,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g993800",
+   "lat": -26.2023,
+   "lon": 28.0436,
+   "timezone": "Africa/Johannesburg"
+  },
+  {
+   "id": "g1791681",
+   "lat": 36.71,
+   "lon": 119.1019,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1799962",
+   "lat": 32.0617,
+   "lon": 118.7778,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g2034937",
+   "lat": 41.7922,
+   "lon": 123.4328,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1811103",
+   "lat": 23.0268,
+   "lon": 113.1315,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g2643743",
+   "lat": 51.5085,
+   "lon": -0.1257,
+   "timezone": "Europe/London"
+  },
+  {
+   "id": "g5128581",
+   "lat": 40.7143,
+   "lon": -74.006,
+   "timezone": "America/New_York"
+  },
+  {
+   "id": "g1642911",
+   "lat": -6.2146,
+   "lon": 106.8451,
+   "timezone": "Asia/Jakarta"
+  },
+  {
+   "id": "g1277333",
+   "lat": 12.9719,
+   "lon": 77.5937,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g1805753",
+   "lat": 36.6683,
+   "lon": 116.9972,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1581130",
+   "lat": 21.0245,
+   "lon": 105.8412,
+   "timezone": "Asia/Bangkok"
+  },
+  {
+   "id": "g1668341",
+   "lat": 25.0531,
+   "lon": 121.5264,
+   "timezone": "Asia/Taipei"
+  },
+  {
+   "id": "g3936456",
+   "lat": -12.0432,
+   "lon": -77.0282,
+   "timezone": "America/Lima"
+  },
+  {
+   "id": "g3688689",
+   "lat": 4.6097,
+   "lon": -74.0817,
+   "timezone": "America/Bogota"
+  },
+  {
+   "id": "g1814087",
+   "lat": 38.9122,
+   "lon": 121.6022,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1819729",
+   "lat": 22.2783,
+   "lon": 114.1747,
+   "timezone": "Asia/Hong_Kong"
+  },
+  {
+   "id": "g98182",
+   "lat": 33.3406,
+   "lon": 44.4009,
+   "timezone": "Asia/Baghdad"
+  },
+  {
+   "id": "g1790842",
+   "lat": 37.9867,
+   "lon": 106.201,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1797929",
+   "lat": 36.0649,
+   "lon": 120.3804,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g112931",
+   "lat": 35.6944,
+   "lon": 51.4215,
+   "timezone": "Asia/Tehran"
+  },
+  {
+   "id": "g1787093",
+   "lat": 37.4765,
+   "lon": 121.4408,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1269843",
+   "lat": 17.384,
+   "lon": 78.4564,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g3451190",
+   "lat": -22.9064,
+   "lon": -43.1822,
+   "timezone": "America/Sao_Paulo"
+  },
+  {
+   "id": "g1886760",
+   "lat": 31.3041,
+   "lon": 120.5954,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1784658",
+   "lat": 34.7578,
+   "lon": 113.6486,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1279233",
+   "lat": 23.0258,
+   "lon": 72.5873,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g2293538",
+   "lat": 5.3544,
+   "lon": -4.0017,
+   "timezone": "Africa/Abidjan"
+  },
+  {
+   "id": "g1799869",
+   "lat": 22.8167,
+   "lon": 108.3167,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1804651",
+   "lat": 25.0389,
+   "lon": 102.7183,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1795270",
+   "lat": 38.0414,
+   "lon": 114.4786,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g2038180",
+   "lat": 43.88,
+   "lon": 125.3228,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g2147714",
+   "lat": -33.8678,
+   "lon": 151.2073,
+   "timezone": "Australia/Sydney"
+  },
+  {
+   "id": "g1880252",
+   "lat": 1.2897,
+   "lon": 103.8501,
+   "timezone": "Asia/Singapore"
+  },
+  {
+   "id": "g2158177",
+   "lat": -37.814,
+   "lon": 144.9633,
+   "timezone": "Australia/Melbourne"
+  },
+  {
+   "id": "g160263",
+   "lat": -6.8235,
+   "lon": 39.2695,
+   "timezone": "Africa/Dar_es_Salaam"
+  },
+  {
+   "id": "g1793511",
+   "lat": 37.8694,
+   "lon": 112.5603,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g361058",
+   "lat": 31.2018,
+   "lon": 29.9158,
+   "timezone": "Africa/Cairo"
+  },
+  {
+   "id": "g1609350",
+   "lat": 13.754,
+   "lon": 100.5014,
+   "timezone": "Asia/Bangkok"
+  },
+  {
+   "id": "g2335204",
+   "lat": 12.0001,
+   "lon": 8.5167,
+   "timezone": "Africa/Lagos"
+  },
+  {
+   "id": "g3871336",
+   "lat": -33.4569,
+   "lon": -70.6483,
+   "timezone": "America/Santiago"
+  },
+  {
+   "id": "g3369157",
+   "lat": -33.9258,
+   "lon": 18.4232,
+   "timezone": "Africa/Johannesburg"
+  },
+  {
+   "id": "g1168197",
+   "lat": 34.008,
+   "lon": 71.5785,
+   "timezone": "Asia/Karachi"
+  },
+  {
+   "id": "g1785286",
+   "lat": 36.7906,
+   "lon": 118.0633,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g105343",
+   "lat": 21.4901,
+   "lon": 39.1862,
+   "timezone": "Asia/Riyadh"
+  },
+  {
+   "id": "g1264527",
+   "lat": 13.0878,
+   "lon": 80.2785,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g1275004",
+   "lat": 22.5626,
+   "lon": 88.363,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g1790645",
+   "lat": 24.4798,
+   "lon": 118.0819,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1255364",
+   "lat": 21.1959,
+   "lon": 72.8302,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g1787227",
+   "lat": 32.3972,
+   "lon": 119.4358,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1797873",
+   "lat": 33.5886,
+   "lon": 119.0192,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1809461",
+   "lat": 26.5833,
+   "lon": 106.7167,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1298824",
+   "lat": 16.8053,
+   "lon": 96.1561,
+   "timezone": "Asia/Yangon"
+  },
+  {
+   "id": "g1138958",
+   "lat": 34.5281,
+   "lon": 69.1723,
+   "timezone": "Asia/Kabul"
+  },
+  {
+   "id": "g184745",
+   "lat": -1.2833,
+   "lon": 36.8167,
+   "timezone": "Africa/Nairobi"
+  },
+  {
+   "id": "g1790923",
+   "lat": 31.5689,
+   "lon": 120.2886,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g360995",
+   "lat": 30.0094,
+   "lon": 31.2086,
+   "timezone": "Africa/Cairo"
+  },
+  {
+   "id": "g1804430",
+   "lat": 36.057,
+   "lon": 103.8399,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g2460596",
+   "lat": 12.6091,
+   "lon": -7.9752,
+   "timezone": "Africa/Bamako"
+  },
+  {
+   "id": "g108410",
+   "lat": 24.6877,
+   "lon": 46.7219,
+   "timezone": "Asia/Riyadh"
+  },
+  {
+   "id": "g1810821",
+   "lat": 26.0614,
+   "lon": 119.3061,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1529102",
+   "lat": 43.801,
+   "lon": 87.6005,
+   "timezone": "Asia/Urumqi"
+  },
+  {
+   "id": "g12908892",
+   "lat": 25.062,
+   "lon": 121.457,
+   "timezone": "Asia/Taipei"
+  },
+  {
+   "id": "g1205733",
+   "lat": 22.3384,
+   "lon": 91.8317,
+   "timezone": "Asia/Dhaka"
+  },
+  {
+   "id": "g344979",
+   "lat": 9.025,
+   "lon": 38.7469,
+   "timezone": "Africa/Addis_Ababa"
+  },
+  {
+   "id": "g1785453",
+   "lat": 34.8647,
+   "lon": 117.5542,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g6986104",
+   "lat": 22.5231,
+   "lon": 113.3791,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1795940",
+   "lat": 23.3549,
+   "lon": 116.6788,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g5368361",
+   "lat": 34.0522,
+   "lon": -118.2437,
+   "timezone": "America/Los_Angeles"
+  },
+  {
+   "id": "g1179400",
+   "lat": 31.4155,
+   "lon": 73.0897,
+   "timezone": "Asia/Karachi"
+  },
+  {
+   "id": "g1848354",
+   "lat": 35.4333,
+   "lon": 139.65,
+   "timezone": "Asia/Tokyo"
+  },
+  {
+   "id": "g1799397",
+   "lat": 29.8782,
+   "lon": 121.5494,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g2553604",
+   "lat": 33.5883,
+   "lon": -7.6114,
+   "timezone": "Africa/Casablanca"
+  },
+  {
+   "id": "g2339354",
+   "lat": 7.3776,
+   "lon": 3.9059,
+   "timezone": "Africa/Lagos"
+  },
+  {
+   "id": "g1798425",
+   "lat": 29.4568,
+   "lon": 119.8887,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g323786",
+   "lat": 39.9199,
+   "lon": 32.8543,
+   "timezone": "Europe/Istanbul"
+  },
+  {
+   "id": "g1794903",
+   "lat": 32.6475,
+   "lon": 110.7781,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g2036892",
+   "lat": 40.8106,
+   "lon": 111.6522,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g2950159",
+   "lat": 52.5244,
+   "lon": 13.4105,
+   "timezone": "Europe/Berlin"
+  },
+  {
+   "id": "g1793346",
+   "lat": 39.6438,
+   "lon": 118.1832,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1166993",
+   "lat": 33.5973,
+   "lon": 73.0479,
+   "timezone": "Asia/Karachi"
+  },
+  {
+   "id": "g13512505",
+   "lat": 37.5192,
+   "lon": 111.1444,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1007311",
+   "lat": -29.8579,
+   "lon": 31.0292,
+   "timezone": "Africa/Johannesburg"
+  },
+  {
+   "id": "g2038632",
+   "lat": 41.1236,
+   "lon": 122.99,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1815456",
+   "lat": 31.7736,
+   "lon": 119.954,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1838524",
+   "lat": 35.1017,
+   "lon": 129.03,
+   "timezone": "Asia/Seoul"
+  },
+  {
+   "id": "g3117735",
+   "lat": 40.4165,
+   "lon": -3.7026,
+   "timezone": "Europe/Madrid"
+  },
+  {
+   "id": "g1871859",
+   "lat": 39.0339,
+   "lon": 125.7543,
+   "timezone": "Asia/Pyongyang"
+  },
+  {
+   "id": "g1259229",
+   "lat": 18.5196,
+   "lon": 73.8554,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g2037799",
+   "lat": 40.0936,
+   "lon": 113.2914,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g750269",
+   "lat": 40.1956,
+   "lon": 29.0601,
+   "timezone": "Europe/Istanbul"
+  },
+  {
+   "id": "g1815577",
+   "lat": 28.1987,
+   "lon": 112.9709,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1692192",
+   "lat": 14.6488,
+   "lon": 121.0509,
+   "timezone": "Asia/Manila"
+  },
+  {
+   "id": "g1269515",
+   "lat": 26.9196,
+   "lon": 75.7878,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g1807681",
+   "lat": 32.6264,
+   "lon": 116.9969,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1625822",
+   "lat": -7.2492,
+   "lon": 112.7508,
+   "timezone": "Asia/Jakarta"
+  },
+  {
+   "id": "g1843564",
+   "lat": 37.4565,
+   "lon": 126.7052,
+   "timezone": "Asia/Seoul"
+  },
+  {
+   "id": "g1809078",
+   "lat": 20.0342,
+   "lon": 110.3465,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g3646738",
+   "lat": 10.488,
+   "lon": -66.8792,
+   "timezone": "America/Caracas"
+  },
+  {
+   "id": "g703448",
+   "lat": 50.4547,
+   "lon": 30.5238,
+   "timezone": "Europe/Kyiv"
+  },
+  {
+   "id": "g311046",
+   "lat": 38.4127,
+   "lon": 27.1384,
+   "timezone": "Europe/Istanbul"
+  },
+  {
+   "id": "g1806776",
+   "lat": 23.1115,
+   "lon": 114.4152,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g3435910",
+   "lat": -34.6131,
+   "lon": -58.3772,
+   "timezone": "America/Argentina/Buenos_Aires"
+  },
+  {
+   "id": "g1786657",
+   "lat": 38.4681,
+   "lon": 106.2731,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1668399",
+   "lat": 24.1469,
+   "lon": 120.6839,
+   "timezone": "Asia/Taipei"
+  },
+  {
+   "id": "g1267995",
+   "lat": 26.4652,
+   "lon": 80.3498,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g6167865",
+   "lat": 43.7064,
+   "lon": -79.3986,
+   "timezone": "America/Toronto"
+  },
+  {
+   "id": "g3652462",
+   "lat": -0.2298,
+   "lon": -78.525,
+   "timezone": "America/Guayaquil"
+  },
+  {
+   "id": "g2174003",
+   "lat": -27.4679,
+   "lon": 153.0281,
+   "timezone": "Australia/Brisbane"
+  },
+  {
+   "id": "g2240449",
+   "lat": -8.8368,
+   "lon": 13.2343,
+   "timezone": "Africa/Luanda"
+  },
+  {
+   "id": "g2038432",
+   "lat": 40.6516,
+   "lon": 109.8439,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1853909",
+   "lat": 34.6938,
+   "lon": 135.5011,
+   "timezone": "Asia/Tokyo"
+  },
+  {
+   "id": "g1803318",
+   "lat": 35.0631,
+   "lon": 118.3428,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1816971",
+   "lat": 38.8729,
+   "lon": 115.4625,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1673820",
+   "lat": 22.6163,
+   "lon": 120.3133,
+   "timezone": "Asia/Taipei"
+  },
+  {
+   "id": "g3657509",
+   "lat": -2.1962,
+   "lon": -79.8862,
+   "timezone": "America/Guayaquil"
+  },
+  {
+   "id": "g3470127",
+   "lat": -19.9208,
+   "lon": -43.9378,
+   "timezone": "America/Sao_Paulo"
+  },
+  {
+   "id": "g11995100",
+   "lat": 31.8694,
+   "lon": 106.7443,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g3450554",
+   "lat": -12.9756,
+   "lon": -38.491,
+   "timezone": "America/Bahia"
+  },
+  {
+   "id": "g2352778",
+   "lat": 9.0579,
+   "lon": 7.4951,
+   "timezone": "Africa/Lagos"
+  },
+  {
+   "id": "g1200109",
+   "lat": 23.9984,
+   "lon": 90.4223,
+   "timezone": "Asia/Dhaka"
+  },
+  {
+   "id": "g4887398",
+   "lat": 41.85,
+   "lon": -87.65,
+   "timezone": "America/Chicago"
+  },
+  {
+   "id": "g1791388",
+   "lat": 27.9994,
+   "lon": 120.6668,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1649378",
+   "lat": -6.2349,
+   "lon": 106.9896,
+   "timezone": "Asia/Jakarta"
+  },
+  {
+   "id": "g2253354",
+   "lat": 14.6937,
+   "lon": -17.4441,
+   "timezone": "Africa/Dakar"
+  },
+  {
+   "id": "g1581298",
+   "lat": 20.8648,
+   "lon": 106.6834,
+   "timezone": "Asia/Bangkok"
+  },
+  {
+   "id": "g1785725",
+   "lat": 22.9279,
+   "lon": 112.0381,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g53654",
+   "lat": 2.0371,
+   "lon": 45.3438,
+   "timezone": "Africa/Mogadishu"
+  },
+  {
+   "id": "g2298890",
+   "lat": 6.6885,
+   "lon": -1.6244,
+   "timezone": "Africa/Accra"
+  },
+  {
+   "id": "g1650357",
+   "lat": -6.9222,
+   "lon": 107.6069,
+   "timezone": "Asia/Jakarta"
+  },
+  {
+   "id": "g1177662",
+   "lat": 32.1557,
+   "lon": 74.187,
+   "timezone": "Asia/Karachi"
+  },
+  {
+   "id": "g1214520",
+   "lat": 3.5833,
+   "lon": 98.6667,
+   "timezone": "Asia/Jakarta"
+  },
+  {
+   "id": "g1264733",
+   "lat": 26.8393,
+   "lon": 80.9231,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g1788852",
+   "lat": 36.6255,
+   "lon": 101.7574,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g2357048",
+   "lat": 12.3657,
+   "lon": -1.5339,
+   "timezone": "Africa/Ouagadougou"
+  },
+  {
+   "id": "g1262180",
+   "lat": 21.1463,
+   "lon": 79.0849,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g3399415",
+   "lat": -3.7172,
+   "lon": -38.5431,
+   "timezone": "America/Fortaleza"
+  },
+  {
+   "id": "g3687925",
+   "lat": 3.4305,
+   "lon": -76.5199,
+   "timezone": "America/Bogota"
+  },
+  {
+   "id": "g2063523",
+   "lat": -31.9522,
+   "lon": 115.8614,
+   "timezone": "Australia/Perth"
+  },
+  {
+   "id": "g1835329",
+   "lat": 35.871,
+   "lon": 128.6012,
+   "timezone": "Asia/Seoul"
+  },
+  {
+   "id": "g2507480",
+   "lat": 36.7323,
+   "lon": 3.0875,
+   "timezone": "Africa/Algiers"
+  },
+  {
+   "id": "g1800163",
+   "lat": 28.684,
+   "lon": 115.8531,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1856057",
+   "lat": 35.1815,
+   "lon": 136.9064,
+   "timezone": "Asia/Tokyo"
+  },
+  {
+   "id": "g3169070",
+   "lat": 41.8919,
+   "lon": 12.5113,
+   "timezone": "Europe/Rome"
+  },
+  {
+   "id": "g4699066",
+   "lat": 29.7633,
+   "lon": -95.3633,
+   "timezone": "America/Chicago"
+  },
+  {
+   "id": "g124665",
+   "lat": 36.2981,
+   "lon": 59.6057,
+   "timezone": "Asia/Tehran"
+  },
+  {
+   "id": "g1795855",
+   "lat": 30.0024,
+   "lon": 120.5786,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1799722",
+   "lat": 32.0303,
+   "lon": 120.8747,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g314830",
+   "lat": 37.0594,
+   "lon": 37.3825,
+   "timezone": "Europe/Istanbul"
+  },
+  {
+   "id": "g922704",
+   "lat": -11.6609,
+   "lon": 27.4794,
+   "timezone": "Africa/Lubumbashi"
+  },
+  {
+   "id": "g3663517",
+   "lat": -3.1019,
+   "lon": -60.025,
+   "timezone": "America/Manaus"
+  },
+  {
+   "id": "g909137",
+   "lat": -15.4067,
+   "lon": 28.2871,
+   "timezone": "Africa/Lusaka"
+  },
+  {
+   "id": "g3469058",
+   "lat": -15.7797,
+   "lon": -47.9297,
+   "timezone": "America/Sao_Paulo"
+  },
+  {
+   "id": "g1790437",
+   "lat": 22.2769,
+   "lon": 113.5678,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g3492908",
+   "lat": 18.4719,
+   "lon": -69.8923,
+   "timezone": "America/Santo_Domingo"
+  },
+  {
+   "id": "g2365267",
+   "lat": 6.1287,
+   "lon": 1.2215,
+   "timezone": "Africa/Lome"
+  },
+  {
+   "id": "g1169825",
+   "lat": 30.1968,
+   "lon": 71.4782,
+   "timezone": "Asia/Karachi"
+  },
+  {
+   "id": "g3553478",
+   "lat": 23.133,
+   "lon": -82.383,
+   "timezone": "America/Havana"
+  },
+  {
+   "id": "g1645524",
+   "lat": -6.4,
+   "lon": 106.8186,
+   "timezone": "Asia/Jakarta"
+  },
+  {
+   "id": "g8347664",
+   "lat": 39.6086,
+   "lon": 109.7816,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g2988507",
+   "lat": 48.8534,
+   "lon": 2.3488,
+   "timezone": "Europe/Paris"
+  },
+  {
+   "id": "g1273865",
+   "lat": 11.0055,
+   "lon": 76.9661,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g12359313",
+   "lat": 35.7098,
+   "lon": 107.6445,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g2324774",
+   "lat": 4.7774,
+   "lon": 7.0134,
+   "timezone": "Africa/Lagos"
+  },
+  {
+   "id": "g964137",
+   "lat": -25.7449,
+   "lon": 28.1878,
+   "timezone": "Africa/Johannesburg"
+  },
+  {
+   "id": "g3860259",
+   "lat": -31.4065,
+   "lon": -64.1885,
+   "timezone": "America/Argentina/Cordoba"
+  },
+  {
+   "id": "g209228",
+   "lat": -6.136,
+   "lon": 23.5898,
+   "timezone": "Africa/Lubumbashi"
+  },
+  {
+   "id": "g170063",
+   "lat": 36.2012,
+   "lon": 37.1612,
+   "timezone": "Asia/Damascus"
+  },
+  {
+   "id": "g1785623",
+   "lat": 31.3776,
+   "lon": 120.9543,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1783621",
+   "lat": 27.6867,
+   "lon": 106.9072,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g3911925",
+   "lat": -16.5,
+   "lon": -68.15,
+   "timezone": "America/La_Paz"
+  },
+  {
+   "id": "g10859300",
+   "lat": 34.5984,
+   "lon": 119.2156,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g3674962",
+   "lat": 6.245,
+   "lon": -75.5715,
+   "timezone": "America/Bogota"
+  },
+  {
+   "id": "g1802940",
+   "lat": 23.3107,
+   "lon": 116.1687,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1269743",
+   "lat": 22.7179,
+   "lon": 75.8333,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g2260535",
+   "lat": -4.2661,
+   "lon": 15.2832,
+   "timezone": "Africa/Brazzaville"
+  },
+  {
+   "id": "g1810638",
+   "lat": 25.8466,
+   "lon": 114.9326,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g379252",
+   "lat": 15.5518,
+   "lon": 32.5324,
+   "timezone": "Africa/Khartoum"
+  },
+  {
+   "id": "g2911298",
+   "lat": 53.5507,
+   "lon": 9.993,
+   "timezone": "Europe/Berlin"
+  },
+  {
+   "id": "g2128295",
+   "lat": 43.0667,
+   "lon": 141.35,
+   "timezone": "Asia/Tokyo"
+  },
+  {
+   "id": "g2306104",
+   "lat": 5.556,
+   "lon": -0.1969,
+   "timezone": "Africa/Accra"
+  },
+  {
+   "id": "g3464975",
+   "lat": -25.4278,
+   "lon": -49.2731,
+   "timezone": "America/Sao_Paulo"
+  },
+  {
+   "id": "g71137",
+   "lat": 15.3545,
+   "lon": 44.2065,
+   "timezone": "Asia/Aden"
+  },
+  {
+   "id": "g2422465",
+   "lat": 9.538,
+   "lon": -13.6773,
+   "timezone": "Africa/Conakry"
+  },
+  {
+   "id": "g1625084",
+   "lat": -6.1781,
+   "lon": 106.63,
+   "timezone": "Asia/Jakarta"
+  },
+  {
+   "id": "g3981609",
+   "lat": 32.5027,
+   "lon": -117.0037,
+   "timezone": "America/Tijuana"
+  },
+  {
+   "id": "g1176734",
+   "lat": 25.3969,
+   "lon": 68.3772,
+   "timezone": "Asia/Karachi"
+  },
+  {
+   "id": "g276781",
+   "lat": 33.8933,
+   "lon": 35.5016,
+   "timezone": "Asia/Beirut"
+  },
+  {
+   "id": "g1797121",
+   "lat": 23.5418,
+   "lon": 116.3658,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g2036502",
+   "lat": 43.8465,
+   "lon": 126.5608,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g683506",
+   "lat": 44.4323,
+   "lon": 26.1063,
+   "timezone": "Europe/Bucharest"
+  },
+  {
+   "id": "g195272",
+   "lat": 0.2842,
+   "lon": 34.7523,
+   "timezone": "Africa/Nairobi"
+  },
+  {
+   "id": "g1796134",
+   "lat": 34.4143,
+   "lon": 115.6561,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1800146",
+   "lat": 30.7951,
+   "lon": 106.0847,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1668355",
+   "lat": 22.9926,
+   "lon": 120.2051,
+   "timezone": "Asia/Taipei"
+  },
+  {
+   "id": "g2335727",
+   "lat": 10.5264,
+   "lon": 7.4388,
+   "timezone": "Africa/Lagos"
+  },
+  {
+   "id": "g365137",
+   "lat": 15.6445,
+   "lon": 32.4777,
+   "timezone": "Africa/Khartoum"
+  },
+  {
+   "id": "g1715348",
+   "lat": 7.0731,
+   "lon": 125.6128,
+   "timezone": "Asia/Manila"
+  },
+  {
+   "id": "g1254661",
+   "lat": 19.197,
+   "lon": 72.9635,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g316541",
+   "lat": 37.9136,
+   "lon": 40.2172,
+   "timezone": "Europe/Istanbul"
+  },
+  {
+   "id": "g3904906",
+   "lat": -17.7863,
+   "lon": -63.1812,
+   "timezone": "America/La_Paz"
+  },
+  {
+   "id": "g1253573",
+   "lat": 22.2994,
+   "lon": 73.2081,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g325363",
+   "lat": 36.9862,
+   "lon": 35.3253,
+   "timezone": "Europe/Istanbul"
+  },
+  {
+   "id": "g1799629",
+   "lat": 33.0052,
+   "lon": 112.5466,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g292968",
+   "lat": 24.4512,
+   "lon": 54.397,
+   "timezone": "Asia/Dubai"
+  },
+  {
+   "id": "g1633070",
+   "lat": -2.9167,
+   "lon": 104.7458,
+   "timezone": "Asia/Jakarta"
+  },
+  {
+   "id": "g292672",
+   "lat": 25.3342,
+   "lon": 55.4122,
+   "timezone": "Asia/Dubai"
+  },
+  {
+   "id": "g1275841",
+   "lat": 23.2547,
+   "lon": 77.4029,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g1806299",
+   "lat": 22.5833,
+   "lon": 113.0833,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g2347283",
+   "lat": 6.3381,
+   "lon": 5.6258,
+   "timezone": "Africa/Lagos"
+  },
+  {
+   "id": "g1815251",
+   "lat": 31.911,
+   "lon": 120.263,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1810845",
+   "lat": 32.9,
+   "lon": 115.8167,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g6077243",
+   "lat": 45.5088,
+   "lon": -73.5878,
+   "timezone": "America/Toronto"
+  },
+  {
+   "id": "g11838258",
+   "lat": 40.7414,
+   "lon": 107.386,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g3633009",
+   "lat": 10.6423,
+   "lon": -71.6109,
+   "timezone": "America/Caracas"
+  },
+  {
+   "id": "g1815395",
+   "lat": 23.654,
+   "lon": 116.6226,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g3054643",
+   "lat": 47.4984,
+   "lon": 19.0404,
+   "timezone": "Europe/Budapest"
+  },
+  {
+   "id": "g1797945",
+   "lat": 23.7,
+   "lon": 113.0333,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1793724",
+   "lat": 36.1853,
+   "lon": 117.12,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g7626690",
+   "lat": 18.6187,
+   "lon": 73.8037,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g1720151",
+   "lat": 14.6495,
+   "lon": 120.9679,
+   "timezone": "Asia/Manila"
+  },
+  {
+   "id": "g756135",
+   "lat": 52.2298,
+   "lon": 21.0118,
+   "timezone": "Europe/Warsaw"
+  },
+  {
+   "id": "g953781",
+   "lat": -26.2678,
+   "lon": 27.8585,
+   "timezone": "Africa/Johannesburg"
+  },
+  {
+   "id": "g1627896",
+   "lat": -6.9931,
+   "lon": 110.4208,
+   "timezone": "Asia/Jakarta"
+  },
+  {
+   "id": "g3521081",
+   "lat": 19.0478,
+   "lon": -98.2072,
+   "timezone": "America/Mexico_City"
+  },
+  {
+   "id": "g2761369",
+   "lat": 48.2085,
+   "lon": 16.3721,
+   "timezone": "Europe/Vienna"
+  },
+  {
+   "id": "g3128760",
+   "lat": 41.3888,
+   "lon": 2.159,
+   "timezone": "Europe/Madrid"
+  },
+  {
+   "id": "g1260086",
+   "lat": 25.5941,
+   "lon": 85.1356,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g99072",
+   "lat": 36.335,
+   "lon": 43.1189,
+   "timezone": "Asia/Baghdad"
+  },
+  {
+   "id": "g232422",
+   "lat": 0.3163,
+   "lon": 32.5822,
+   "timezone": "Africa/Kampala"
+  },
+  {
+   "id": "g7283386",
+   "lat": 31.6461,
+   "lon": 120.7422,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g2538475",
+   "lat": 34.0132,
+   "lon": -6.8326,
+   "timezone": "Africa/Casablanca"
+  },
+  {
+   "id": "g3390760",
+   "lat": -8.0539,
+   "lon": -34.8811,
+   "timezone": "America/Recife"
+  },
+  {
+   "id": "g5308655",
+   "lat": 33.4484,
+   "lon": -112.074,
+   "timezone": "America/Phoenix"
+  },
+  {
+   "id": "g3529612",
+   "lat": 19.6001,
+   "lon": -99.0486,
+   "timezone": "America/Mexico_City"
+  },
+  {
+   "id": "g1802206",
+   "lat": 31.7356,
+   "lon": 116.5169,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g3625549",
+   "lat": 10.1615,
+   "lon": -68.0004,
+   "timezone": "America/Caracas"
+  },
+  {
+   "id": "g1264728",
+   "lat": 30.912,
+   "lon": 75.8538,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g1787746",
+   "lat": 33.3575,
+   "lon": 120.1573,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g95446",
+   "lat": 36.1912,
+   "lon": 44.0094,
+   "timezone": "Asia/Baghdad"
+  },
+  {
+   "id": "g1863967",
+   "lat": 33.6,
+   "lon": 130.4167,
+   "timezone": "Asia/Tokyo"
+  },
+  {
+   "id": "g1793505",
+   "lat": 32.4907,
+   "lon": 119.9081,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g2037860",
+   "lat": 46.5833,
+   "lon": 125.0,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g212730",
+   "lat": 0.5153,
+   "lon": 25.191,
+   "timezone": "Africa/Lubumbashi"
+  },
+  {
+   "id": "g1701668",
+   "lat": 14.6042,
+   "lon": 120.9822,
+   "timezone": "Asia/Manila"
+  },
+  {
+   "id": "g1791236",
+   "lat": 31.3526,
+   "lon": 118.4295,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g3991164",
+   "lat": 20.5881,
+   "lon": -100.3881,
+   "timezone": "America/Mexico_City"
+  },
+  {
+   "id": "g1813325",
+   "lat": 31.2106,
+   "lon": 107.4631,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g3998655",
+   "lat": 21.1218,
+   "lon": -101.6825,
+   "timezone": "America/Mexico_City"
+  },
+  {
+   "id": "g104515",
+   "lat": 21.4266,
+   "lon": 39.8256,
+   "timezone": "Asia/Riyadh"
+  },
+  {
+   "id": "g4560349",
+   "lat": 39.9524,
+   "lon": -75.1636,
+   "timezone": "America/New_York"
+  },
+  {
+   "id": "g1821306",
+   "lat": 11.5625,
+   "lon": 104.916,
+   "timezone": "Asia/Phnom_Penh"
+  },
+  {
+   "id": "g1809498",
+   "lat": 25.2802,
+   "lon": 110.2964,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g170654",
+   "lat": 33.5102,
+   "lon": 36.2913,
+   "timezone": "Asia/Damascus"
+  },
+  {
+   "id": "g1167528",
+   "lat": 30.1841,
+   "lon": 67.0014,
+   "timezone": "Asia/Karachi"
+  },
+  {
+   "id": "g1784853",
+   "lat": 23.0489,
+   "lon": 112.4609,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g2326016",
+   "lat": 6.1498,
+   "lon": 6.7857,
+   "timezone": "Africa/Lagos"
+  },
+  {
+   "id": "g1800627",
+   "lat": 31.4678,
+   "lon": 104.6817,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g2193733",
+   "lat": -36.8485,
+   "lon": 174.7635,
+   "timezone": "Pacific/Auckland"
+  },
+  {
+   "id": "g418863",
+   "lat": 32.6525,
+   "lon": 51.6746,
+   "timezone": "Asia/Tehran"
+  },
+  {
+   "id": "g890299",
+   "lat": -17.8277,
+   "lon": 31.0534,
+   "timezone": "Africa/Harare"
+  },
+  {
+   "id": "g2274895",
+   "lat": 6.3005,
+   "lon": -10.7969,
+   "timezone": "Africa/Monrovia"
+  },
+  {
+   "id": "g1798449",
+   "lat": 25.4394,
+   "lon": 119.0103,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1859642",
+   "lat": 35.5206,
+   "lon": 139.7172,
+   "timezone": "Asia/Tokyo"
+  },
+  {
+   "id": "g3462377",
+   "lat": -16.6786,
+   "lon": -49.2539,
+   "timezone": "America/Sao_Paulo"
+  },
+  {
+   "id": "g4726206",
+   "lat": 29.4241,
+   "lon": -98.4936,
+   "timezone": "America/Chicago"
+  },
+  {
+   "id": "g1859171",
+   "lat": 34.6913,
+   "lon": 135.183,
+   "timezone": "Asia/Tokyo"
+  },
+  {
+   "id": "g2036427",
+   "lat": 41.1078,
+   "lon": 121.1417,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g2673730",
+   "lat": 59.3294,
+   "lon": 18.0687,
+   "timezone": "Europe/Stockholm"
+  },
+  {
+   "id": "g4013708",
+   "lat": 31.7202,
+   "lon": -106.4608,
+   "timezone": "America/Ciudad_Juarez"
+  },
+  {
+   "id": "g1586203",
+   "lat": 10.0371,
+   "lon": 105.7883,
+   "timezone": "Asia/Ho_Chi_Minh"
+  },
+  {
+   "id": "g2867714",
+   "lat": 48.1374,
+   "lon": 11.5755,
+   "timezone": "Europe/Berlin"
+  },
+  {
+   "id": "g1336135",
+   "lat": 22.8098,
+   "lon": 89.5644,
+   "timezone": "Asia/Dhaka"
+  },
+  {
+   "id": "g3405870",
+   "lat": -1.4558,
+   "lon": -48.5044,
+   "timezone": "America/Belem"
+  },
+  {
+   "id": "g3452925",
+   "lat": -30.0328,
+   "lon": -51.2302,
+   "timezone": "America/Sao_Paulo"
+  },
+  {
+   "id": "g1261731",
+   "lat": 19.9973,
+   "lon": 73.791,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g3439389",
+   "lat": -25.2865,
+   "lon": -57.647,
+   "timezone": "America/Asuncion"
+  },
+  {
+   "id": "g1814870",
+   "lat": 29.3151,
+   "lon": 120.0768,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g3979770",
+   "lat": 20.7211,
+   "lon": -103.3874,
+   "timezone": "America/Mexico_City"
+  },
+  {
+   "id": "g1622786",
+   "lat": -5.1486,
+   "lon": 119.4319,
+   "timezone": "Asia/Makassar"
+  },
+  {
+   "id": "g2078025",
+   "lat": -34.9287,
+   "lon": 138.5986,
+   "timezone": "Australia/Adelaide"
+  },
+  {
+   "id": "g1797353",
+   "lat": 24.9139,
+   "lon": 118.5858,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1264521",
+   "lat": 9.919,
+   "lon": 78.1195,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g1805528",
+   "lat": 29.1068,
+   "lon": 119.6442,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1857910",
+   "lat": 35.0211,
+   "lon": 135.7538,
+   "timezone": "Asia/Tokyo"
+  },
+  {
+   "id": "g1806602",
+   "lat": 30.1764,
+   "lon": 121.2457,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1791121",
+   "lat": 29.0321,
+   "lon": 111.6984,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1735161",
+   "lat": 3.1412,
+   "lon": 101.6865,
+   "timezone": "Asia/Kuala_Lumpur"
+  },
+  {
+   "id": "g308464",
+   "lat": 38.7322,
+   "lon": 35.4853,
+   "timezone": "Europe/Istanbul"
+  },
+  {
+   "id": "g1804879",
+   "lat": 34.7986,
+   "lon": 114.3074,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g128747",
+   "lat": 35.8327,
+   "lon": 50.9915,
+   "timezone": "Asia/Tehran"
+  },
+  {
+   "id": "g1283240",
+   "lat": 27.7017,
+   "lon": 85.3206,
+   "timezone": "Asia/Kathmandu"
+  },
+  {
+   "id": "g1835235",
+   "lat": 36.3502,
+   "lon": 127.3848,
+   "timezone": "Asia/Seoul"
+  },
+  {
+   "id": "g10942359",
+   "lat": 34.3678,
+   "lon": 107.237,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1793771",
+   "lat": 33.9492,
+   "lon": 118.2958,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1803300",
+   "lat": 24.324,
+   "lon": 109.407,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1254361",
+   "lat": 8.7274,
+   "lon": 77.6838,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g306571",
+   "lat": 37.8713,
+   "lon": 32.4846,
+   "timezone": "Europe/Istanbul"
+  },
+  {
+   "id": "g1787331",
+   "lat": 31.865,
+   "lon": 120.5389,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1279259",
+   "lat": 27.1833,
+   "lon": 78.0167,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g8581443",
+   "lat": -6.2886,
+   "lon": 106.7179,
+   "timezone": "Asia/Jakarta"
+  },
+  {
+   "id": "g113646",
+   "lat": 38.08,
+   "lon": 46.2919,
+   "timezone": "Asia/Tehran"
+  },
+  {
+   "id": "g706483",
+   "lat": 49.9818,
+   "lon": 36.2548,
+   "timezone": "Europe/Kyiv"
+  },
+  {
+   "id": "g1797658",
+   "lat": 24.8198,
+   "lon": 118.5742,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1271951",
+   "lat": 28.4112,
+   "lon": 77.3132,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g1816234",
+   "lat": 33.8772,
+   "lon": 115.7703,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1797318",
+   "lat": 25.4833,
+   "lon": 103.7833,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g5391811",
+   "lat": 32.7157,
+   "lon": -117.1647,
+   "timezone": "America/Los_Angeles"
+  },
+  {
+   "id": "g1841811",
+   "lat": 35.1547,
+   "lon": 126.9156,
+   "timezone": "Asia/Seoul"
+  },
+  {
+   "id": "g1784990",
+   "lat": 21.2339,
+   "lon": 110.3875,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g2037355",
+   "lat": 41.8867,
+   "lon": 123.9436,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1258847",
+   "lat": 22.2916,
+   "lon": 70.7932,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g1801792",
+   "lat": 34.6735,
+   "lon": 112.4368,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g4005539",
+   "lat": 20.6774,
+   "lon": -103.3475,
+   "timezone": "America/Mexico_City"
+  },
+  {
+   "id": "g1580240",
+   "lat": 16.4619,
+   "lon": 107.5955,
+   "timezone": "Asia/Bangkok"
+  },
+  {
+   "id": "g3173435",
+   "lat": 45.4643,
+   "lon": 9.1895,
+   "timezone": "Europe/Rome"
+  },
+  {
+   "id": "g1804120",
+   "lat": 21.6467,
+   "lon": 110.2817,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g2427123",
+   "lat": 12.1067,
+   "lon": 15.0444,
+   "timezone": "Africa/Ndjamena"
+  },
+  {
+   "id": "g1808963",
+   "lat": 36.61,
+   "lon": 114.4876,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1183460",
+   "lat": 32.9853,
+   "lon": 70.604,
+   "timezone": "Asia/Karachi"
+  },
+  {
+   "id": "g1786764",
+   "lat": 30.7144,
+   "lon": 111.2847,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1070940",
+   "lat": -18.9137,
+   "lon": 47.5361,
+   "timezone": "Indian/Antananarivo"
+  },
+  {
+   "id": "g1808198",
+   "lat": 35.2393,
+   "lon": 115.4736,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g3461786",
+   "lat": -23.4628,
+   "lon": -46.5333,
+   "timezone": "America/Sao_Paulo"
+  },
+  {
+   "id": "g1269300",
+   "lat": 22.8028,
+   "lon": 86.1855,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g2232593",
+   "lat": 4.0483,
+   "lon": 9.7043,
+   "timezone": "Africa/Douala"
+  },
+  {
+   "id": "g323777",
+   "lat": 36.9081,
+   "lon": 30.6956,
+   "timezone": "Europe/Istanbul"
+  },
+  {
+   "id": "g99532",
+   "lat": 30.5085,
+   "lon": 47.7804,
+   "timezone": "Asia/Baghdad"
+  },
+  {
+   "id": "g4684888",
+   "lat": 32.7831,
+   "lon": -96.8067,
+   "timezone": "America/Chicago"
+  },
+  {
+   "id": "g6940394",
+   "lat": 35.9081,
+   "lon": 139.6566,
+   "timezone": "Asia/Tokyo"
+  },
+  {
+   "id": "g2440485",
+   "lat": 13.5137,
+   "lon": 2.1098,
+   "timezone": "Africa/Niamey"
+  },
+  {
+   "id": "g8533133",
+   "lat": 26.5944,
+   "lon": 104.8333,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1684308",
+   "lat": 14.5243,
+   "lon": 121.0792,
+   "timezone": "Asia/Manila"
+  },
+  {
+   "id": "g1801180",
+   "lat": 21.6663,
+   "lon": 110.9136,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g5913490",
+   "lat": 51.0501,
+   "lon": -114.0853,
+   "timezone": "America/Edmonton"
+  },
+  {
+   "id": "g2210247",
+   "lat": 32.8874,
+   "lon": 13.1873,
+   "timezone": "Africa/Tripoli"
+  },
+  {
+   "id": "g109223",
+   "lat": 24.4686,
+   "lon": 39.6142,
+   "timezone": "Asia/Riyadh"
+  },
+  {
+   "id": "g2220957",
+   "lat": 3.8667,
+   "lon": 11.5167,
+   "timezone": "Africa/Douala"
+  },
+  {
+   "id": "g6295587",
+   "lat": 1.1494,
+   "lon": 104.0249,
+   "timezone": "Asia/Jakarta"
+  },
+  {
+   "id": "g1797551",
+   "lat": 21.9825,
+   "lon": 108.6506,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1801934",
+   "lat": 33.5742,
+   "lon": 114.0326,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1790587",
+   "lat": 32.0422,
+   "lon": 112.1448,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1806408",
+   "lat": 21.8556,
+   "lon": 111.9627,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1786760",
+   "lat": 31.3606,
+   "lon": 119.8202,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1583992",
+   "lat": 16.0678,
+   "lon": 108.2208,
+   "timezone": "Asia/Ho_Chi_Minh"
+  },
+  {
+   "id": "g250441",
+   "lat": 31.9552,
+   "lon": 35.945,
+   "timezone": "Asia/Amman"
+  },
+  {
+   "id": "g1587923",
+   "lat": 10.9447,
+   "lon": 106.8243,
+   "timezone": "Asia/Ho_Chi_Minh"
+  },
+  {
+   "id": "g214481",
+   "lat": -5.8962,
+   "lon": 22.4166,
+   "timezone": "Africa/Lubumbashi"
+  },
+  {
+   "id": "g3441575",
+   "lat": -34.9033,
+   "lon": -56.1882,
+   "timezone": "America/Montevideo"
+  },
+  {
+   "id": "g1788046",
+   "lat": 34.0319,
+   "lon": 113.863,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1268295",
+   "lat": 19.2437,
+   "lon": 73.1355,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g1783745",
+   "lat": 29.3416,
+   "lon": 104.7769,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g520555",
+   "lat": 56.3287,
+   "lon": 44.002,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g1642548",
+   "lat": -6.5924,
+   "lon": 110.671,
+   "timezone": "Asia/Jakarta"
+  },
+  {
+   "id": "g1040652",
+   "lat": -25.9655,
+   "lon": 32.5832,
+   "timezone": "Africa/Maputo"
+  },
+  {
+   "id": "g10630003",
+   "lat": 34.2044,
+   "lon": 117.2839,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g110336",
+   "lat": 26.4344,
+   "lon": 50.1033,
+   "timezone": "Asia/Riyadh"
+  },
+  {
+   "id": "g1799491",
+   "lat": 29.5835,
+   "lon": 105.0622,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g115019",
+   "lat": 29.6103,
+   "lon": 52.5311,
+   "timezone": "Asia/Tehran"
+  },
+  {
+   "id": "g1272423",
+   "lat": 19.2167,
+   "lon": 73.0833,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g1805518",
+   "lat": 35.405,
+   "lon": 116.5814,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g3648522",
+   "lat": 10.0647,
+   "lon": -69.357,
+   "timezone": "America/Caracas"
+  },
+  {
+   "id": "g349076",
+   "lat": 30.1251,
+   "lon": 31.2505,
+   "timezone": "Africa/Cairo"
+  },
+  {
+   "id": "g3718426",
+   "lat": 18.5435,
+   "lon": -72.3388,
+   "timezone": "America/Port-au-Prince"
+  },
+  {
+   "id": "g1835553",
+   "lat": 37.2782,
+   "lon": 127.0316,
+   "timezone": "Asia/Seoul"
+  },
+  {
+   "id": "g1803834",
+   "lat": 36.4506,
+   "lon": 116.0025,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g10942283",
+   "lat": 37.684,
+   "lon": 112.7547,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g3946083",
+   "lat": -12.0516,
+   "lon": -77.1345,
+   "timezone": "America/Lima"
+  },
+  {
+   "id": "g1263214",
+   "lat": 28.98,
+   "lon": 77.7064,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g1253133",
+   "lat": 19.4559,
+   "lon": 72.8114,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g1261162",
+   "lat": 19.2311,
+   "lon": 82.5483,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g94824",
+   "lat": 32.616,
+   "lon": 44.0249,
+   "timezone": "Asia/Baghdad"
+  },
+  {
+   "id": "g1808956",
+   "lat": 36.1839,
+   "lon": 113.1053,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1792892",
+   "lat": 34.5795,
+   "lon": 105.7424,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g186301",
+   "lat": -4.0547,
+   "lon": 39.6636,
+   "timezone": "Africa/Nairobi"
+  },
+  {
+   "id": "g1311874",
+   "lat": 21.9747,
+   "lon": 96.0836,
+   "timezone": "Asia/Yangon"
+  },
+  {
+   "id": "g1255634",
+   "lat": 34.0857,
+   "lon": 74.8055,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g3689147",
+   "lat": 10.9685,
+   "lon": -74.7813,
+   "timezone": "America/Bogota"
+  },
+  {
+   "id": "g1508291",
+   "lat": 55.1611,
+   "lon": 61.4288,
+   "timezone": "Asia/Yekaterinburg"
+  },
+  {
+   "id": "g3523349",
+   "lat": 20.967,
+   "lon": -89.6232,
+   "timezone": "America/Merida"
+  },
+  {
+   "id": "g1862415",
+   "lat": 34.4,
+   "lon": 132.45,
+   "timezone": "Asia/Tokyo"
+  },
+  {
+   "id": "g1518980",
+   "lat": 42.3099,
+   "lon": 69.6004,
+   "timezone": "Asia/Almaty"
+  },
+  {
+   "id": "g3492914",
+   "lat": 19.4504,
+   "lon": -70.6908,
+   "timezone": "America/Santo_Domingo"
+  },
+  {
+   "id": "g1791636",
+   "lat": 34.5035,
+   "lon": 109.5089,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1271308",
+   "lat": 28.6654,
+   "lon": 77.4391,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g1039854",
+   "lat": -25.9622,
+   "lon": 32.4589,
+   "timezone": "Africa/Maputo"
+  },
+  {
+   "id": "g1272979",
+   "lat": 23.7976,
+   "lon": 86.4299,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g3947322",
+   "lat": -16.399,
+   "lon": -71.5375,
+   "timezone": "America/Lima"
+  },
+  {
+   "id": "g2548885",
+   "lat": 34.0331,
+   "lon": -5.0003,
+   "timezone": "Africa/Casablanca"
+  },
+  {
+   "id": "g2377450",
+   "lat": 18.0858,
+   "lon": -15.9785,
+   "timezone": "Africa/Nouakchott"
+  },
+  {
+   "id": "g1805953",
+   "lat": 30.7522,
+   "lon": 120.75,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1278149",
+   "lat": 19.8776,
+   "lon": 75.3423,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g1784285",
+   "lat": 37.5113,
+   "lon": 105.1907,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1496153",
+   "lat": 54.9924,
+   "lon": 73.3686,
+   "timezone": "Asia/Omsk"
+  },
+  {
+   "id": "g1631761",
+   "lat": 0.5167,
+   "lon": 101.4417,
+   "timezone": "Asia/Jakarta"
+  },
+  {
+   "id": "g10794003",
+   "lat": 41.121,
+   "lon": 122.0739,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1624917",
+   "lat": -5.4292,
+   "lon": 105.2611,
+   "timezone": "Asia/Jakarta"
+  },
+  {
+   "id": "g3067696",
+   "lat": 50.088,
+   "lon": 14.4208,
+   "timezone": "Europe/Prague"
+  },
+  {
+   "id": "g1253405",
+   "lat": 25.3167,
+   "lon": 83.0104,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g1805179",
+   "lat": 29.7048,
+   "lon": 116.0021,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g499099",
+   "lat": 53.2077,
+   "lon": 50.1355,
+   "timezone": "Europe/Samara"
+  },
+  {
+   "id": "g2353151",
+   "lat": 5.1066,
+   "lon": 7.3667,
+   "timezone": "Africa/Lagos"
+  },
+  {
+   "id": "g1278710",
+   "lat": 31.6223,
+   "lon": 74.8753,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g2655603",
+   "lat": 52.4814,
+   "lon": -1.8998,
+   "timezone": "Europe/London"
+  },
+  {
+   "id": "g2618425",
+   "lat": 55.6759,
+   "lon": 12.5655,
+   "timezone": "Europe/Copenhagen"
+  },
+  {
+   "id": "g727011",
+   "lat": 42.6975,
+   "lon": 23.3241,
+   "timezone": "Europe/Sofia"
+  },
+  {
+   "id": "g1785294",
+   "lat": 36.096,
+   "lon": 114.3828,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1253184",
+   "lat": 16.5074,
+   "lon": 80.6466,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g13608002",
+   "lat": 30.8584,
+   "lon": 121.4678,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1816373",
+   "lat": 27.3019,
+   "lon": 105.2863,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g3995465",
+   "lat": 25.6843,
+   "lon": -100.3172,
+   "timezone": "America/Monterrey"
+  },
+  {
+   "id": "g202061",
+   "lat": -1.95,
+   "lon": 30.0588,
+   "timezone": "Africa/Kigali"
+  },
+  {
+   "id": "g501175",
+   "lat": 47.22,
+   "lon": 39.7077,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g1783763",
+   "lat": 27.8333,
+   "lon": 113.15,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1797063",
+   "lat": 27.7761,
+   "lon": 120.6586,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g2244322",
+   "lat": 14.8623,
+   "lon": -15.8753,
+   "timezone": "Africa/Dakar"
+  },
+  {
+   "id": "g479561",
+   "lat": 54.7431,
+   "lon": 55.9678,
+   "timezone": "Asia/Yekaterinburg"
+  },
+  {
+   "id": "g1258526",
+   "lat": 23.3432,
+   "lon": 85.3094,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g1783633",
+   "lat": 35.4006,
+   "lon": 116.9656,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1787858",
+   "lat": 28.4518,
+   "lon": 117.9429,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g927967",
+   "lat": -13.9669,
+   "lon": 33.7873,
+   "timezone": "Africa/Blantyre"
+  },
+  {
+   "id": "g1807700",
+   "lat": 33.9744,
+   "lon": 116.7917,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g2331447",
+   "lat": 11.8469,
+   "lon": 13.1571,
+   "timezone": "Africa/Lagos"
+  },
+  {
+   "id": "g1800818",
+   "lat": 30.0439,
+   "lon": 103.837,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g152224",
+   "lat": -2.5167,
+   "lon": 32.9,
+   "timezone": "Africa/Dar_es_Salaam"
+  },
+  {
+   "id": "g1833747",
+   "lat": 35.5392,
+   "lon": 129.3124,
+   "timezone": "Asia/Seoul"
+  },
+  {
+   "id": "g2111149",
+   "lat": 38.2667,
+   "lon": 140.8667,
+   "timezone": "Asia/Tokyo"
+  },
+  {
+   "id": "g1502026",
+   "lat": 56.0374,
+   "lon": 92.9314,
+   "timezone": "Asia/Krasnoyarsk"
+  },
+  {
+   "id": "g1809532",
+   "lat": 23.116,
+   "lon": 109.5947,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g3143244",
+   "lat": 59.9127,
+   "lon": 10.7461,
+   "timezone": "Europe/Oslo"
+  },
+  {
+   "id": "g1269633",
+   "lat": 23.167,
+   "lon": 79.9501,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g2337639",
+   "lat": 8.4966,
+   "lon": 4.5421,
+   "timezone": "Africa/Lagos"
+  },
+  {
+   "id": "g415189",
+   "lat": 12.7796,
+   "lon": 45.0385,
+   "timezone": "Asia/Aden"
+  },
+  {
+   "id": "g1648473",
+   "lat": -6.5944,
+   "lon": 106.7892,
+   "timezone": "Asia/Jakarta"
+  },
+  {
+   "id": "g3530589",
+   "lat": 19.4006,
+   "lon": -99.0148,
+   "timezone": "America/Mexico_City"
+  },
+  {
+   "id": "g1808370",
+   "lat": 26.8895,
+   "lon": 112.6189,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1278994",
+   "lat": 25.4448,
+   "lon": 81.8432,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g3691175",
+   "lat": -8.116,
+   "lon": -79.03,
+   "timezone": "America/Lima"
+  },
+  {
+   "id": "g1253102",
+   "lat": 17.6801,
+   "lon": 83.2016,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g1842485",
+   "lat": 37.6564,
+   "lon": 126.835,
+   "timezone": "Asia/Seoul"
+  },
+  {
+   "id": "g1785781",
+   "lat": 22.6305,
+   "lon": 110.1469,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1268865",
+   "lat": 26.2684,
+   "lon": 73.0059,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g1270583",
+   "lat": 26.2298,
+   "lon": 78.1734,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g1805540",
+   "lat": 30.3503,
+   "lon": 112.1903,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g964420",
+   "lat": -33.9611,
+   "lon": 25.6149,
+   "timezone": "Africa/Johannesburg"
+  },
+  {
+   "id": "g472045",
+   "lat": 51.6683,
+   "lon": 39.192,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g1788572",
+   "lat": 35.1903,
+   "lon": 113.8015,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1786746",
+   "lat": 27.8333,
+   "lon": 114.4,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g2322911",
+   "lat": 13.0627,
+   "lon": 5.2432,
+   "timezone": "Africa/Lagos"
+  },
+  {
+   "id": "g2335953",
+   "lat": 9.9285,
+   "lon": 8.8921,
+   "timezone": "Africa/Lagos"
+  },
+  {
+   "id": "g2530335",
+   "lat": 35.7673,
+   "lon": -5.7998,
+   "timezone": "Africa/Casablanca"
+  },
+  {
+   "id": "g1790353",
+   "lat": 34.3378,
+   "lon": 108.7026,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g3996069",
+   "lat": 32.6278,
+   "lon": -115.4545,
+   "timezone": "America/Tijuana"
+  },
+  {
+   "id": "g2255414",
+   "lat": -4.7761,
+   "lon": 11.8635,
+   "timezone": "Africa/Brazzaville"
+  },
+  {
+   "id": "g3395981",
+   "lat": -9.6658,
+   "lon": -35.7353,
+   "timezone": "America/Maceio"
+  },
+  {
+   "id": "g3467865",
+   "lat": -22.9056,
+   "lon": -47.0608,
+   "timezone": "America/Sao_Paulo"
+  },
+  {
+   "id": "g1796556",
+   "lat": 18.2543,
+   "lon": 109.5095,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1185188",
+   "lat": 25.7466,
+   "lon": 89.2517,
+   "timezone": "Asia/Dhaka"
+  },
+  {
+   "id": "g94787",
+   "lat": 35.4681,
+   "lon": 44.3922,
+   "timezone": "Asia/Baghdad"
+  },
+  {
+   "id": "g162183",
+   "lat": 37.95,
+   "lon": 58.3833,
+   "timezone": "Asia/Ashgabat"
+  },
+  {
+   "id": "g1795874",
+   "lat": 24.8,
+   "lon": 113.5833,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1270396",
+   "lat": 22.5769,
+   "lon": 88.3186,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g1258980",
+   "lat": 21.2333,
+   "lon": 81.6333,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g1846326",
+   "lat": 35.2281,
+   "lon": 128.6811,
+   "timezone": "Asia/Seoul"
+  },
+  {
+   "id": "g1802276",
+   "lat": 25.0749,
+   "lon": 117.0178,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g2886242",
+   "lat": 50.9333,
+   "lon": 6.95,
+   "timezone": "Europe/Berlin"
+  },
+  {
+   "id": "g2964574",
+   "lat": 53.3331,
+   "lon": -6.2489,
+   "timezone": "Europe/Dublin"
+  },
+  {
+   "id": "g1254388",
+   "lat": 10.8155,
+   "lon": 78.6965,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g1786217",
+   "lat": 26.4239,
+   "lon": 111.6131,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g2800866",
+   "lat": 50.8505,
+   "lon": 4.3488,
+   "timezone": "Europe/Brussels"
+  },
+  {
+   "id": "g1679432",
+   "lat": 6.9103,
+   "lon": 122.0739,
+   "timezone": "Asia/Manila"
+  },
+  {
+   "id": "g6094817",
+   "lat": 45.4112,
+   "lon": -75.6981,
+   "timezone": "America/Toronto"
+  },
+  {
+   "id": "g1806535",
+   "lat": 30.8703,
+   "lon": 120.0933,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1812057",
+   "lat": 22.373,
+   "lon": 110.9475,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g472757",
+   "lat": 48.7138,
+   "lon": 44.4976,
+   "timezone": "Europe/Volgograd"
+  },
+  {
+   "id": "g379251",
+   "lat": 15.6493,
+   "lon": 32.5346,
+   "timezone": "Africa/Khartoum"
+  },
+  {
+   "id": "g5946768",
+   "lat": 53.5501,
+   "lon": -113.4687,
+   "timezone": "America/Edmonton"
+  },
+  {
+   "id": "g698740",
+   "lat": 46.4857,
+   "lon": 30.7438,
+   "timezone": "Europe/Kyiv"
+  },
+  {
+   "id": "g1803936",
+   "lat": 37.9267,
+   "lon": 102.632,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g4160021",
+   "lat": 30.3322,
+   "lon": -81.6556,
+   "timezone": "America/New_York"
+  },
+  {
+   "id": "g4691930",
+   "lat": 32.7254,
+   "lon": -97.3208,
+   "timezone": "America/Chicago"
+  },
+  {
+   "id": "g1786455",
+   "lat": 35.7847,
+   "lon": 118.6281,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1808857",
+   "lat": 33.0751,
+   "lon": 107.0221,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g7576887",
+   "lat": 24.4036,
+   "lon": 111.5667,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g1266049",
+   "lat": 25.1825,
+   "lon": 75.8391,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g7602670",
+   "lat": 35.995,
+   "lon": 119.4026,
+   "timezone": "Asia/Shanghai"
+  },
+  {
+   "id": "g5392171",
+   "lat": 37.3394,
+   "lon": -121.895,
+   "timezone": "America/Los_Angeles"
+  },
+  {
+   "id": "g3598132",
+   "lat": 14.6407,
+   "lon": -90.5133,
+   "timezone": "America/Guatemala"
+  },
+  {
+   "id": "g511196",
+   "lat": 58.0105,
+   "lon": 56.2502,
+   "timezone": "Asia/Yekaterinburg"
+  },
+  {
+   "id": "g3617763",
+   "lat": 12.1328,
+   "lon": -86.2504,
+   "timezone": "America/Managua"
+  },
+  {
+   "id": "g709930",
+   "lat": 48.4666,
+   "lon": 35.0407,
+   "timezone": "Europe/Kyiv"
+  },
+  {
+   "id": "g3489854",
+   "lat": 17.997,
+   "lon": -76.7936,
+   "timezone": "America/Jamaica"
+  },
+  {
+   "id": "g6611854",
+   "lat": 19.745,
+   "lon": 96.1297,
+   "timezone": "Asia/Yangon"
+  },
+  {
+   "id": "g3600949",
+   "lat": 14.0818,
+   "lon": -87.2068,
+   "timezone": "America/Tegucigalpa"
+  },
+  {
+   "id": "g2399697",
+   "lat": 0.3924,
+   "lon": 9.4536,
+   "timezone": "Africa/Libreville"
+  },
+  {
+   "id": "g498677",
+   "lat": 51.5405,
+   "lon": 45.9901,
+   "timezone": "Europe/Saratov"
+  },
+  {
+   "id": "g2028462",
+   "lat": 47.9077,
+   "lon": 106.8832,
+   "timezone": "Asia/Ulaanbaatar"
+  },
+  {
+   "id": "g1651944",
+   "lat": 17.9667,
+   "lon": 102.6,
+   "timezone": "Asia/Vientiane"
+  },
+  {
+   "id": "g2389853",
+   "lat": 4.3612,
+   "lon": 18.555,
+   "timezone": "Africa/Bangui"
+  },
+  {
+   "id": "g2409306",
+   "lat": 8.4871,
+   "lon": -13.2356,
+   "timezone": "Africa/Freetown"
+  },
+  {
+   "id": "g287286",
+   "lat": 23.5841,
+   "lon": 58.4078,
+   "timezone": "Asia/Muscat"
+  },
+  {
+   "id": "g1488754",
+   "lat": 57.1522,
+   "lon": 65.5272,
+   "timezone": "Asia/Yekaterinburg"
+  },
+  {
+   "id": "g160196",
+   "lat": -6.1722,
+   "lon": 35.7395,
+   "timezone": "Africa/Dar_es_Salaam"
+  },
+  {
+   "id": "g1514588",
+   "lat": 40.7834,
+   "lon": 72.3507,
+   "timezone": "Asia/Tashkent"
+  },
+  {
+   "id": "g456172",
+   "lat": 56.946,
+   "lon": 24.1059,
+   "timezone": "Europe/Riga"
+  },
+  {
+   "id": "g2759794",
+   "lat": 52.374,
+   "lon": 4.8897,
+   "timezone": "Europe/Amsterdam"
+  },
+  {
+   "id": "g702550",
+   "lat": 49.8383,
+   "lon": 24.0232,
+   "timezone": "Europe/Kyiv"
+  },
+  {
+   "id": "g1513157",
+   "lat": 40.9983,
+   "lon": 71.6726,
+   "timezone": "Asia/Tashkent"
+  },
+  {
+   "id": "g687700",
+   "lat": 47.8517,
+   "lon": 35.1171,
+   "timezone": "Europe/Kyiv"
+  },
+  {
+   "id": "g482283",
+   "lat": 53.5303,
+   "lon": 49.3461,
+   "timezone": "Europe/Samara"
+  },
+  {
+   "id": "g3191281",
+   "lat": 43.8486,
+   "lon": 18.3564,
+   "timezone": "Europe/Sarajevo"
+  },
+  {
+   "id": "g2464470",
+   "lat": 36.819,
+   "lon": 10.1658,
+   "timezone": "Africa/Tunis"
+  },
+  {
+   "id": "g4140963",
+   "lat": 38.8951,
+   "lon": -77.0364,
+   "timezone": "America/New_York"
+  },
+  {
+   "id": "g1221874",
+   "lat": 38.5358,
+   "lon": 68.779,
+   "timezone": "Asia/Dushanbe"
+  },
+  {
+   "id": "g264371",
+   "lat": 37.9838,
+   "lon": 23.7278,
+   "timezone": "Europe/Athens"
+  },
+  {
+   "id": "g3186886",
+   "lat": 45.8144,
+   "lon": 15.978,
+   "timezone": "Europe/Zagreb"
+  },
+  {
+   "id": "g658225",
+   "lat": 60.1695,
+   "lon": 24.9354,
+   "timezone": "Europe/Helsinki"
+  },
+  {
+   "id": "g1821274",
+   "lat": 22.2006,
+   "lon": 113.5461,
+   "timezone": "Asia/Macau"
+  },
+  {
+   "id": "g554840",
+   "lat": 56.8522,
+   "lon": 53.1986,
+   "timezone": "Europe/Samara"
+  },
+  {
+   "id": "g1248991",
+   "lat": 6.9355,
+   "lon": 79.8487,
+   "timezone": "Asia/Colombo"
+  },
+  {
+   "id": "g618426",
+   "lat": 47.009,
+   "lon": 28.8594,
+   "timezone": "Europe/Chisinau"
+  },
+  {
+   "id": "g1510853",
+   "lat": 53.362,
+   "lon": 83.7279,
+   "timezone": "Asia/Barnaul"
+  },
+  {
+   "id": "g479123",
+   "lat": 54.3282,
+   "lon": 48.3866,
+   "timezone": "Europe/Ulyanovsk"
+  },
+  {
+   "id": "g223817",
+   "lat": 11.589,
+   "lon": 43.145,
+   "timezone": "Africa/Djibouti"
+  },
+  {
+   "id": "g2023469",
+   "lat": 52.2957,
+   "lon": 104.2908,
+   "timezone": "Asia/Irkutsk"
+  },
+  {
+   "id": "g2022890",
+   "lat": 48.462,
+   "lon": 135.0971,
+   "timezone": "Asia/Vladivostok"
+  },
+  {
+   "id": "g468902",
+   "lat": 57.6299,
+   "lon": 39.8737,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g2013348",
+   "lat": 43.1056,
+   "lon": 131.8735,
+   "timezone": "Asia/Vladivostok"
+  },
+  {
+   "id": "g703845",
+   "lat": 47.9057,
+   "lon": 33.394,
+   "timezone": "Europe/Kyiv"
+  },
+  {
+   "id": "g1176615",
+   "lat": 33.7215,
+   "lon": 73.0433,
+   "timezone": "Asia/Karachi"
+  },
+  {
+   "id": "g532096",
+   "lat": 42.9778,
+   "lon": 47.5003,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g1216265",
+   "lat": 39.6546,
+   "lon": 66.9644,
+   "timezone": "Asia/Samarkand"
+  },
+  {
+   "id": "g1489425",
+   "lat": 56.5005,
+   "lon": 84.9822,
+   "timezone": "Asia/Tomsk"
+  },
+  {
+   "id": "g515003",
+   "lat": 51.7671,
+   "lon": 55.0988,
+   "timezone": "Asia/Yekaterinburg"
+  },
+  {
+   "id": "g343300",
+   "lat": 15.3381,
+   "lon": 38.9318,
+   "timezone": "Africa/Asmara"
+  },
+  {
+   "id": "g1503901",
+   "lat": 55.3542,
+   "lon": 86.1043,
+   "timezone": "Asia/Novokuznetsk"
+  },
+  {
+   "id": "g786714",
+   "lat": 42.6727,
+   "lon": 21.1669,
+   "timezone": "Europe/Belgrade"
+  },
+  {
+   "id": "g593116",
+   "lat": 54.6892,
+   "lon": 25.2798,
+   "timezone": "Europe/Vilnius"
+  },
+  {
+   "id": "g1496990",
+   "lat": 53.7575,
+   "lon": 87.136,
+   "timezone": "Asia/Novokuznetsk"
+  },
+  {
+   "id": "g500096",
+   "lat": 54.627,
+   "lon": 39.7041,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g580497",
+   "lat": 46.3497,
+   "lon": 48.0408,
+   "timezone": "Europe/Astrakhan"
+  },
+  {
+   "id": "g3583361",
+   "lat": 13.6893,
+   "lon": -89.1872,
+   "timezone": "America/El_Salvador"
+  },
+  {
+   "id": "g511565",
+   "lat": 53.1957,
+   "lon": 45.0108,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g2267057",
+   "lat": 38.7251,
+   "lon": -9.1498,
+   "timezone": "Europe/Lisbon"
+  },
+  {
+   "id": "g523750",
+   "lat": 55.7372,
+   "lon": 52.4196,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g535121",
+   "lat": 52.5876,
+   "lon": 39.5515,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g548408",
+   "lat": 58.5981,
+   "lon": 49.6578,
+   "timezone": "Europe/Kirov"
+  },
+  {
+   "id": "g627907",
+   "lat": 52.4345,
+   "lon": 30.9754,
+   "timezone": "Europe/Minsk"
+  },
+  {
+   "id": "g610611",
+   "lat": 50.2797,
+   "lon": 57.2072,
+   "timezone": "Asia/Aqtobe"
+  },
+  {
+   "id": "g609655",
+   "lat": 49.8019,
+   "lon": 73.1021,
+   "timezone": "Asia/Almaty"
+  },
+  {
+   "id": "g569696",
+   "lat": 56.1322,
+   "lon": 47.246,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g480562",
+   "lat": 54.1961,
+   "lon": 37.6182,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g554234",
+   "lat": 54.7064,
+   "lon": 20.511,
+   "timezone": "Europe/Kaliningrad"
+  },
+  {
+   "id": "g785842",
+   "lat": 41.9965,
+   "lon": 21.4314,
+   "timezone": "Europe/Skopje"
+  },
+  {
+   "id": "g700569",
+   "lat": 46.9763,
+   "lon": 31.993,
+   "timezone": "Europe/Kyiv"
+  },
+  {
+   "id": "g373303",
+   "lat": 4.8517,
+   "lon": 31.5825,
+   "timezone": "Africa/Juba"
+  },
+  {
+   "id": "g538560",
+   "lat": 51.7269,
+   "lon": 36.1846,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g2374775",
+   "lat": 11.8636,
+   "lon": -15.5977,
+   "timezone": "Africa/Bissau"
+  },
+  {
+   "id": "g487846",
+   "lat": 45.0344,
+   "lon": 41.9642,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g689558",
+   "lat": 49.2322,
+   "lon": 28.4687,
+   "timezone": "Europe/Kyiv"
+  },
+  {
+   "id": "g571476",
+   "lat": 53.271,
+   "lon": 34.3214,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g584923",
+   "lat": 40.5897,
+   "lon": 49.6686,
+   "timezone": "Asia/Baku"
+  },
+  {
+   "id": "g3060972",
+   "lat": 48.1482,
+   "lon": 17.1067,
+   "timezone": "Europe/Bratislava"
+  },
+  {
+   "id": "g480060",
+   "lat": 56.8584,
+   "lon": 35.9006,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g3183875",
+   "lat": 41.3274,
+   "lon": 19.8187,
+   "timezone": "Europe/Tirane"
+  },
+  {
+   "id": "g4568127",
+   "lat": 18.4663,
+   "lon": -66.1057,
+   "timezone": "America/Puerto_Rico"
+  },
+  {
+   "id": "g532288",
+   "lat": 53.3981,
+   "lon": 59.0066,
+   "timezone": "Asia/Yekaterinburg"
+  },
+  {
+   "id": "g3703443",
+   "lat": 8.9936,
+   "lon": -79.5197,
+   "timezone": "America/Panama"
+  },
+  {
+   "id": "g555312",
+   "lat": 56.9999,
+   "lon": 40.9726,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g588409",
+   "lat": 59.437,
+   "lon": 24.7535,
+   "timezone": "Europe/Tallinn"
+  },
+  {
+   "id": "g3352136",
+   "lat": -22.5594,
+   "lon": 17.0832,
+   "timezone": "Africa/Windhoek"
+  },
+  {
+   "id": "g2179537",
+   "lat": -41.2866,
+   "lon": 174.7756,
+   "timezone": "Pacific/Auckland"
+  },
+  {
+   "id": "g520494",
+   "lat": 57.9194,
+   "lon": 59.965,
+   "timezone": "Asia/Yekaterinburg"
+  },
+  {
+   "id": "g2172517",
+   "lat": -35.2835,
+   "lon": 149.1281,
+   "timezone": "Australia/Sydney"
+  },
+  {
+   "id": "g627904",
+   "lat": 53.6758,
+   "lon": 23.8289,
+   "timezone": "Europe/Minsk"
+  },
+  {
+   "id": "g2014407",
+   "lat": 51.8265,
+   "lon": 107.5998,
+   "timezone": "Asia/Irkutsk"
+  },
+  {
+   "id": "g932505",
+   "lat": -29.3167,
+   "lon": 27.4833,
+   "timezone": "Africa/Maseru"
+  },
+  {
+   "id": "g620127",
+   "lat": 55.1904,
+   "lon": 30.2049,
+   "timezone": "Europe/Minsk"
+  },
+  {
+   "id": "g1516905",
+   "lat": 42.898,
+   "lon": 71.3733,
+   "timezone": "Asia/Almaty"
+  },
+  {
+   "id": "g473247",
+   "lat": 56.1385,
+   "lon": 40.3998,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g1519922",
+   "lat": 44.8528,
+   "lon": 65.5092,
+   "timezone": "Asia/Qyzylorda"
+  },
+  {
+   "id": "g625665",
+   "lat": 53.9088,
+   "lon": 30.3404,
+   "timezone": "Europe/Minsk"
+  },
+  {
+   "id": "g581049",
+   "lat": 64.5461,
+   "lon": 40.5518,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g2025339",
+   "lat": 52.0431,
+   "lon": 113.4917,
+   "timezone": "Asia/Chita"
+  },
+  {
+   "id": "g629634",
+   "lat": 52.1089,
+   "lon": 23.7175,
+   "timezone": "Europe/Minsk"
+  },
+  {
+   "id": "g578072",
+   "lat": 50.6034,
+   "lon": 36.5809,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g290030",
+   "lat": 25.2855,
+   "lon": 51.531,
+   "timezone": "Asia/Qatar"
+  },
+  {
+   "id": "g553915",
+   "lat": 54.5306,
+   "lon": 36.27,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g3621849",
+   "lat": 9.9339,
+   "lon": -84.0849,
+   "timezone": "America/Costa_Rica"
+  },
+  {
+   "id": "g601294",
+   "lat": 42.4586,
+   "lon": 59.6058,
+   "timezone": "Asia/Samarkand"
+  },
+  {
+   "id": "g586523",
+   "lat": 40.6816,
+   "lon": 46.3613,
+   "timezone": "Asia/Baku"
+  },
+  {
+   "id": "g491687",
+   "lat": 54.7783,
+   "lon": 32.0509,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g608668",
+   "lat": 51.246,
+   "lon": 51.4256,
+   "timezone": "Asia/Oral"
+  },
+  {
+   "id": "g1520240",
+   "lat": 52.276,
+   "lon": 76.9688,
+   "timezone": "Asia/Almaty"
+  },
+  {
+   "id": "g491422",
+   "lat": 43.597,
+   "lon": 39.7248,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g472231",
+   "lat": 48.7858,
+   "lon": 44.7797,
+   "timezone": "Europe/Volgograd"
+  },
+  {
+   "id": "g1527534",
+   "lat": 40.5283,
+   "lon": 72.7985,
+   "timezone": "Asia/Bishkek"
+  },
+  {
+   "id": "g1520316",
+   "lat": 49.9714,
+   "lon": 82.6059,
+   "timezone": "Asia/Almaty"
+  },
+  {
+   "id": "g498698",
+   "lat": 54.1848,
+   "lon": 45.1717,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g1261481",
+   "lat": 28.6214,
+   "lon": 77.2148,
+   "timezone": "Asia/Kolkata"
+  },
+  {
+   "id": "g569223",
+   "lat": 59.1333,
+   "lon": 37.9,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g472459",
+   "lat": 59.2239,
+   "lon": 39.884,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g1501321",
+   "lat": 55.449,
+   "lon": 65.3434,
+   "timezone": "Asia/Yekaterinburg"
+  },
+  {
+   "id": "g473249",
+   "lat": 43.041,
+   "lon": 44.6699,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g515012",
+   "lat": 52.9688,
+   "lon": 36.0791,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g1490624",
+   "lat": 61.2576,
+   "lon": 73.4177,
+   "timezone": "Asia/Yekaterinburg"
+  },
+  {
+   "id": "g1514019",
+   "lat": 40.3842,
+   "lon": 71.7843,
+   "timezone": "Asia/Tashkent"
+  },
+  {
+   "id": "g558418",
+   "lat": 43.312,
+   "lon": 45.6889,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g484646",
+   "lat": 52.7363,
+   "lon": 41.441,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g1519422",
+   "lat": 50.4206,
+   "lon": 80.2502,
+   "timezone": "Asia/Almaty"
+  },
+  {
+   "id": "g610529",
+   "lat": 47.1048,
+   "lon": 51.8843,
+   "timezone": "Asia/Atyrau"
+  },
+  {
+   "id": "g2088122",
+   "lat": -9.4772,
+   "lon": 147.1509,
+   "timezone": "Pacific/Port_Moresby"
+  },
+  {
+   "id": "g710735",
+   "lat": 51.5054,
+   "lon": 31.2866,
+   "timezone": "Europe/Kyiv"
+  },
+  {
+   "id": "g1217662",
+   "lat": 39.7703,
+   "lon": 64.4307,
+   "timezone": "Asia/Samarkand"
+  },
+  {
+   "id": "g696643",
+   "lat": 49.5892,
+   "lon": 34.5537,
+   "timezone": "Europe/Kyiv"
+  },
+  {
+   "id": "g509820",
+   "lat": 61.7849,
+   "lon": 34.3469,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g484907",
+   "lat": 47.2363,
+   "lon": 38.9053,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g1216311",
+   "lat": 38.8606,
+   "lon": 65.7891,
+   "timezone": "Asia/Samarkand"
+  },
+  {
+   "id": "g543878",
+   "lat": 57.7664,
+   "lon": 40.9283,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g2021851",
+   "lat": 50.5503,
+   "lon": 137.01,
+   "timezone": "Asia/Vladivostok"
+  },
+  {
+   "id": "g2279755",
+   "lat": 6.8205,
+   "lon": -5.2767,
+   "timezone": "Africa/Abidjan"
+  },
+  {
+   "id": "g706369",
+   "lat": 49.4183,
+   "lon": 26.9794,
+   "timezone": "Europe/Kyiv"
+  },
+  {
+   "id": "g1514896",
+   "lat": 40.1265,
+   "lon": 70.6253,
+   "timezone": "Asia/Dushanbe"
+  },
+  {
+   "id": "g1220253",
+   "lat": 39.9142,
+   "lon": 69.0033,
+   "timezone": "Asia/Dushanbe"
+  },
+  {
+   "id": "g3196359",
+   "lat": 46.0511,
+   "lon": 14.5051,
+   "timezone": "Europe/Ljubljana"
+  },
+  {
+   "id": "g710791",
+   "lat": 49.4445,
+   "lon": 32.0574,
+   "timezone": "Europe/Kyiv"
+  },
+  {
+   "id": "g466806",
+   "lat": 56.6388,
+   "lon": 47.8908,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g487495",
+   "lat": 53.6379,
+   "lon": 55.9533,
+   "timezone": "Asia/Yekaterinburg"
+  },
+  {
+   "id": "g2392087",
+   "lat": 6.4965,
+   "lon": 2.6036,
+   "timezone": "Africa/Porto-Novo"
+  },
+  {
+   "id": "g710719",
+   "lat": 48.2904,
+   "lon": 25.9324,
+   "timezone": "Europe/Kyiv"
+  },
+  {
+   "id": "g686967",
+   "lat": 50.2623,
+   "lon": 28.6791,
+   "timezone": "Europe/Kyiv"
+  },
+  {
+   "id": "g1512979",
+   "lat": 40.5286,
+   "lon": 70.9425,
+   "timezone": "Asia/Tashkent"
+  },
+  {
+   "id": "g2051523",
+   "lat": 56.1325,
+   "lon": 101.6142,
+   "timezone": "Asia/Irkutsk"
+  },
+  {
+   "id": "g692194",
+   "lat": 50.9174,
+   "lon": 34.7991,
+   "timezone": "Europe/Kyiv"
+  },
+  {
+   "id": "g1513243",
+   "lat": 40.4724,
+   "lon": 71.7246,
+   "timezone": "Asia/Tashkent"
+  },
+  {
+   "id": "g514734",
+   "lat": 51.2321,
+   "lon": 58.488,
+   "timezone": "Asia/Yekaterinburg"
+  },
+  {
+   "id": "g933773",
+   "lat": -24.6545,
+   "lon": 25.9086,
+   "timezone": "Africa/Gaborone"
+  },
+  {
+   "id": "g485239",
+   "lat": 61.6639,
+   "lon": 50.8163,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g1497543",
+   "lat": 60.9344,
+   "lon": 76.5531,
+   "timezone": "Asia/Yekaterinburg"
+  },
+  {
+   "id": "g695594",
+   "lat": 50.6204,
+   "lon": 26.237,
+   "timezone": "Europe/Kyiv"
+  },
+  {
+   "id": "g2027667",
+   "lat": 52.5597,
+   "lon": 103.9141,
+   "timezone": "Asia/Irkutsk"
+  },
+  {
+   "id": "g518255",
+   "lat": 44.7319,
+   "lon": 37.7618,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g550280",
+   "lat": 55.9001,
+   "lon": 37.4285,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g523523",
+   "lat": 43.4981,
+   "lon": 43.6189,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g707471",
+   "lat": 48.9231,
+   "lon": 24.7125,
+   "timezone": "Europe/Kyiv"
+  },
+  {
+   "id": "g3193044",
+   "lat": 42.4412,
+   "lon": 19.2631,
+   "timezone": "Europe/Podgorica"
+  },
+  {
+   "id": "g2013159",
+   "lat": 62.0311,
+   "lon": 129.7229,
+   "timezone": "Asia/Yakutsk"
+  },
+  {
+   "id": "g3378644",
+   "lat": 6.8045,
+   "lon": -58.1553,
+   "timezone": "America/Guyana"
+  },
+  {
+   "id": "g521118",
+   "lat": 55.6379,
+   "lon": 51.815,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g563708",
+   "lat": 56.2442,
+   "lon": 43.4554,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g1219649",
+   "lat": 39.0733,
+   "lon": 63.5786,
+   "timezone": "Asia/Ashgabat"
+  },
+  {
+   "id": "g3571824",
+   "lat": 25.0582,
+   "lon": -77.3431,
+   "timezone": "America/Nassau"
+  },
+  {
+   "id": "g1517945",
+   "lat": 43.2946,
+   "lon": 68.2569,
+   "timezone": "Asia/Almaty"
+  },
+  {
+   "id": "g487928",
+   "lat": 51.3025,
+   "lon": 37.8461,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g709932",
+   "lat": 48.5172,
+   "lon": 34.6062,
+   "timezone": "Europe/Kyiv"
+  },
+  {
+   "id": "g691650",
+   "lat": 49.554,
+   "lon": 25.5907,
+   "timezone": "Europe/Kyiv"
+  },
+  {
+   "id": "g2026609",
+   "lat": 50.2759,
+   "lon": 127.5264,
+   "timezone": "Asia/Yakutsk"
+  },
+  {
+   "id": "g704147",
+   "lat": 49.0625,
+   "lon": 33.4048,
+   "timezone": "Europe/Kyiv"
+  },
+  {
+   "id": "g3903987",
+   "lat": -19.0333,
+   "lon": -65.2627,
+   "timezone": "America/La_Paz"
+  },
+  {
+   "id": "g3383330",
+   "lat": 5.8664,
+   "lon": -55.1668,
+   "timezone": "America/Paramaribo"
+  },
+  {
+   "id": "g519336",
+   "lat": 58.5213,
+   "lon": 31.271,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g496015",
+   "lat": 47.7192,
+   "lon": 40.216,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g705812",
+   "lat": 48.5083,
+   "lon": 32.2662,
+   "timezone": "Europe/Kyiv"
+  },
+  {
+   "id": "g1494114",
+   "lat": 53.9152,
+   "lon": 86.7189,
+   "timezone": "Asia/Novokuznetsk"
+  },
+  {
+   "id": "g500004",
+   "lat": 58.0456,
+   "lon": 38.8381,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g702569",
+   "lat": 50.7578,
+   "lon": 25.3502,
+   "timezone": "Europe/Kyiv"
+  },
+  {
+   "id": "g1510018",
+   "lat": 52.5342,
+   "lon": 85.1966,
+   "timezone": "Asia/Barnaul"
+  },
+  {
+   "id": "g1221194",
+   "lat": 37.9146,
+   "lon": 69.7845,
+   "timezone": "Asia/Dushanbe"
+  },
+  {
+   "id": "g1514891",
+   "lat": 40.2941,
+   "lon": 70.4312,
+   "timezone": "Asia/Dushanbe"
+  },
+  {
+   "id": "g504341",
+   "lat": 57.8192,
+   "lon": 28.3318,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g1519928",
+   "lat": 53.2144,
+   "lon": 63.6246,
+   "timezone": "Asia/Qostanay"
+  },
+  {
+   "id": "g712165",
+   "lat": 49.7994,
+   "lon": 30.1165,
+   "timezone": "Europe/Kyiv"
+  },
+  {
+   "id": "g630468",
+   "lat": 53.1468,
+   "lon": 29.2055,
+   "timezone": "Europe/Minsk"
+  },
+  {
+   "id": "g601734",
+   "lat": 41.8362,
+   "lon": 59.9666,
+   "timezone": "Asia/Ashgabat"
+  },
+  {
+   "id": "g1520172",
+   "lat": 54.8734,
+   "lon": 69.1506,
+   "timezone": "Asia/Almaty"
+  },
+  {
+   "id": "g146268",
+   "lat": 35.1728,
+   "lon": 33.354,
+   "timezone": "Asia/Nicosia"
+  },
+  {
+   "id": "g579492",
+   "lat": 52.0264,
+   "lon": 47.7967,
+   "timezone": "Europe/Saratov"
+  },
+  {
+   "id": "g580922",
+   "lat": 44.9985,
+   "lon": 41.1147,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g2119441",
+   "lat": 46.9543,
+   "lon": 142.7356,
+   "timezone": "Asia/Sakhalin"
+  },
+  {
+   "id": "g585915",
+   "lat": 40.4481,
+   "lon": 49.755,
+   "timezone": "Asia/Baku"
+  },
+  {
+   "id": "g563464",
+   "lat": 51.4839,
+   "lon": 46.1053,
+   "timezone": "Europe/Saratov"
+  },
+  {
+   "id": "g496285",
+   "lat": 64.5583,
+   "lon": 39.8297,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g462444",
+   "lat": 55.1718,
+   "lon": 59.6547,
+   "timezone": "Asia/Yekaterinburg"
+  },
+  {
+   "id": "g1514581",
+   "lat": 41.0167,
+   "lon": 70.1436,
+   "timezone": "Asia/Tashkent"
+  },
+  {
+   "id": "g1514879",
+   "lat": 40.2826,
+   "lon": 69.6222,
+   "timezone": "Asia/Dushanbe"
+  },
+  {
+   "id": "g484972",
+   "lat": 53.1585,
+   "lon": 48.4681,
+   "timezone": "Europe/Samara"
+  },
+  {
+   "id": "g615532",
+   "lat": 41.6408,
+   "lon": 41.6306,
+   "timezone": "Asia/Tbilisi"
+  },
+  {
+   "id": "g1512236",
+   "lat": 53.7154,
+   "lon": 91.4259,
+   "timezone": "Asia/Krasnoyarsk"
+  },
+  {
+   "id": "g1215957",
+   "lat": 37.2242,
+   "lon": 67.2783,
+   "timezone": "Asia/Samarkand"
+  },
+  {
+   "id": "g1504826",
+   "lat": 56.4063,
+   "lon": 61.9335,
+   "timezone": "Asia/Yekaterinburg"
+  },
+  {
+   "id": "g2122104",
+   "lat": 53.0639,
+   "lon": 158.6275,
+   "timezone": "Asia/Kamchatka"
+  },
+  {
+   "id": "g508101",
+   "lat": 55.4242,
+   "lon": 37.5547,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g1513886",
+   "lat": 40.1335,
+   "lon": 67.8296,
+   "timezone": "Asia/Samarkand"
+  },
+  {
+   "id": "g1518262",
+   "lat": 50.052,
+   "lon": 72.955,
+   "timezone": "Asia/Almaty"
+  },
+  {
+   "id": "g630429",
+   "lat": 53.1326,
+   "lon": 26.0078,
+   "timezone": "Europe/Minsk"
+  },
+  {
+   "id": "g577206",
+   "lat": 59.4091,
+   "lon": 56.8204,
+   "timezone": "Asia/Yekaterinburg"
+  },
+  {
+   "id": "g472761",
+   "lat": 47.5114,
+   "lon": 42.1527,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g1498894",
+   "lat": 55.0455,
+   "lon": 60.1076,
+   "timezone": "Asia/Yekaterinburg"
+  },
+  {
+   "id": "g1218667",
+   "lat": 37.5938,
+   "lon": 61.8303,
+   "timezone": "Asia/Ashgabat"
+  },
+  {
+   "id": "g518970",
+   "lat": 47.4222,
+   "lon": 40.0937,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g523064",
+   "lat": 43.226,
+   "lon": 44.7732,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g1514210",
+   "lat": 41.4689,
+   "lon": 69.5822,
+   "timezone": "Asia/Tashkent"
+  },
+  {
+   "id": "g1493467",
+   "lat": 51.5147,
+   "lon": 81.2061,
+   "timezone": "Asia/Barnaul"
+  },
+  {
+   "id": "g523812",
+   "lat": 55.911,
+   "lon": 37.7296,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g499292",
+   "lat": 53.3828,
+   "lon": 55.9109,
+   "timezone": "Asia/Yekaterinburg"
+  },
+  {
+   "id": "g2014006",
+   "lat": 43.8047,
+   "lon": 131.9573,
+   "timezone": "Asia/Vladivostok"
+  },
+  {
+   "id": "g617239",
+   "lat": 46.8428,
+   "lon": 29.6284,
+   "timezone": "Europe/Chisinau"
+  },
+  {
+   "id": "g934154",
+   "lat": -20.1619,
+   "lon": 57.4989,
+   "timezone": "Indian/Mauritius"
+  },
+  {
+   "id": "g935264",
+   "lat": -20.8823,
+   "lon": 55.4504,
+   "timezone": "Indian/Reunion"
+  },
+  {
+   "id": "g532615",
+   "lat": 55.6772,
+   "lon": 37.8932,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g543460",
+   "lat": 56.3575,
+   "lon": 41.3189,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g1522203",
+   "lat": 53.2841,
+   "lon": 69.3936,
+   "timezone": "Asia/Almaty"
+  },
+  {
+   "id": "g579464",
+   "lat": 55.7948,
+   "lon": 37.9479,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g1645457",
+   "lat": -8.5586,
+   "lon": 125.5736,
+   "timezone": "Asia/Dili"
+  },
+  {
+   "id": "g701404",
+   "lat": 46.8473,
+   "lon": 35.382,
+   "timezone": "Europe/Kyiv"
+  },
+  {
+   "id": "g546230",
+   "lat": 55.0711,
+   "lon": 38.784,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g610612",
+   "lat": 43.6611,
+   "lon": 51.1739,
+   "timezone": "Asia/Aqtau"
+  },
+  {
+   "id": "g290340",
+   "lat": 26.2279,
+   "lon": 50.5857,
+   "timezone": "Asia/Bahrain"
+  },
+  {
+   "id": "g2019528",
+   "lat": 42.8436,
+   "lon": 132.9183,
+   "timezone": "Asia/Vladivostok"
+  },
+  {
+   "id": "g1512473",
+   "lat": 41.5518,
+   "lon": 60.6314,
+   "timezone": "Asia/Samarkand"
+  },
+  {
+   "id": "g563523",
+   "lat": 55.7865,
+   "lon": 38.4571,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g1513131",
+   "lat": 40.0844,
+   "lon": 65.3792,
+   "timezone": "Asia/Samarkand"
+  },
+  {
+   "id": "g503550",
+   "lat": 44.05,
+   "lon": 43.0504,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g1216187",
+   "lat": 39.0578,
+   "lon": 66.8342,
+   "timezone": "Asia/Samarkand"
+  },
+  {
+   "id": "g528293",
+   "lat": 44.6079,
+   "lon": 40.1024,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g463355",
+   "lat": 55.744,
+   "lon": 38.0168,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g1497337",
+   "lat": 69.3535,
+   "lon": 88.2027,
+   "timezone": "Asia/Krasnoyarsk"
+  },
+  {
+   "id": "g582432",
+   "lat": 54.904,
+   "lon": 52.3179,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g554233",
+   "lat": 55.9142,
+   "lon": 37.8256,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g546105",
+   "lat": 59.7507,
+   "lon": 30.5886,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g3374333",
+   "lat": 14.9315,
+   "lon": -23.5125,
+   "timezone": "Atlantic/Cape_Verde"
+  },
+  {
+   "id": "g516215",
+   "lat": 55.6698,
+   "lon": 37.2772,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g613607",
+   "lat": 42.2679,
+   "lon": 42.6946,
+   "timezone": "Asia/Tbilisi"
+  },
+  {
+   "id": "g522377",
+   "lat": 44.6333,
+   "lon": 41.9444,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g630376",
+   "lat": 54.2279,
+   "lon": 28.505,
+   "timezone": "Europe/Minsk"
+  },
+  {
+   "id": "g510808",
+   "lat": 56.9053,
+   "lon": 59.9436,
+   "timezone": "Asia/Yekaterinburg"
+  },
+  {
+   "id": "g1513064",
+   "lat": 40.8447,
+   "lon": 69.5983,
+   "timezone": "Asia/Tashkent"
+  },
+  {
+   "id": "g548114",
+   "lat": 43.9133,
+   "lon": 42.7208,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g566199",
+   "lat": 54.2139,
+   "lon": 49.6184,
+   "timezone": "Europe/Ulyanovsk"
+  },
+  {
+   "id": "g518557",
+   "lat": 54.011,
+   "lon": 38.2908,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g553287",
+   "lat": 50.0885,
+   "lon": 45.4128,
+   "timezone": "Europe/Volgograd"
+  },
+  {
+   "id": "g518976",
+   "lat": 56.111,
+   "lon": 47.4776,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g612287",
+   "lat": 41.5627,
+   "lon": 44.9787,
+   "timezone": "Asia/Tbilisi"
+  },
+  {
+   "id": "g496527",
+   "lat": 54.9198,
+   "lon": 37.4162,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g584649",
+   "lat": 40.6183,
+   "lon": 47.1501,
+   "timezone": "Asia/Baku"
+  },
+  {
+   "id": "g524294",
+   "lat": 55.5685,
+   "lon": 42.0239,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g550478",
+   "lat": 43.2487,
+   "lon": 46.5857,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g522942",
+   "lat": 56.0888,
+   "lon": 54.2638,
+   "timezone": "Asia/Yekaterinburg"
+  },
+  {
+   "id": "g618605",
+   "lat": 47.7629,
+   "lon": 27.9285,
+   "timezone": "Europe/Chisinau"
+  },
+  {
+   "id": "g3513090",
+   "lat": 12.1225,
+   "lon": -68.8864,
+   "timezone": "America/Curacao"
+  },
+  {
+   "id": "g1519843",
+   "lat": 52.9724,
+   "lon": 63.1106,
+   "timezone": "Asia/Qostanay"
+  },
+  {
+   "id": "g623549",
+   "lat": 52.1215,
+   "lon": 26.0673,
+   "timezone": "Europe/Minsk"
+  },
+  {
+   "id": "g1528249",
+   "lat": 40.945,
+   "lon": 72.9931,
+   "timezone": "Asia/Bishkek"
+  },
+  {
+   "id": "g569154",
+   "lat": 44.2238,
+   "lon": 42.0462,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g2661552",
+   "lat": 46.9481,
+   "lon": 7.4474,
+   "timezone": "Europe/Zurich"
+  },
+  {
+   "id": "g1524325",
+   "lat": 51.7237,
+   "lon": 75.3229,
+   "timezone": "Asia/Almaty"
+  },
+  {
+   "id": "g515024",
+   "lat": 55.8124,
+   "lon": 38.9915,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g3413829",
+   "lat": 64.1355,
+   "lon": -21.8954,
+   "timezone": "Atlantic/Reykjavik"
+  },
+  {
+   "id": "g1512165",
+   "lat": 56.2679,
+   "lon": 90.5015,
+   "timezone": "Asia/Krasnoyarsk"
+  },
+  {
+   "id": "g1500973",
+   "lat": 51.7111,
+   "lon": 94.4378,
+   "timezone": "Asia/Krasnoyarsk"
+  },
+  {
+   "id": "g1518542",
+   "lat": 45.0156,
+   "lon": 78.3739,
+   "timezone": "Asia/Almaty"
+  },
+  {
+   "id": "g520068",
+   "lat": 55.8649,
+   "lon": 38.4485,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g467978",
+   "lat": 52.6144,
+   "lon": 38.5093,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g690548",
+   "lat": 48.6242,
+   "lon": 22.2947,
+   "timezone": "Europe/Kyiv"
+  },
+  {
+   "id": "g1513604",
+   "lat": 41.3856,
+   "lon": 60.3641,
+   "timezone": "Asia/Samarkand"
+  },
+  {
+   "id": "g616635",
+   "lat": 40.7931,
+   "lon": 43.8464,
+   "timezone": "Asia/Yerevan"
+  },
+  {
+   "id": "g1489530",
+   "lat": 58.1981,
+   "lon": 68.2546,
+   "timezone": "Asia/Yekaterinburg"
+  },
+  {
+   "id": "g495344",
+   "lat": 55.925,
+   "lon": 37.9722,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g1497917",
+   "lat": 61.0998,
+   "lon": 72.6035,
+   "timezone": "Asia/Yekaterinburg"
+  },
+  {
+   "id": "g518659",
+   "lat": 53.0971,
+   "lon": 49.94,
+   "timezone": "Europe/Samara"
+  },
+  {
+   "id": "g1220747",
+   "lat": 37.8365,
+   "lon": 68.7776,
+   "timezone": "Asia/Dushanbe"
+  },
+  {
+   "id": "g618577",
+   "lat": 46.8316,
+   "lon": 29.4767,
+   "timezone": "Europe/Chisinau"
+  },
+  {
+   "id": "g1496503",
+   "lat": 63.1931,
+   "lon": 75.4373,
+   "timezone": "Asia/Yekaterinburg"
+  },
+  {
+   "id": "g578740",
+   "lat": 47.1375,
+   "lon": 39.7571,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g1538637",
+   "lat": 56.6006,
+   "lon": 84.8864,
+   "timezone": "Asia/Tomsk"
+  },
+  {
+   "id": "g711390",
+   "lat": 50.511,
+   "lon": 30.7911,
+   "timezone": "Europe/Kyiv"
+  },
+  {
+   "id": "g580724",
+   "lat": 55.3956,
+   "lon": 43.8381,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g496638",
+   "lat": 56.312,
+   "lon": 38.1387,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g1500665",
+   "lat": 54.6567,
+   "lon": 86.1737,
+   "timezone": "Asia/Novokuznetsk"
+  },
+  {
+   "id": "g515879",
+   "lat": 54.4815,
+   "lon": 53.471,
+   "timezone": "Asia/Yekaterinburg"
+  },
+  {
+   "id": "g516436",
+   "lat": 55.1099,
+   "lon": 36.6124,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g563514",
+   "lat": 46.3079,
+   "lon": 44.2554,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g712451",
+   "lat": 46.7558,
+   "lon": 36.7882,
+   "timezone": "Europe/Kyiv"
+  },
+  {
+   "id": "g517836",
+   "lat": 51.201,
+   "lon": 58.3132,
+   "timezone": "Asia/Yekaterinburg"
+  },
+  {
+   "id": "g585514",
+   "lat": 40.7642,
+   "lon": 47.0623,
+   "timezone": "Asia/Baku"
+  },
+  {
+   "id": "g566532",
+   "lat": 42.0662,
+   "lon": 48.2876,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g700051",
+   "lat": 47.5683,
+   "lon": 34.3913,
+   "timezone": "Europe/Kyiv"
+  },
+  {
+   "id": "g625324",
+   "lat": 52.0416,
+   "lon": 29.2163,
+   "timezone": "Europe/Minsk"
+  },
+  {
+   "id": "g1516589",
+   "lat": 47.7941,
+   "lon": 67.7063,
+   "timezone": "Asia/Almaty"
+  },
+  {
+   "id": "g1503277",
+   "lat": 53.99,
+   "lon": 86.6621,
+   "timezone": "Asia/Novokuznetsk"
+  },
+  {
+   "id": "g1282027",
+   "lat": 4.1752,
+   "lon": 73.5092,
+   "timezone": "Indian/Maldives"
+  },
+  {
+   "id": "g607610",
+   "lat": 43.3412,
+   "lon": 52.8619,
+   "timezone": "Asia/Aqtau"
+  },
+  {
+   "id": "g626081",
+   "lat": 53.8833,
+   "lon": 25.2997,
+   "timezone": "Europe/Minsk"
+  },
+  {
+   "id": "g476077",
+   "lat": 56.3406,
+   "lon": 30.5438,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g503977",
+   "lat": 55.9946,
+   "lon": 37.829,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g2027456",
+   "lat": 43.3576,
+   "lon": 132.1914,
+   "timezone": "Asia/Vladivostok"
+  },
+  {
+   "id": "g479411",
+   "lat": 63.569,
+   "lon": 53.6914,
+   "timezone": "Europe/Moscow"
+  },
+  {
+   "id": "g624079",
+   "lat": 54.5136,
+   "lon": 30.4036,
+   "timezone": "Europe/Minsk"
+  },
+  {
+   "id": "g1504682",
+   "lat": 56.2022,
+   "lon": 95.7185,
+   "timezone": "Asia/Krasnoyarsk"
+  },
+  {
+   "id": "g1503772",
+   "lat": 61.0019,
+   "lon": 69.0273,
+   "timezone": "Asia/Yekaterinburg"
+  },
+  {
+   "id": "g697889",
+   "lat": 48.5321,
+   "lon": 35.8688,
+   "timezone": "Europe/Kyiv"
+  },
+  {
+   "id": "g1498920",
+   "lat": 53.6899,
+   "lon": 88.0622,
+   "timezone": "Asia/Novokuznetsk"
+  },
+  {
+   "id": "g491023",
+   "lat": 59.6669,
+   "lon": 56.7427,
+   "timezone": "Asia/Yekaterinburg"
+  },
+  {
+   "id": "g561347",
+   "lat": 58.14,
+   "lon": 52.6562,
+   "timezone": "Europe/Samara"
+  },
+  {
+   "id": "g2013952",
+   "lat": 58.0006,
+   "lon": 102.6619,
+   "timezone": "Asia/Irkutsk"
+  },
+  {
+   "id": "g1514192",
+   "lat": 41.0033,
+   "lon": 71.2379,
+   "timezone": "Asia/Tashkent"
+  },
+  {
+   "id": "g1252416",
+   "lat": 27.4661,
+   "lon": 89.6419,
+   "timezone": "Asia/Thimphu"
+  },
+  {
+   "id": "g3374036",
+   "lat": 13.1073,
+   "lon": -59.6202,
+   "timezone": "America/Barbados"
+  },
+  {
+   "id": "g2139521",
+   "lat": -22.2741,
+   "lon": 166.4488,
+   "timezone": "Pacific/Noumea"
+  },
+  {
+   "id": "g3570675",
+   "lat": 14.6037,
+   "lon": -61.0742,
+   "timezone": "America/Martinique"
+  },
+  {
+   "id": "g616530",
+   "lat": 40.8074,
+   "lon": 44.497,
+   "timezone": "Asia/Yerevan"
+  },
+  {
+   "id": "g2198148",
+   "lat": -18.1368,
+   "lon": 178.4253,
+   "timezone": "Pacific/Fiji"
+  },
+  {
+   "id": "g2960316",
+   "lat": 49.6098,
+   "lon": 6.1327,
+   "timezone": "Europe/Luxembourg"
+  },
+  {
+   "id": "g934985",
+   "lat": -26.3167,
+   "lon": 31.1333,
+   "timezone": "Africa/Mbabane"
+  },
+  {
+   "id": "g921772",
+   "lat": -11.7022,
+   "lon": 43.2551,
+   "timezone": "Indian/Comoro"
+  },
+  {
+   "id": "g426272",
+   "lat": -3.4271,
+   "lon": 29.9246,
+   "timezone": "Africa/Bujumbura"
+  },
+  {
+   "id": "g1820906",
+   "lat": 4.8903,
+   "lon": 114.9401,
+   "timezone": "Asia/Brunei"
+  },
+  {
+   "id": "g3382160",
+   "lat": 4.9381,
+   "lon": -52.3346,
+   "timezone": "America/Cayenne"
+  },
+  {
+   "id": "g285787",
+   "lat": 29.367,
+   "lon": 47.9743,
+   "timezone": "Asia/Kuwait"
+  },
+  {
+   "id": "g2108502",
+   "lat": -9.4333,
+   "lon": 159.95,
+   "timezone": "Pacific/Guadalcanal"
+  },
+  {
+   "id": "g921815",
+   "lat": -12.7823,
+   "lon": 45.2288,
+   "timezone": "Indian/Mayotte"
+  },
+  {
+   "id": "g2410763",
+   "lat": 0.3376,
+   "lon": 6.7299,
+   "timezone": "Africa/Sao_Tome"
+  },
+  {
+   "id": "g3576022",
+   "lat": 17.121,
+   "lon": -61.8433,
+   "timezone": "America/Antigua"
+  },
+  {
+   "id": "g617026",
+   "lat": 40.2717,
+   "lon": 44.6334,
+   "timezone": "Asia/Yerevan"
+  },
+  {
+   "id": "g616629",
+   "lat": 40.5169,
+   "lon": 44.7559,
+   "timezone": "Asia/Yerevan"
+  },
+  {
+   "id": "g3573890",
+   "lat": 10.6667,
+   "lon": -61.5189,
+   "timezone": "America/Port_of_Spain"
+  },
+  {
+   "id": "g7828758",
+   "lat": 15.2123,
+   "lon": 145.7545,
+   "timezone": "Pacific/Saipan"
+  },
+  {
+   "id": "g616062",
+   "lat": 40.1656,
+   "lon": 44.2946,
+   "timezone": "Asia/Yerevan"
+  },
+  {
+   "id": "g4035413",
+   "lat": -13.8333,
+   "lon": -171.7667,
+   "timezone": "Pacific/Apia"
+  },
+  {
+   "id": "g2110257",
+   "lat": 1.3278,
+   "lon": 172.977,
+   "timezone": "Pacific/Tarawa"
+  },
+  {
+   "id": "g2413876",
+   "lat": 13.4527,
+   "lon": -16.578,
+   "timezone": "Africa/Banjul"
+  },
+  {
+   "id": "g2135171",
+   "lat": -17.7365,
+   "lon": 168.3137,
+   "timezone": "Pacific/Efate"
+  },
+  {
+   "id": "g2993458",
+   "lat": 43.7372,
+   "lon": 7.4215,
+   "timezone": "Europe/Monaco"
+  },
+  {
+   "id": "g174875",
+   "lat": 39.2076,
+   "lon": 46.4068,
+   "timezone": "Asia/Yerevan"
+  },
+  {
+   "id": "g3577154",
+   "lat": 12.524,
+   "lon": -70.027,
+   "timezone": "America/Aruba"
+  },
+  {
+   "id": "g616631",
+   "lat": 40.1555,
+   "lon": 44.0388,
+   "timezone": "Asia/Yerevan"
+  },
+  {
+   "id": "g3580661",
+   "lat": 19.2866,
+   "lon": -81.3744,
+   "timezone": "America/Cayman"
+  },
+  {
+   "id": "g3042091",
+   "lat": 49.188,
+   "lon": -2.1049,
+   "timezone": "Europe/Jersey"
+  },
+  {
+   "id": "g2411585",
+   "lat": 36.1447,
+   "lon": -5.3526,
+   "timezone": "Europe/Gibraltar"
+  },
+  {
+   "id": "g4033936",
+   "lat": -17.5347,
+   "lon": -149.5684,
+   "timezone": "Pacific/Tahiti"
+  },
+  {
+   "id": "g3042237",
+   "lat": 54.15,
+   "lon": -4.4833,
+   "timezone": "Europe/Isle_of_Man"
+  },
+  {
+   "id": "g2113779",
+   "lat": 7.0897,
+   "lon": 171.3803,
+   "timezone": "Pacific/Majuro"
+  },
+  {
+   "id": "g3577887",
+   "lat": 13.1553,
+   "lon": -61.2274,
+   "timezone": "America/St_Vincent"
+  },
+  {
+   "id": "g616435",
+   "lat": 40.066,
+   "lon": 44.4367,
+   "timezone": "Asia/Yerevan"
+  },
+  {
+   "id": "g241131",
+   "lat": -4.62,
+   "lon": 55.455,
+   "timezone": "Indian/Mahe"
+  },
+  {
+   "id": "g174979",
+   "lat": 39.9548,
+   "lon": 44.5487,
+   "timezone": "Asia/Yerevan"
+  },
+  {
+   "id": "g4032402",
+   "lat": -21.1368,
+   "lon": -175.2011,
+   "timezone": "Pacific/Tongatapu"
+  },
+  {
+   "id": "g616785",
+   "lat": 40.4029,
+   "lon": 44.6445,
+   "timezone": "Asia/Yerevan"
+  },
+  {
+   "id": "g3041563",
+   "lat": 42.5078,
+   "lon": 1.5211,
+   "timezone": "Europe/Andorra"
+  },
+  {
+   "id": "g3576812",
+   "lat": 13.9957,
+   "lon": -61.0061,
+   "timezone": "America/St_Lucia"
+  },
+  {
+   "id": "g4795467",
+   "lat": 18.3419,
+   "lon": -64.9307,
+   "timezone": "America/St_Thomas"
+  },
+  {
+   "id": "g616250",
+   "lat": 40.548,
+   "lon": 44.9531,
+   "timezone": "Asia/Yerevan"
+  },
+  {
+   "id": "g616627",
+   "lat": 40.8804,
+   "lon": 45.1478,
+   "timezone": "Asia/Yerevan"
+  },
+  {
+   "id": "g616599",
+   "lat": 40.354,
+   "lon": 45.1239,
+   "timezone": "Asia/Yerevan"
+  },
+  {
+   "id": "g616887",
+   "lat": 40.6192,
+   "lon": 43.9721,
+   "timezone": "Asia/Yerevan"
+  },
+  {
+   "id": "g616877",
+   "lat": 40.2976,
+   "lon": 44.3615,
+   "timezone": "Asia/Yerevan"
+  },
+  {
+   "id": "g174991",
+   "lat": 39.8549,
+   "lon": 44.6947,
+   "timezone": "Asia/Yerevan"
+  },
+  {
+   "id": "g174895",
+   "lat": 39.5111,
+   "lon": 46.3417,
+   "timezone": "Asia/Yerevan"
+  },
+  {
+   "id": "g3575635",
+   "lat": 15.3017,
+   "lon": -61.3881,
+   "timezone": "America/Dominica"
+  },
+  {
+   "id": "g3042287",
+   "lat": 49.4598,
+   "lon": -2.5353,
+   "timezone": "Europe/Guernsey"
+  },
+  {
+   "id": "g616752",
+   "lat": 40.7404,
+   "lon": 44.8634,
+   "timezone": "Asia/Yerevan"
+  },
+  {
+   "id": "g3421319",
+   "lat": 64.1835,
+   "lon": -51.7216,
+   "timezone": "America/Nuuk"
+  },
+  {
+   "id": "g3582672",
+   "lat": 17.2538,
+   "lon": -88.764,
+   "timezone": "America/Belize"
+  },
+  {
+   "id": "g4035715",
+   "lat": -21.2075,
+   "lon": -159.7755,
+   "timezone": "Pacific/Rarotonga"
+  },
+  {
+   "id": "g2611396",
+   "lat": 62.0097,
+   "lon": -6.7716,
+   "timezone": "Atlantic/Faroe"
+  },
+  {
+   "id": "g3575551",
+   "lat": 17.2955,
+   "lon": -62.725,
+   "timezone": "America/St_Kitts"
+  },
+  {
+   "id": "g5881576",
+   "lat": -14.2781,
+   "lon": -170.7025,
+   "timezone": "Pacific/Pago_Pago"
+  },
+  {
+   "id": "g3579732",
+   "lat": 15.9971,
+   "lon": -61.7321,
+   "timezone": "America/Guadeloupe"
+  },
+  {
+   "id": "g3041732",
+   "lat": 60.0973,
+   "lon": 19.9348,
+   "timezone": "Europe/Mariehamn"
+  },
+  {
+   "id": "g3513563",
+   "lat": 12.15,
+   "lon": -68.2667,
+   "timezone": "America/Kralendijk"
+  },
+  {
+   "id": "g3577430",
+   "lat": 18.4269,
+   "lon": -64.6208,
+   "timezone": "America/Tortola"
+  },
+  {
+   "id": "g3579925",
+   "lat": 12.0529,
+   "lon": -61.7523,
+   "timezone": "America/Grenada"
+  },
+  {
+   "id": "g2081986",
+   "lat": 6.9248,
+   "lon": 158.1611,
+   "timezone": "Pacific/Pohnpei"
+  },
+  {
+   "id": "g2562305",
+   "lat": 35.8997,
+   "lon": 14.5148,
+   "timezone": "Europe/Malta"
+  },
+  {
+   "id": "g2110394",
+   "lat": -8.5243,
+   "lon": 179.1942,
+   "timezone": "Pacific/Funafuti"
+  },
+  {
+   "id": "g3424934",
+   "lat": 46.7791,
+   "lon": -56.1773,
+   "timezone": "America/Miquelon"
+  },
+  {
+   "id": "g3579132",
+   "lat": 17.8962,
+   "lon": -62.8498,
+   "timezone": "America/St_Barthelemy"
+  },
+  {
+   "id": "g3578851",
+   "lat": 18.0682,
+   "lon": -63.083,
+   "timezone": "America/Marigot"
+  },
+  {
+   "id": "g3042030",
+   "lat": 47.1415,
+   "lon": 9.5215,
+   "timezone": "Europe/Vaduz"
+  },
+  {
+   "id": "g3168070",
+   "lat": 43.9367,
+   "lon": 12.4464,
+   "timezone": "Europe/San_Marino"
+  },
+  {
+   "id": "g3576994",
+   "lat": 21.4612,
+   "lon": -71.1419,
+   "timezone": "America/Grand_Turk"
+  },
+  {
+   "id": "g2729907",
+   "lat": 78.2233,
+   "lon": 15.6469,
+   "timezone": "Arctic/Longyearbyen"
+  },
+  {
+   "id": "g3426691",
+   "lat": -51.6938,
+   "lon": -57.857,
+   "timezone": "Atlantic/Stanley"
+  },
+  {
+   "id": "g3573374",
+   "lat": 18.217,
+   "lon": -63.0578,
+   "timezone": "America/Anguilla"
+  },
+  {
+   "id": "g12226438",
+   "lat": 1.5925,
+   "lon": 10.8236,
+   "timezone": "Africa/Malabo"
+  },
+  {
+   "id": "g3513392",
+   "lat": 18.026,
+   "lon": -63.0458,
+   "timezone": "America/Lower_Princes"
+  },
+  {
+   "id": "g2078127",
+   "lat": -10.4217,
+   "lon": 105.6791,
+   "timezone": "Indian/Christmas"
+  },
+  {
+   "id": "g4034821",
+   "lat": -13.2816,
+   "lon": -176.1745,
+   "timezone": "Pacific/Wallis"
+  },
+  {
+   "id": "g7626461",
+   "lat": -0.5508,
+   "lon": 166.9252,
+   "timezone": "Pacific/Nauru"
+  },
+  {
+   "id": "g4044012",
+   "lat": 13.4757,
+   "lon": 144.7489,
+   "timezone": "Pacific/Guam"
+  },
+  {
+   "id": "g3573197",
+   "lat": 32.2949,
+   "lon": -64.783,
+   "timezone": "Atlantic/Bermuda"
+  },
+  {
+   "id": "g2161314",
+   "lat": -29.0546,
+   "lon": 167.9663,
+   "timezone": "Pacific/Norfolk"
+  },
+  {
+   "id": "g6691831",
+   "lat": 41.9027,
+   "lon": 12.4541,
+   "timezone": "Europe/Vatican"
+  },
+  {
+   "id": "g3370903",
+   "lat": -15.9249,
+   "lon": -5.7182,
+   "timezone": "Atlantic/St_Helena"
+  },
+  {
+   "id": "g4036284",
+   "lat": -19.0529,
+   "lon": -169.9196,
+   "timezone": "Pacific/Niue"
+  },
+  {
+   "id": "g7304591",
+   "lat": -12.1568,
+   "lon": 96.8225,
+   "timezone": "Indian/Cocos"
+  },
+  {
+   "id": "g4030723",
+   "lat": -25.066,
+   "lon": -130.1015,
+   "timezone": "Pacific/Pitcairn"
+  },
+  {
+   "id": "g1546102",
+   "lat": -49.3492,
+   "lon": 70.2194,
+   "timezone": "Indian/Kerguelen"
+  },
+  {
+   "id": "g3426466",
+   "lat": -54.2811,
+   "lon": -36.5092,
+   "timezone": "Atlantic/South_Georgia"
+  },
+  {
+   "id": "g3578069",
+   "lat": 16.7055,
+   "lon": -62.2129,
+   "timezone": "America/Montserrat"
+  },
+  {
+   "id": "g8063361",
+   "lat": 7.5008,
+   "lon": 134.6238,
+   "timezone": "Pacific/Palau"
+  }
+ ]
+}
