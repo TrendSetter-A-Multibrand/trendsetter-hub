@@ -6,6 +6,7 @@ import SectionHead from '../layout/SectionHead.jsx'
 import { dayLabel, formatTemp, weatherKind } from './weather.js'
 import CityPicker from './CityPicker.jsx'
 import { DEFAULT_CITY_IDS } from './myCity.js'
+import { cityName } from './cityCatalog.js'
 
 const s = strings.hub.home
 const BAR_H = 88
@@ -66,16 +67,16 @@ export default function WeatherCard({ loading, data, cityId, onCity, myCity, onM
                   aria-pressed={c.id === city.id}
                   onClick={() => onCity(c.id)}
                 >
-                  <span className="seg-label" title={s.cities[c.id]}>
-                    {s.cities[c.id]}
+                  <span className="seg-label" title={cityName(c.id)}>
+                    {cityName(c.id)}
                   </span>
                 </button>
                 {removable && c.id === myCity && (
                   <button
                     type="button"
                     className="seg-btn seg-remove"
-                    aria-label={s.removeCityAria(s.cities[c.id])}
-                    title={s.removeCityAria(s.cities[c.id])}
+                    aria-label={s.removeCityAria(cityName(c.id))}
+                    title={s.removeCityAria(cityName(c.id))}
                     onClick={remove}
                   >
                     <CloseOutlined aria-hidden="true" />

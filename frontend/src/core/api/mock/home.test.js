@@ -40,6 +40,28 @@ test('погода: ?city — третий город, дефолтные/неи
   assert.deepEqual(await ids('?city='), ['yerevan', 'moscow'])
 })
 
+test('погода: ?city=g<id> из справочника — третий город с зоной справочника и слотами; неизвестный g-id — 2 города', async () => {
+  const out = await call('/core/home/weather?city=g2643743') // Лондон
+  assert.deepEqual(out.cities.map((c) => c.id), ['yerevan', 'moscow', 'g2643743'])
+  const london = out.cities[2]
+  assert.equal(london.timezone, 'Europe/London')
+  assert.deepEqual(london.days[0].slots.map((sl) => sl.id), ['morning', 'noon', 'lunch', 'evening'])
+  assert.equal(london.days.length, 7)
+  // условная температура для не-легаси городов — из хэша id, в диапазоне от -5 до +30 (с учётом разброса дней)
+  assert.ok(london.days.every((d) => d.max >= -10 && d.max <= 35))
+  const again = await call('/core/home/weather?city=g2643743')
+  assert.deepEqual(again.cities[2].days.map((d) => d.max), london.days.map((d) => d.max))
+  for (const q of ['g0', 'G2643743', 'g2643743%20', '__proto__']) {
+    assert.deepEqual((await call(`/core/home/weather?city=${q}`)).cities.map((c) => c.id), ['yerevan', 'moscow'], q)
+  }
+})
+
+test('погода: ?city=dubai по-прежнему работает (прежние 17 городов)', async () => {
+  const out = await call('/core/home/weather?city=dubai')
+  assert.deepEqual(out.cities.map((c) => c.id), ['yerevan', 'moscow', 'dubai'])
+  assert.equal(out.cities[2].timezone, 'Asia/Dubai')
+})
+
 test('погода: slots только у days[0], 4 окна по порядку', async () => {
   const out = await call('/core/home/weather?city=dubai')
   for (const city of out.cities) {

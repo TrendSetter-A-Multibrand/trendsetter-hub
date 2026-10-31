@@ -5,12 +5,14 @@
 БД не используется. В лог — только тип ошибки, без тела ответа.
 """
 
+import json
 import logging
 import math
 import re
 import threading
 from datetime import date, datetime, time, timedelta, timezone
 from email.utils import parsedate_to_datetime
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import httpx
@@ -23,26 +25,10 @@ HTTP_TIMEOUT = 5.0
 
 MET_URL = "https://api.met.no/weatherapi/locationforecast/2.0/complete?lat={lat:.4f}&lon={lon:.4f}"
 MET_SOURCE = "MET Norway"
-# Белый список городов: URL к MET строится только из него. Копия зон — frontend/src/core/home/myCity.js. TODO(Q-H7)/TODO(Q-W3): список подтверждает пользователь
-CITIES = (
-    {"id": "yerevan", "lat": 40.1792, "lon": 44.4991, "timezone": "Asia/Yerevan"},
-    {"id": "moscow", "lat": 55.7558, "lon": 37.6173, "timezone": "Europe/Moscow"},
-    {"id": "saintPetersburg", "lat": 59.9386, "lon": 30.3141, "timezone": "Europe/Moscow"},
-    {"id": "kazan", "lat": 55.7961, "lon": 49.1064, "timezone": "Europe/Moscow"},
-    {"id": "krasnodar", "lat": 45.0355, "lon": 38.9753, "timezone": "Europe/Moscow"},
-    {"id": "yekaterinburg", "lat": 56.8389, "lon": 60.6057, "timezone": "Asia/Yekaterinburg"},
-    {"id": "novosibirsk", "lat": 55.0084, "lon": 82.9357, "timezone": "Asia/Novosibirsk"},
-    {"id": "minsk", "lat": 53.9006, "lon": 27.5590, "timezone": "Europe/Minsk"},
-    {"id": "tbilisi", "lat": 41.7151, "lon": 44.8271, "timezone": "Asia/Tbilisi"},
-    {"id": "baku", "lat": 40.4093, "lon": 49.8671, "timezone": "Asia/Baku"},
-    {"id": "almaty", "lat": 43.2220, "lon": 76.8512, "timezone": "Asia/Almaty"},
-    {"id": "astana", "lat": 51.1605, "lon": 71.4704, "timezone": "Asia/Almaty"},
-    {"id": "tashkent", "lat": 41.2995, "lon": 69.2401, "timezone": "Asia/Tashkent"},
-    {"id": "bishkek", "lat": 42.8746, "lon": 74.5698, "timezone": "Asia/Bishkek"},
-    {"id": "istanbul", "lat": 41.0082, "lon": 28.9784, "timezone": "Europe/Istanbul"},
-    {"id": "dubai", "lat": 25.2048, "lon": 55.2708, "timezone": "Asia/Dubai"},
-    {"id": "belgrade", "lat": 44.7866, "lon": 20.4489, "timezone": "Europe/Belgrade"},
-)
+# Белый список городов: URL к MET строится только из него. Файл генерирует backend/scripts/build_city_catalog.py (GeoNames, CC BY 4.0),
+# см. docs/TZ-weather-cities.md; список id — тот же, что во фронтовом справочнике (frontend/src/core/home/cityCatalog.data.js)
+CITIES_FILE = Path(__file__).parent / "data" / "home_cities.json"
+CITIES: dict[str, dict] = {c["id"]: c for c in json.loads(CITIES_FILE.read_text(encoding="utf-8"))["cities"]}
 DEFAULT_CITY_IDS = ("yerevan", "moscow")
 # Контрольные окна дня: (id, начало, конец, опорный час), часы местные, start <= hour < end
 SLOTS = (("morning", 6, 11, 8), ("noon", 11, 13, 12), ("lunch", 13, 17, 14), ("evening", 17, 22, 19))
@@ -59,7 +45,7 @@ RATES_MIN_INTERVAL = 3 * 3600
 RATES_MAX_AGE = 4 * 24 * 3600
 
 _SYMBOL_SUFFIX = re.compile(r"_(day|night|polartwilight)$")
-_lock = threading.Lock()
+_lock = threading.Lock()  # TODO(Q-WC9): глобальная блокировка на время HTTP — при холодном кэше и лежащем MET ждут все запросы главной
 _rates_lock = threading.Lock()
 
 
@@ -278,13 +264,13 @@ def _slots_today(state: dict, today_key: str, today_date: date, now_local: datet
 def weather_payload(city_id: str | None = None) -> dict:
     """Города по умолчанию + (если city_id — известный id вне DEFAULT_CITY_IDS) он третьим. Значение city_id нигде не отражается."""
     ids = list(DEFAULT_CITY_IDS)
-    if city_id and city_id not in ids and any(c["id"] == city_id for c in CITIES):
+    if city_id and city_id not in ids and city_id in CITIES:
         ids.append(city_id)
     cities = []
     with _lock:
         now_dt = _now()
         now = now_dt.timestamp()
-        for city in (next(c for c in CITIES if c["id"] == i) for i in ids):
+        for city in (CITIES[i] for i in ids):
             state = _weather.setdefault(city["id"], _new_city_state())
             if now >= max(state["fetched_at"] + WEATHER_MIN_INTERVAL, state["expires_at"]) and now >= state["next_try_at"]:
                 _refresh_city(city, state, now)

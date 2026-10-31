@@ -1,7 +1,10 @@
 """Главная: погода (MET Norway) и курсы ЦБ РФ. Сеть запрещена: _http_get подменён. Контракт — docs/TZ-home.md."""
 
+import json
+import re
 from datetime import datetime, timedelta, timezone
 from email.utils import format_datetime
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import httpx
@@ -440,12 +443,55 @@ def _urls(fake):
     return [c[0] for c in fake.calls]
 
 
-def test_cities_whitelist_17_and_defaults():
-    ids = [c["id"] for c in home.CITIES]
-    assert len(ids) == 17 and len(set(ids)) == 17
+LEGACY = (
+    ("yerevan", 40.1792, 44.4991, "Asia/Yerevan"),
+    ("moscow", 55.7558, 37.6173, "Europe/Moscow"),
+    ("saintPetersburg", 59.9386, 30.3141, "Europe/Moscow"),
+    ("kazan", 55.7961, 49.1064, "Europe/Moscow"),
+    ("krasnodar", 45.0355, 38.9753, "Europe/Moscow"),
+    ("yekaterinburg", 56.8389, 60.6057, "Asia/Yekaterinburg"),
+    ("novosibirsk", 55.0084, 82.9357, "Asia/Novosibirsk"),
+    ("minsk", 53.9006, 27.5590, "Europe/Minsk"),
+    ("tbilisi", 41.7151, 44.8271, "Asia/Tbilisi"),
+    ("baku", 40.4093, 49.8671, "Asia/Baku"),
+    ("almaty", 43.2220, 76.8512, "Asia/Almaty"),
+    ("astana", 51.1605, 71.4704, "Asia/Almaty"),
+    ("tashkent", 41.2995, 69.2401, "Asia/Tashkent"),
+    ("bishkek", 42.8746, 74.5698, "Asia/Bishkek"),
+    ("istanbul", 41.0082, 28.9784, "Europe/Istanbul"),
+    ("dubai", 25.2048, 55.2708, "Asia/Dubai"),
+    ("belgrade", 44.7866, 20.4489, "Europe/Belgrade"),
+)
+LONDON = "g2643743"
+
+
+def test_cities_catalog_shape():
+    ids = list(home.CITIES)
+    assert 700 <= len(ids) <= 1400 and len(set(ids)) == len(ids)
     assert home.DEFAULT_CITY_IDS == ("yerevan", "moscow") and ids[:2] == ["yerevan", "moscow"]
-    for c in home.CITIES:
+    pattern = re.compile(r"^([a-zA-Z]+|g\d{1,9})$")
+    points = set()
+    for cid, c in home.CITIES.items():
+        assert c["id"] == cid and pattern.match(cid)
         ZoneInfo(c["timezone"])
+        assert -90 <= c["lat"] <= 90 and -180 <= c["lon"] <= 180
+        assert c["lat"] == round(c["lat"], 4) and c["lon"] == round(c["lon"], 4)
+        points.add((c["lat"], c["lon"]))
+    assert len(points) == len(ids)  # одна точка — одна запись
+
+
+def test_cities_legacy_first_and_unchanged():
+    ids = list(home.CITIES)
+    assert ids[:17] == [row[0] for row in LEGACY]
+    for cid, lat, lon, tz in LEGACY:
+        assert home.CITIES[cid] == {"id": cid, "lat": lat, "lon": lon, "timezone": tz}
+
+
+def test_cities_legacy_geonameids_not_duplicated_as_g_ids():
+    overrides = json.loads((Path(__file__).parents[1] / "scripts" / "city_overrides.json").read_text(encoding="utf-8"))
+    assert [l["id"] for l in overrides["legacy"]] == [row[0] for row in LEGACY]
+    for l in overrides["legacy"]:
+        assert f"g{l['geonameid']}" not in home.CITIES
 
 
 def test_weather_city_param_adds_third_city(clock, monkeypatch):
@@ -460,6 +506,38 @@ def test_weather_city_param_adds_third_city(clock, monkeypatch):
 def test_weather_city_param_default_or_unknown_gives_two(clock, monkeypatch, city):
     monkeypatch.setattr(home, "_http_get", FakeHttp(met_response()))
     assert [c["id"] for c in home.weather_payload(city)["cities"]] == ["yerevan", "moscow"]
+
+
+def test_weather_city_any_catalog_city_adds_third_with_its_coordinates(clock, monkeypatch):
+    fake = FakeHttp(met_response())
+    monkeypatch.setattr(home, "_http_get", fake)
+    c = home.CITIES[LONDON]
+    out = home.weather_payload(LONDON)
+    assert [x["id"] for x in out["cities"]] == ["yerevan", "moscow", LONDON]
+    assert out["cities"][2]["timezone"] == "Europe/London"
+    assert f"lat={c['lat']:.4f}&lon={c['lon']:.4f}" in _urls(fake)[2]
+
+
+@pytest.mark.parametrize("city", ["g0", "g999999999", "G2643743", " g2643743", "g2643743 ", "g2643743\n", "g02643743", "g-1"])
+def test_weather_city_param_malformed_g_id_gives_two(clock, monkeypatch, city):
+    fake = FakeHttp(met_response())
+    monkeypatch.setattr(home, "_http_get", fake)
+    assert [c["id"] for c in home.weather_payload(city)["cities"]] == ["yerevan", "moscow"]
+    assert len(fake.calls) == 2
+
+
+def test_weather_cache_keys_subset_of_whitelist_and_hourly(clock, monkeypatch):
+    fake = FakeHttp(met_response())
+    monkeypatch.setattr(home, "_http_get", fake)
+    for cid in ("kazan", LONDON, "g1275339", "zzz", "g0"):
+        home.weather_payload(cid)
+    assert set(home._weather) <= set(home.CITIES)
+    assert set(home._weather) == {"yerevan", "moscow", "kazan", LONDON, "g1275339"}
+    calls = len(fake.calls)
+    assert calls == 5
+    for cid in ("kazan", LONDON, "g1275339"):
+        home.weather_payload(cid)
+    assert len(fake.calls) == calls  # повтор в пределах часа не ходит в MET
 
 
 def test_weather_city_cached_per_city(clock, monkeypatch):
