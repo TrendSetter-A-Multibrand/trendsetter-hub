@@ -34,20 +34,19 @@ button.hc-cell { cursor: pointer; }
 button.hc-cell:hover { filter: brightness(.96); }
 button.hc-cell:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
 
-/* Виды дней: цвет + маркер (подчёркивание), чтобы рабочие переносы различались и без цвета */
-.hc-holiday { background: var(--accent-soft); color: var(--accent-primary); font-weight: var(--fw-medium); }
-.hc-dayoff { background: var(--accent-soft); color: var(--accent-primary); font-weight: var(--fw-medium); }
+/* Виды дней: заливка/рамка разных цветов (токены --cal-* в core/styles.css); рабочий перенос дополнительно подчёркнут */
+.hc-holiday { background: var(--accent-fill); color: var(--text-on-accent); font-weight: var(--fw-medium); }
+.hc-dayoff { background: var(--cal-dayoff-bg); color: var(--accent-primary); font-weight: var(--fw-medium); border: 1px solid var(--accent-primary); }
 .hc-weekend { background: var(--bg-surface-secondary); color: var(--text-secondary); }
 .hc-work { color: var(--text-primary); }
-.hc-workday { background: transparent; color: var(--status-success); text-decoration: underline solid 2px; text-underline-offset: 3px; }
-.hc-short { background: var(--bg-surface-secondary); color: var(--text-primary); border: 1px dashed var(--border-strong); }
+.hc-workday { background: var(--cal-work-bg); color: var(--text-primary); font-weight: var(--fw-medium); border: 1px solid var(--status-success); text-decoration: underline solid 2px var(--status-success); text-underline-offset: 3px; }
+.hc-short { background: var(--marker); color: var(--marker-text); font-weight: var(--fw-medium); }
 .hc-today { outline: 2px solid var(--border-strong); outline-offset: -2px; }
 
 .hc-legend { display: flex; flex-wrap: wrap; gap: var(--space-8) var(--space-16); margin-top: var(--space-16); font-size: var(--fs-small); color: var(--text-secondary); }
 .hc-legend-item { display: inline-flex; align-items: center; gap: var(--space-8); }
 .hc-swatch { display: inline-block; width: 16px; height: 16px; border: 1px solid var(--border-default); }
-.hc-swatch.hc-workday { border-bottom: 3px solid var(--status-success); }
-.hc-swatch.hc-short { border: 1px dashed var(--border-strong); }
+.hc-swatch.hc-workday { text-decoration: none; }
 
 /* Список праздников и переносов года */
 .hc-list { list-style: none; margin: 0; padding: 0; }

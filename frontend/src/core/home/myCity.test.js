@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { CITY_ZONES, MY_CITY_KEY, clockSlots, loadMyCity, saveMyCity } from './myCity.js'
+import { CITY_ZONES, DEFAULT_CITY_IDS, MY_CITY_KEY, clockSlots, loadMyCity, saveMyCity } from './myCity.js'
 
 const NOW = new Date('2026-10-29T09:00:00Z')
 const ids = (zones) => zones.map((z) => z.cityId)
@@ -24,6 +24,11 @@ test('CITY_ZONES: 17 городов, первые два — Ереван и М�
   assert.equal(CITY_ZONES.length, 17)
   assert.equal(new Set(CITY_ZONES.map((c) => c.id)).size, 17)
   assert.deepEqual(CITY_ZONES.slice(0, 2).map((c) => c.id), ['yerevan', 'moscow'])
+})
+
+test('DEFAULT_CITY_IDS: Ереван и Москва, оба есть в CITY_ZONES', () => {
+  assert.deepEqual(DEFAULT_CITY_IDS, ['yerevan', 'moscow'])
+  assert.ok(DEFAULT_CITY_IDS.every((id) => CITY_ZONES.some((c) => c.id === id)))
 })
 
 test('clockSlots: без выбора и Ереван — как V1', () => {
